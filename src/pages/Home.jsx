@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import PropertyCard from '../components/PropertyCard';
-import { Palmtree, Mountain, Waves, Building, Warehouse, ArrowRight, Search, MapPin, ListFilter, Home as HomeIcon, Key, Briefcase } from 'lucide-react';
+import { Palmtree, Mountain, Waves, Building, Warehouse, ArrowRight, Search, MapPin, ListFilter, Home as HomeIcon, Key, Briefcase, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const categories = [
@@ -22,6 +22,22 @@ const Home = () => {
     const [priceMin, setPriceMin] = useState('');
     const [priceMax, setPriceMax] = useState('');
     const [showFilters, setShowFilters] = useState(false);
+
+    // Modal State
+    const [showSellModal, setShowSellModal] = useState(false);
+    const [sellFormData, setSellFormData] = useState({
+        location: '',
+        footage: '',
+        price: ''
+    });
+
+    const handleSellSubmit = () => {
+        const message = `Hola, quiero vender mi propiedad.\n\n📍 Ubicación: ${sellFormData.location}\n📐 Metraje: ${sellFormData.footage} m²\n💰 Precio Estimado: $${sellFormData.price}\n\nSolicito más información.`;
+        const whatsappUrl = `https://wa.me/51999999999?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+        setShowSellModal(false);
+        setSellFormData({ location: '', footage: '', price: '' });
+    };
 
     // Simple mock for city autocomplete
     const cities = ["Lima", "Arequipa", "Cusco", "Trujillo", "Piura", "Ica", "Tacna"];
@@ -277,27 +293,90 @@ const Home = () => {
                                 </Link>
                             </div>
 
-                            <a
-                                href="https://wa.me/51999999999?text=Hola,%20quiero%20invertir%20en%20Inmuevete"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl max-w-sm border-l-4 border-blue-500 transform hover:-translate-x-2 transition cursor-pointer delay-100"
+                            <button
+                                onClick={() => setShowSellModal(true)}
+                                className="block w-full text-left bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl max-w-sm border-l-4 border-blue-500 transform hover:-translate-x-2 transition cursor-pointer delay-100"
                             >
                                 <div className="flex items-center gap-4">
                                     <div className="bg-blue-100 p-3 rounded-full">
                                         <Key className="w-6 h-6 text-blue-500" />
                                     </div>
                                     <div>
-                                        <h3 className="font-bold text-gray-800 text-lg">¿Buscas Invertir?</h3>
-                                        <p className="text-gray-600 text-sm">Asesoría experta para multiplicar tu capital.</p>
+                                        <h3 className="font-bold text-gray-800 text-lg">¿Vendes tu Propiedad?</h3>
+                                        <p className="text-gray-600 text-sm">Contáctanos para vender rápido y seguro al mejor precio.</p>
                                     </div>
                                 </div>
-                            </a>
+                            </button>
                         </div>
                     </div>
 
                 </div>
             </div>
+
+            {/* Sell Property Modal */}
+            {showSellModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden animate-fadeIn">
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                            <h3 className="font-bold text-lg text-gray-800">Vende con nosotros</h3>
+                            <button
+                                onClick={() => setShowSellModal(false)}
+                                className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-200 rounded-full transition"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <p className="text-sm text-gray-600 mb-2">Ingresa los datos de tu propiedad para enviarlos a un agente.</p>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación / Distrito</label>
+                                <input
+                                    type="text"
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
+                                    placeholder="Ej: Miraflores, Lima"
+                                    value={sellFormData.location}
+                                    onChange={e => setSellFormData({ ...sellFormData, location: e.target.value })}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Metraje Aprox. (m²)</label>
+                                <input
+                                    type="number"
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
+                                    placeholder="Ej: 120"
+                                    value={sellFormData.footage}
+                                    onChange={e => setSellFormData({ ...sellFormData, footage: e.target.value })}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Monto Estimado de Venta</label>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                                    <input
+                                        type="number"
+                                        className="w-full pl-8 pr-4 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
+                                        placeholder="Ej: 150000"
+                                        value={sellFormData.price}
+                                        onChange={e => setSellFormData({ ...sellFormData, price: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handleSellSubmit}
+                                disabled={!sellFormData.location || !sellFormData.footage || !sellFormData.price}
+                                className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3 rounded-lg shadow-lg hover:shadow-green-500/30 transition flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Key className="w-5 h-5" />
+                                Enviar por WhatsApp
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Categories Section */}
             <div className="bg-gray-50 py-10 border-b border-gray-200">
