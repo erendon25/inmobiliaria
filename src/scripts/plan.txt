@@ -1,0 +1,32 @@
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, addDoc, getDocs, query, where } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+
+// Use client config for now - simpler than using Admin purely for creating a doc if auth allows,
+// but actually, client SDK with admin credential? No, just use client SDK.
+// But wait, user might not be logged in to this script.
+// It's safer to use the existing `src/lib/firebase.js` logic but that requires ES modules and specific env.
+
+// Let's create a temporary client script that imports the firebase config.
+// I'll create a new file src/scripts/createCode.js that I can run or ask the user to run?
+// No, I can run `node` if I use CommonJS or ES modules correctly.
+// Let's try to inject the code into the app temporarily or just use the browser console?
+// No, I'll modify `App.jsx` temporarily to run this once? No.
+
+// I will write a standalone script using Admin SDK if user has service account? No.
+// I will write a script that uses the web SDK.
+
+const firebaseConfig = {
+  // I need the config. It's in src/lib/firebase.js but I don't want to parse it.
+  // I'll assume standard environment variables or just hardcode if I knew them.
+  // Wait, I can't see .env.
+  // I'll check src/lib/firebase.js content first.
+};
+
+// Actually, I'll modify `AgentDashboard.jsx` to have a "Dev: Create Code" button temporarily?
+// No, the user asked "si no hay uno crealo".
+// I'll add a 'useEffect' in `AgentDashboard.jsx` that checks if a specific code exists, and if not, creates it.
+// This is safe because I can condition it.
+
+// Let's go with modifying `AgentDashboard.jsx`.
+// I'll add a function `ensureActivationCode` that runs once.
