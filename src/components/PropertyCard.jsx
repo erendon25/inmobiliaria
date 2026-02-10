@@ -2,14 +2,19 @@ import { Link } from 'react-router-dom';
 import { Heart, Star } from 'lucide-react';
 
 const PropertyCard = ({ property }) => {
+    // Format price if it's a number
+    const formattedPrice = typeof property.price === 'number'
+        ? `$${property.price.toLocaleString()}`
+        : property.price;
+
     return (
         <Link
-            to={`/property/${property.id}`}
+            to={`/properties/${property.id}`} // Updated path to match App.jsx route
             className="group block"
         >
             <div className="relative aspect-[20/19] overflow-hidden rounded-xl bg-gray-200 mb-3">
                 <img
-                    src={property.images[0]}
+                    src={property.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image'}
                     alt={property.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
@@ -19,19 +24,19 @@ const PropertyCard = ({ property }) => {
             </div>
 
             <div className="flex justify-between items-start">
-                <h3 className="font-bold text-gray-900 truncate pr-4">{property.location}</h3>
+                <h3 className="font-bold text-gray-900 truncate pr-4">{property.location || property.address}</h3>
                 <div className="flex items-center gap-1">
                     <Star className="w-3 h-3 fill-black text-black" />
-                    <span className="text-sm font-light">4.9</span>
+                    <span className="text-sm font-light">New</span>
                 </div>
             </div>
 
-            <p className="text-gray-500 text-sm">Hosted by Agent Smith</p>
-            <p className="text-gray-500 text-sm mb-1">Nov 15 - 20</p>
+            <p className="text-gray-500 text-sm">Agente: {property.agentName || 'Inmuévete'}</p>
+            <p className="text-gray-500 text-sm mb-1 line-clamp-1">{property.title}</p>
 
             <div className="flex items-baseline gap-1 mt-1">
-                <span className="font-semibold text-gray-900">{property.price}</span>
-                <span className="text-gray-900 font-light"> total</span>
+                <span className="font-semibold text-gray-900">{formattedPrice}</span>
+                {property.type === 'alquiler' && <span className="text-gray-900 font-light"> / mes</span>}
             </div>
         </Link>
     );

@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { properties } from '../data/properties';
+import { useState, useEffect } from 'react';
+import { db } from '../lib/firebase';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import PropertyCard from '../components/PropertyCard';
 import { Palmtree, Mountain, Waves, Building, Warehouse, ArrowRight, Search, MapPin, ListFilter, Home as HomeIcon, Key, Briefcase } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -43,6 +44,35 @@ const Home = () => {
         setShowSuggestions(false);
     };
 
+    // Fetch Properties from Firestore
+    const [properties, setProperties] = useState([]);
+    const [loadingProperties, setLoadingProperties] = useState(true);
+
+    useEffect(() => {
+        const fetchProperties = async () => {
+            try {
+                // Basic query: Get all available properties
+                // Note: Complex queries like filtering by multiple fields will need Firestore Indexes.
+                // For now, we fetch 'disponible' properties.
+                const q = query(
+                    collection(db, "properties"),
+                    where("status", "==", "disponible")
+                    // orderBy("createdAt", "desc") // May require index, commenting out for safety 
+                );
+
+                const querySnapshot = await getDocs(q);
+                const props = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setProperties(props);
+            } catch (error) {
+                console.error("Error fetching properties:", error);
+            } finally {
+                setLoadingProperties(false);
+            }
+        };
+
+        fetchProperties();
+    }, []);
+
     return (
         <div className="min-h-screen bg-white font-sans text-[#262626]">
             {/* Navbar rendering is handled in App.jsx. 
@@ -77,8 +107,8 @@ const Home = () => {
                                         key={op}
                                         onClick={() => setOperation(op)}
                                         className={`flex-1 py-2 text-sm font-bold capitalize rounded-lg transition-all ${operation === op
-                                                ? 'bg-white text-[#fc7f51] shadow-sm transform scale-105'
-                                                : 'text-gray-500 hover:text-gray-700'
+                                            ? 'bg-white text-[#fc7f51] shadow-sm transform scale-105'
+                                            : 'text-gray-500 hover:text-gray-700'
                                             }`}
                                     >
                                         {op}
@@ -260,13 +290,20 @@ const Home = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                    {properties.map((property) => (
-                        <PropertyCard key={property.id} property={property} />
-                    ))}
-                    {/* Duplicate for demo */}
-                    {properties.map((property) => (
-                        <PropertyCard key={`${property.id}-dup`} property={{ ...property, id: `${property.id}-dup` }} />
-                    ))}
+                    {loadingProperties ? (
+                        <div className="col-span-full py-20 text-center">
+                            <div className="inline-block w-8 h-8 border-4 border-[#fc7f51] border-t-transparent rounded-full animate-spin"></div>
+                            <p className="mt-2 text-gray-500">Cargando propiedades...</p>
+                        </div>
+                    ) : properties.length === 0 ? (
+                        <div className="col-span-full py-20 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                            <p className="text-gray-500 text-lg">No hay propiedades disponibles en este momento.</p>
+                        </div>
+                    ) : (
+                        properties.map((property) => (
+                            <PropertyCard key={property.id} property={property} />
+                        ))
+                    )}
                 </div>
 
                 <div className="mt-12 text-center md:hidden">
