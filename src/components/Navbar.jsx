@@ -10,7 +10,7 @@ const Navbar = () => {
                 {/* Brand Logo */}
                 <Link to="/" className="flex items-center gap-3 group">
                     {/* Recreated Logo based on 'Arrow House' concept from Brand Manual */}
-                    <img src="/logo.png" alt="Inmuévete" className="h-12 w-auto object-contain" />
+                    <img src="./logo.png" alt="Inmuévete" className="h-12 w-auto object-contain" />
                 </Link>
 
                 {/* Search Bar */}
