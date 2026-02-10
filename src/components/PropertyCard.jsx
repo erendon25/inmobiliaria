@@ -2,14 +2,34 @@ import { Link } from 'react-router-dom';
 import { Heart, Star } from 'lucide-react';
 
 const PropertyCard = ({ property }) => {
-    // Format price if it's a number
-    const formattedPrice = typeof property.price === 'number'
-        ? `$${property.price.toLocaleString()}`
-        : property.price;
+    // Exchange Rate
+    const EXCHANGE_RATE = 3.75;
+
+    // Determine currencies
+    const currency = property.currency || 'USD';
+    const price = typeof property.price === 'number' ? property.price : parseFloat(property.price);
+
+    let priceUSD, pricePEN;
+
+    if (currency === 'USD') {
+        priceUSD = price;
+        pricePEN = price * EXCHANGE_RATE;
+    } else {
+        pricePEN = price;
+        priceUSD = price / EXCHANGE_RATE;
+    }
+
+    const formatPrice = (amount, curr) => {
+        return amount.toLocaleString('en-US', {
+            style: 'currency',
+            currency: curr,
+            maximumFractionDigits: 0
+        });
+    };
 
     return (
         <Link
-            to={`/properties/${property.id}`} // Updated path to match App.jsx route
+            to={`/properties/${property.id}`}
             className="group block"
         >
             <div className="relative aspect-[20/19] overflow-hidden rounded-xl bg-gray-200 mb-3">
@@ -21,6 +41,9 @@ const PropertyCard = ({ property }) => {
                 <button className="absolute top-3 right-3 text-white/70 hover:scale-110 transition">
                     <Heart className="w-6 h-6 fill-black/50 text-white stroke-[2px]" />
                 </button>
+                <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg text-white text-xs font-bold uppercase">
+                    {property.type}
+                </div>
             </div>
 
             <div className="flex justify-between items-start">
@@ -34,9 +57,9 @@ const PropertyCard = ({ property }) => {
             <p className="text-gray-500 text-sm">Agente: {property.agentName || 'Inmuévete'}</p>
             <p className="text-gray-500 text-sm mb-1 line-clamp-1">{property.title}</p>
 
-            <div className="flex items-baseline gap-1 mt-1">
-                <span className="font-semibold text-gray-900">{formattedPrice}</span>
-                {property.type === 'alquiler' && <span className="text-gray-900 font-light"> / mes</span>}
+            <div className="flex flex-col mt-1">
+                <span className="font-bold text-gray-900 text-lg">{formatPrice(priceUSD, 'USD')}</span>
+                <span className="text-sm text-gray-500 font-medium">{formatPrice(pricePEN, 'PEN')}</span>
             </div>
         </Link>
     );

@@ -24,6 +24,7 @@ const AgentDashboard = () => {
         title: '',
         description: '',
         type: 'venta',
+        currency: 'USD',
         price: '',
         category: 'construido',
         location: '',
@@ -144,6 +145,7 @@ const AgentDashboard = () => {
             title: property.title,
             description: property.description,
             type: property.type,
+            currency: property.currency || 'USD',
             price: property.price,
             category: property.category,
             location: property.location,
@@ -239,6 +241,7 @@ const AgentDashboard = () => {
                     title: '',
                     description: '',
                     type: 'venta',
+                    currency: 'USD',
                     price: '',
                     category: 'construido',
                     location: '',
@@ -343,14 +346,24 @@ const AgentDashboard = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Precio</label>
-                                        <input
-                                            required
-                                            type="number"
-                                            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
-                                            placeholder="0.00"
-                                            value={formData.price}
-                                            onChange={e => setFormData({ ...formData, price: e.target.value })}
-                                        />
+                                        <div className="flex">
+                                            <select
+                                                className="w-24 px-2 py-3 rounded-l-lg border border-r-0 border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition bg-gray-50 text-sm font-bold"
+                                                value={formData.currency}
+                                                onChange={e => setFormData({ ...formData, currency: e.target.value })}
+                                            >
+                                                <option value="USD">USD</option>
+                                                <option value="PEN">PEN</option>
+                                            </select>
+                                            <input
+                                                required
+                                                type="number"
+                                                className="w-full px-4 py-3 rounded-r-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
+                                                placeholder="0.00"
+                                                value={formData.price}
+                                                onChange={e => setFormData({ ...formData, price: e.target.value })}
+                                            />
+                                        </div>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Operación</label>
