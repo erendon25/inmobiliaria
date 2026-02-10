@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper to check if user is superadmin
+    function isSuperAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+    }
+
+    // USERS:
+    // - Authenticated users can read/write their own profile
+    // - SuperAdmins can read/write all
+    match /users/{userId} {
+      allow read, write: if request.auth != null && (request.auth.uid == userId || isSuperAdmin());
+    }
+
+    // PROPERTIES:
+    // - Anyone (including public) can read properties
+    // - Authenticated users (Agents) can create
+    // - Agents can only update/delete their own properties
+    // - SuperAdmins can update/delete all
+    match /properties/{propertyId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (resource.data.agentId == request.auth.uid || isSuperAdmin());
+    }
+
+    // ACTIVATION CODES:
+    // - SuperAdmins can read/write full access
+    // - Authenticated users (new Agents) need to query (read) to validate code
+    // - Authenticated users need to update (mark as used)
+    match /activation_codes/{codeId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null && isSuperAdmin();
+        allow update: if request.auth != null; // Ideally stricter: check if code matches input
+    }
+  }
+}

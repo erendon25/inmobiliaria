@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  /* Reset headings in base layer so utility classes can override them */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--color-secondary);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+}
+
+:root {
+  --color-primary: #fc7f51;
+  --color-secondary: #262626;
+  --color-dark: #16151a;
+  --color-grey: #878787;
+
+  --color-text-main: #262626;
+  --color-bg: #FFFFFF;
+
+  --radius-xl: 0px;
+  --radius-lg: 4px;
+}
+
+.text-primary {
+  color: var(--color-primary);
+}
+
+.bg-primary {
+  background-color: var(--color-primary);
+}
+
+.text-secondary {
+  color: var(--color-secondary);
+}
+
+.bg-secondary {
+  background-color: var(--color-secondary);
+}
+
+/* Buttons */
+button.bg-primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+button.bg-primary:hover {
+  background-color: #e56b3e;
+}
+
+.shadow-card {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}

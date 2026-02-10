@@ -1,0 +1,70 @@
+import { Link } from 'react-router-dom';
+import { Search, UserCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+
+const Navbar = () => {
+    const { user, userData, logout } = useAuth();
+    return (
+        <nav className="fixed w-full z-50 bg-[#16151a] border-b border-gray-800 shadow-lg">
+            <div className="container mx-auto px-6 h-24 flex justify-between items-center">
+                {/* Brand Logo */}
+                <Link to="/" className="flex items-center gap-3 group">
+                    {/* Recreated Logo based on 'Arrow House' concept from Brand Manual */}
+                    <img src="/logo.png" alt="Inmuévete" className="h-12 w-auto object-contain" />
+                </Link>
+
+                {/* Search Bar */}
+                <div className="hidden lg:flex items-center bg-white rounded-full py-2 pl-6 pr-2 shadow-xl hover:shadow-orange-500/5 transition cursor-pointer gap-4 min-w-[420px]">
+                    <input
+                        type="text"
+                        placeholder="Buscar por zona, ciudad o tipo..."
+                        className="bg-transparent border-none outline-none text-[#262626] placeholder-gray-400 flex-1 font-medium text-sm"
+                    />
+                    <div className="bg-[#fc7f51] p-2.5 rounded-full text-white hover:bg-[#e56b3e] transition shadow-md">
+                        <Search className="w-5 h-5" strokeWidth={2.5} />
+                    </div>
+                </div>
+
+                {/* Right Actions */}
+                <div className="flex items-center gap-4">
+                    <div className="hidden md:flex items-center gap-8">
+                        <Link to="/" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Propiedades</Link>
+                        <Link to="/about" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Nosotros</Link>
+                        <Link to="/contact" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Contacto</Link>
+                    </div>
+
+                    {user ? (
+                        <div className="flex items-center gap-4">
+                            <Link
+                                to={userData?.role === 'agente' ? '/agent-dashboard' : '/client-dashboard'}
+                                className="text-white hover:text-[#fc7f51] transition font-medium mr-2"
+                            >
+                                Hola, {user.displayName ? user.displayName.split(' ')[0] : 'Usuario'}
+                            </Link>
+                            <button
+                                onClick={logout}
+                                className="bg-[#262626] border border-gray-600 text-white px-4 py-2 rounded-full text-sm hover:bg-gray-800 transition"
+                            >
+                                Salir
+                            </button>
+                            <Link to={userData?.role === 'agente' ? '/agent-dashboard' : '/client-dashboard'}>
+                                <div className="bg-gray-600 rounded-full p-0.5 cursor-pointer">
+                                    <UserCircle className="w-8 h-8 text-white fill-gray-600" />
+                                </div>
+                            </Link>
+                        </div>
+                    ) : (
+                        <Link
+                            to="/login"
+                            className="bg-[#fc7f51] hover:bg-[#e56b3e] text-white px-6 py-2 rounded-full font-bold transition shadow-lg shadow-orange-500/20"
+                        >
+                            Ingresar
+                        </Link>
+                    )}
+                </div>
+            </div>
+        </nav>
+    );
+};
+
+export default Navbar;
