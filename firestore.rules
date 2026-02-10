@@ -32,7 +32,15 @@ service cloud.firestore {
     match /activation_codes/{codeId} {
         allow read: if request.auth != null;
         allow create: if request.auth != null && isSuperAdmin();
-        allow update: if request.auth != null; // Ideally stricter: check if code matches input
+        allow update: if request.auth != null; 
+    }
+
+    // INQUIRIES:
+    // - Public can create (contact form)
+    // - Agents can read their own inquiries
+    match /inquiries/{inquiryId} {
+        allow create: if true;
+        allow read, update, delete: if request.auth != null && (resource.data.agentId == request.auth.uid || isSuperAdmin());
     }
   }
 }

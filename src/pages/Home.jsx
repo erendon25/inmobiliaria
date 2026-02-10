@@ -56,8 +56,8 @@ const Home = () => {
                 // Note: Complex queries like filtering by multiple fields will need Firestore Indexes.
                 // For now, we fetch 'disponible' properties.
                 const q = query(
-                    collection(db, "properties"),
-                    where("status", "==", "disponible")
+                    collection(db, "properties")
+                    // where("status", "==", "disponible")
                     // orderBy("createdAt", "desc") // May require index, commenting out for safety 
                 );
 
@@ -277,7 +277,12 @@ const Home = () => {
                                 </Link>
                             </div>
 
-                            <div className="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl max-w-sm border-l-4 border-blue-500 transform hover:-translate-x-2 transition cursor-pointer delay-100">
+                            <a
+                                href="https://wa.me/51999999999?text=Hola,%20quiero%20invertir%20en%20Inmuevete"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl max-w-sm border-l-4 border-blue-500 transform hover:-translate-x-2 transition cursor-pointer delay-100"
+                            >
                                 <div className="flex items-center gap-4">
                                     <div className="bg-blue-100 p-3 rounded-full">
                                         <Key className="w-6 h-6 text-blue-500" />
@@ -287,7 +292,7 @@ const Home = () => {
                                         <p className="text-gray-600 text-sm">Asesoría experta para multiplicar tu capital.</p>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
                     </div>
 

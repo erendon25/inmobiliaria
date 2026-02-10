@@ -24,9 +24,10 @@ const ClientDashboard = () => {
         // Let's mock fetching ALL properties for now as "Featured" so the dashboard isn't empty
         const fetchProperties = async () => {
             try {
-                const q = query(collection(db, "properties"), orderBy("createdAt", "desc"));
+                const q = query(collection(db, "properties"));
                 const querySnapshot = await getDocs(q);
                 const props = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                console.log("ClientDashboard Fetched properties:", props);
                 setFavorites(props);
             } catch (error) {
                 console.error("Error fetching properties:", error);

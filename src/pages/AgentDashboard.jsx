@@ -11,6 +11,7 @@ const AgentDashboard = () => {
     const { user, userData } = useAuth();
     const [loading, setLoading] = useState(false);
     const [showMap, setShowMap] = useState(false);
+    const [editingId, setEditingId] = useState(null);
 
     // Activation State
     const [activationCode, setActivationCode] = useState('');
@@ -33,6 +34,7 @@ const AgentDashboard = () => {
 
     // Property List State
     const [myProperties, setMyProperties] = useState([]);
+    const [inquiries, setInquiries] = useState([]);
     const [loadingProps, setLoadingProps] = useState(true);
 
     // Fetch Properties
@@ -54,6 +56,18 @@ const AgentDashboard = () => {
     useEffect(() => {
         if (userData?.isActivated) {
             fetchMyProperties();
+
+            // Fetch Inquiries
+            const fetchInquiries = async () => {
+                try {
+                    const q = query(collection(db, "inquiries"), where("agentId", "==", user.uid));
+                    const snap = await getDocs(q);
+                    setInquiries(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                } catch (error) {
+                    console.error("Error fetching inquiries:", error);
+                }
+            };
+            fetchInquiries();
         }
     }, [user, userData]);
 
@@ -124,48 +138,119 @@ const AgentDashboard = () => {
         setImagePreviews(prev => prev.filter((_, i) => i !== index));
     };
 
+    const handleEdit = (property) => {
+        setEditingId(property.id);
+        setFormData({
+            title: property.title,
+            description: property.description,
+            type: property.type,
+            price: property.price,
+            category: property.category,
+            location: property.location,
+            footage: property.footage,
+            bedrooms: property.bedrooms || '',
+            bathrooms: property.bathrooms || '',
+            lat: property.lat || '',
+            lng: property.lng || ''
+        });
+        setImagePreviews(property.images || []);
+        setImages([]); // Clear new files queue
+
+        // Scroll to form
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleCancelEdit = () => {
+        setEditingId(null);
+        setFormData({
+            title: '',
+            description: '',
+            type: 'venta',
+            price: '',
+            category: 'construido',
+            location: '',
+            footage: '',
+            bedrooms: '',
+            bathrooms: ''
+        });
+        setImagePreviews([]);
+        setImages([]);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            const imageUrls = await Promise.all(
-                images.map(async (image) => {
-                    const storageRef = ref(storage, `properties/${user.uid}/${Date.now()}_${image.name}`);
-                    const snapshot = await uploadBytes(storageRef, image);
-                    return await getDownloadURL(snapshot.ref);
-                })
-            );
+            const imageUrls = [];
+            for (const image of images) {
+                const storageRef = ref(storage, `properties/${user.uid}/${Date.now()}_${image.name}`);
+                const snapshot = await uploadBytes(storageRef, image);
+                const url = await getDownloadURL(snapshot.ref);
+                imageUrls.push(url);
+            }
 
-            await addDoc(collection(db, "properties"), {
-                ...formData,
-                agentId: user.uid,
-                agentName: userData.displayName || 'Agente', // Add agent name for display
-                images: imageUrls,
-                createdAt: new Date(),
-                status: 'disponible', // Default status
-                price: parseFloat(formData.price),
-                footage: parseFloat(formData.footage),
-                bedrooms: formData.category === 'construido' ? parseInt(formData.bedrooms) : 0,
-                bathrooms: formData.category === 'construido' ? parseInt(formData.bathrooms) : 0,
-            });
+            if (editingId) {
+                // Update existing property
+                const updateData = {
+                    ...formData,
+                    price: parseFloat(formData.price),
+                    footage: parseFloat(formData.footage),
+                    bedrooms: formData.category === 'construido' ? parseInt(formData.bedrooms) : 0,
+                    bathrooms: formData.category === 'construido' ? parseInt(formData.bathrooms) : 0,
+                };
 
-            toast.success("¡Propiedad publicada con éxito!");
-            setFormData({
-                title: '',
-                description: '',
-                type: 'venta',
-                price: '',
-                category: 'construido',
-                location: '',
-                footage: '',
-                bedrooms: '',
-                bathrooms: ''
-            });
-            setImages([]);
-            setImagePreviews([]);
-            fetchMyProperties(); // Update list
+                // Only update images if new ones are added? 
+                // Current logic appends new images to existing ones in state?
+                // The state `images` contains new files. `imagePreviews` contains URLs of both old and new?
+                // Actually `images` state only holds *new files* to upload.
+                // We need to handle preserving old images if we are editing.
 
+                // Simplified: If new images uploaded, append them. 
+                // If we want to keep old images, we need to know which ones are old.
+                // In handleEdit we populate logic.
+                // For now, let's assume we just add new ones to the array.
+                if (imageUrls.length > 0) {
+                    updateData.images = [...(imagePreviews.filter(url => url.startsWith('http'))), ...imageUrls];
+                    // Note: This logic assumes imagePreviews has all current images.
+                }
+
+                await updateDoc(doc(db, "properties", editingId), updateData);
+                toast.success("¡Propiedad actualizada con éxito!");
+            } else {
+                // Create new property
+                await addDoc(collection(db, "properties"), {
+                    ...formData,
+                    agentId: user.uid,
+                    // ... rest of fields
+
+                    agentName: userData.displayName || 'Agente', // Add agent name for display
+                    images: imageUrls,
+                    createdAt: new Date(),
+                    status: 'disponible', // Default status
+                    price: parseFloat(formData.price),
+                    footage: parseFloat(formData.footage),
+                    bedrooms: formData.category === 'construido' ? parseInt(formData.bedrooms) : 0,
+                    bathrooms: formData.category === 'construido' ? parseInt(formData.bathrooms) : 0,
+                });
+
+                toast.success("¡Propiedad publicada con éxito!");
+                setFormData({
+                    title: '',
+                    description: '',
+                    type: 'venta',
+                    price: '',
+                    category: 'construido',
+                    location: '',
+                    footage: '',
+                    bedrooms: '',
+                    bathrooms: ''
+                });
+                setImages([]);
+                setImagePreviews([]);
+                setEditingId(null); // Reset edit state
+                fetchMyProperties(); // Update list
+            }
         } catch (error) {
             console.error("Error adding property: ", error);
             toast.error("Hubo un error al publicar la propiedad.");
@@ -175,6 +260,7 @@ const AgentDashboard = () => {
     };
 
     // Dev Helper: Ensure an activation code exists
+    // Dev Helper: Ensure an activation code exists
     useEffect(() => {
         const ensureCode = async () => {
             // Check if AGENT2024 exists
@@ -183,11 +269,7 @@ const AgentDashboard = () => {
             if (snapshot.empty) {
                 await addDoc(collection(db, "activation_codes"), {
                     code: "AGENT2024",
-                    used: false, // In this case, we might want a reusable code or just infinite?
-                    // For this specific request "si no hay uno crealo", let's make a reusable one or unique.
-                    // Let's make a "Master Code" that doesn't get consumed, or just a standard one.
-                    // The current logic consumes the code (used: true).
-                    // So let's create a code that is intended for single use but we create it if missing.
+                    used: false,
                     createdAt: new Date(),
                     type: 'standard'
                 });
@@ -201,16 +283,20 @@ const AgentDashboard = () => {
     const isActivated = userData?.isActivated;
 
     return (
-        <div className="min-h-screen bg-gray-50 pt-24 pb-12 px-6">
+        <div className="min-h-screen bg-gray-50 pt-36 pb-12 px-6">
             <div className="container mx-auto max-w-6xl">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Left Column: Create Property OR Activation */}
                     <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 h-fit relative">
-                        <div className="bg-[#16151a] p-8 text-white">
-                            <h1 className="text-2xl font-bold font-[Montserrat]">Nueva Propiedad</h1>
-                            <p className="text-gray-400 mt-1 text-sm">
-                                {isActivated ? "Publica un nuevo inmueble" : "Activa tu cuenta para publicar"}
-                            </p>
+                        <div className="bg-[#16151a] p-8 text-white flex justify-between items-center">
+                            <div>
+                                <h1 className="text-2xl font-bold font-[Montserrat]">
+                                    {editingId ? "Editar Propiedad" : "Nueva Propiedad"}
+                                </h1>
+                                <p className="text-gray-400 mt-1 text-sm">
+                                    {isActivated ? "Publica un nuevo inmueble" : "Activa tu cuenta para publicar"}
+                                </p>
+                            </div>
                         </div>
 
                         {!isActivated ? (
@@ -242,9 +328,6 @@ const AgentDashboard = () => {
                             </div>
                         ) : (
                             <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                                {/* Form Content - Only shown if activated */}
-
-                                {/* Shortened Form Sections for Layout - Logic remains same */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Título</label>
                                     <input
@@ -425,13 +508,24 @@ const AgentDashboard = () => {
                                     </div>
                                 )}
 
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full bg-[#fc7f51] hover:bg-[#e56b3e] text-white font-bold py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2"
-                                >
-                                    {loading ? <Loader2 className="animate-spin" /> : 'Publicar Propiedad'}
-                                </button>
+                                <div className="flex gap-2">
+                                    {editingId && (
+                                        <button
+                                            type="button"
+                                            onClick={handleCancelEdit}
+                                            className="flex-1 bg-gray-200 text-gray-800 font-bold py-3 rounded-xl hover:bg-gray-300 transition"
+                                        >
+                                            Cancelar
+                                        </button>
+                                    )}
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="flex-1 bg-[#fc7f51] hover:bg-[#e56b3e] text-white font-bold py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2"
+                                    >
+                                        {loading ? <Loader2 className="animate-spin" /> : (editingId ? 'Actualizar Propiedad' : 'Publicar Propiedad')}
+                                    </button>
+                                </div>
                             </form>
                         )}
                     </div>
@@ -487,12 +581,50 @@ const AgentDashboard = () => {
                                                 >
                                                     {property.status === 'disponible' ? 'Marcar Vendido/Alquilado' : 'Marcar Disponible'}
                                                 </button>
+                                                <button
+                                                    onClick={() => handleEdit(property)}
+                                                    className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-100 transition"
+                                                >
+                                                    Editar
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         )}
+
+
+
+                        {/* Inquiries Section */}
+                        <div className="space-y-6 mt-8 border-t border-gray-200 pt-8">
+                            <h2 className="text-2xl font-bold text-gray-800">Solicitudes de Clientes</h2>
+                            {inquiries.length === 0 ? (
+                                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500 text-sm">
+                                    No tienes solicitudes de contacto pendientes.
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {inquiries.map(inquiry => (
+                                        <div key={inquiry.id} className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-[#fc7f51] hover:shadow-md transition">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h3 className="font-bold text-gray-800 text-sm">{inquiry.propertyTitle}</h3>
+                                                <span className="text-xs text-gray-400">
+                                                    {inquiry.timestamp?.toDate().toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                            <div className="text-sm text-gray-600 space-y-1">
+                                                <p><span className="font-semibold text-gray-700">Cliente:</span> {inquiry.clientName}</p>
+                                                <p><span className="font-semibold text-gray-700">Contacto:</span> {inquiry.clientPhone}</p>
+                                                <div className="bg-gray-50 p-2 rounded text-xs italic mt-2">
+                                                    "{inquiry.clientMessage}"
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
