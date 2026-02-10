@@ -4,12 +4,9 @@ import './index.css'
 import App from './App.jsx'
 import { BrowserRouter } from 'react-router-dom'
 
-// Detect if we are in production (GitHub Pages) to set the correct basename
-const basename = import.meta.env.PROD ? '/inmobiliaria/' : '/';
-
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <BrowserRouter basename={basename}>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <App />
     </BrowserRouter>
   </StrictMode>,
