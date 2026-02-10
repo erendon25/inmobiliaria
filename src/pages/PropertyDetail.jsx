@@ -250,7 +250,6 @@ const PropertyDetail = () => {
                                     {(property.currency === 'PEN' ? property.price : property.price * 3.75).toLocaleString('en-US', { style: 'currency', currency: 'PEN', maximumFractionDigits: 0 })}
                                 </span>
                                 {property.type === 'alquiler' && <span className="text-gray-500 text-sm block mt-1">Precio por mes</span>}
-                                {property.type === 'alquiler' && <span className="text-gray-500 text-lg"> / mes</span>}
                             </div>
 
                             <button className="w-full bg-[#25D366] text-white font-bold text-lg py-3 rounded-lg hover:bg-[#20bd5a] transition mb-4 shadow-lg shadow-green-500/30 flex items-center justify-center gap-2">
