@@ -5,10 +5,12 @@ import { collection, addDoc, query, where, getDocs, updateDoc, doc } from 'fireb
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Upload, MapPin, DollarSign, Home, Maximize, Loader2, Plus, X, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
+import MapPicker from '../components/MapPicker';
 
 const AgentDashboard = () => {
     const { user, userData } = useAuth();
     const [loading, setLoading] = useState(false);
+    const [showMap, setShowMap] = useState(false);
 
     // Activation State
     const [activationCode, setActivationCode] = useState('');
@@ -332,15 +334,58 @@ const AgentDashboard = () => {
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Ubicación</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
-                                        placeholder="Dirección o Link Maps"
-                                        value={formData.location}
-                                        onChange={e => setFormData({ ...formData, location: e.target.value })}
-                                    />
+                                    <div className="flex gap-2">
+                                        <div className="relative flex-grow">
+                                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                            <input
+                                                required
+                                                type="text"
+                                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
+                                                placeholder="Dirección o Link Maps"
+                                                value={formData.location}
+                                                onChange={e => setFormData({ ...formData, location: e.target.value })}
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMap(true)}
+                                            className="bg-[#262626] text-white px-4 rounded-lg hover:bg-black transition flex items-center justify-center"
+                                            title="Buscar en Mapa"
+                                        >
+                                            <MapPin className="w-5 h-5" />
+                                        </button>
+                                    </div>
                                 </div>
+
+                                {/* Map Modal */}
+                                {showMap && (
+                                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[600px] flex flex-col overflow-hidden relative">
+                                            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                                                <h3 className="font-bold text-lg text-gray-800">Seleccionar Ubicación</h3>
+                                                <button
+                                                    onClick={() => setShowMap(false)}
+                                                    className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-200 rounded-full transition"
+                                                >
+                                                    <X className="w-5 h-5" />
+                                                </button>
+                                            </div>
+                                            <div className="flex-grow p-0">
+                                                <MapPicker
+                                                    onConfirm={(loc) => {
+                                                        setFormData({
+                                                            ...formData,
+                                                            location: loc.address || `${loc.lat}, ${loc.lng}`,
+                                                            lat: loc.lat,
+                                                            lng: loc.lng
+                                                        });
+                                                        setShowMap(false);
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
