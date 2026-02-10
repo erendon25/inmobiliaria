@@ -21,6 +21,7 @@ const Home = () => {
     const [currency, setCurrency] = useState('USD');
     const [priceMin, setPriceMin] = useState('');
     const [priceMax, setPriceMax] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
 
     // Simple mock for city autocomplete
     const cities = ["Lima", "Arequipa", "Cusco", "Trujillo", "Piura", "Ica", "Tacna"];
@@ -210,11 +211,43 @@ const Home = () => {
                                 </div>
                             </div>
 
-                            {/* Advanced Filters Toggle (Placeholder) */}
-                            <button className="flex items-center gap-2 text-[#fc7f51] font-bold text-sm hover:underline">
+                            {/* Advanced Filters Toggle */}
+                            <button
+                                onClick={() => setShowFilters(!showFilters)}
+                                className="flex items-center gap-2 text-[#fc7f51] font-bold text-sm hover:underline"
+                            >
                                 <ListFilter className="w-4 h-4" />
-                                Más filtros (Habitaciones, Baños, Área...)
+                                {showFilters ? "Menos filtros" : "Más filtros (Habitaciones, Baños, Área...)"}
                             </button>
+
+                            {/* Extra Filters */}
+                            {showFilters && (
+                                <div className="grid grid-cols-2 gap-4 animate-fadeIn">
+                                    <div className="col-span-2 sm:col-span-1">
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Habitaciones</label>
+                                        <select className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none">
+                                            <option value="">Cualquiera</option>
+                                            <option value="1">1+</option>
+                                            <option value="2">2+</option>
+                                            <option value="3">3+</option>
+                                            <option value="4">4+</option>
+                                        </select>
+                                    </div>
+                                    <div className="col-span-2 sm:col-span-1">
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Baños</label>
+                                        <select className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none">
+                                            <option value="">Cualquiera</option>
+                                            <option value="1">1+</option>
+                                            <option value="2">2+</option>
+                                            <option value="3">3+</option>
+                                        </select>
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Área Mínima (m²)</label>
+                                        <input type="number" placeholder="Ej: 80" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none" />
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Search Button */}
                             <button className="w-full bg-[#fc7f51] hover:bg-[#e56b3e] text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-orange-500/30 transition flex items-center justify-center gap-2">

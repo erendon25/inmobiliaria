@@ -18,7 +18,8 @@ const Register = () => {
         try {
             await signup(email, password, role, name, phone);
             toast.success("¡Cuenta creada exitosamente!");
-            navigate("/dashboard"); // Redirect to appropriate dashboard
+            // Redirect based on selected role
+            navigate(role === 'agente' ? "/agent-dashboard" : "/client-dashboard");
         } catch (error) {
             toast.error(error.message);
         }
@@ -28,6 +29,7 @@ const Register = () => {
         try {
             await loginWithGoogle(role); // Pass selected role
             toast.success("¡Cuenta creada exitosamente!");
+            navigate(role === 'agente' ? "/agent-dashboard" : "/client-dashboard");
         } catch (error) {
             toast.error(error.message);
         }
@@ -37,6 +39,7 @@ const Register = () => {
         try {
             await loginWithApple(role); // Pass selected role
             toast.success("¡Cuenta creada exitosamente!");
+            navigate(role === 'agente' ? "/agent-dashboard" : "/client-dashboard");
         } catch (error) {
             toast.error(error.message);
         }

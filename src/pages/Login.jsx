@@ -1,7 +1,8 @@
 
-import { auth, googleProvider } from "../lib/firebase";
+import { auth, googleProvider, db } from "../lib/firebase";
 import { signInWithPopup } from "firebase/auth";
-import { Link } from "react-router-dom";
+import { doc, getDoc } from 'firebase/firestore';
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
@@ -11,12 +12,36 @@ const Login = () => {
     const [password, setPassword] = useState("");
     const { login, loginWithGoogle, loginWithApple } = useAuth();
 
+    // Need to navigate
+    const navigate = useNavigate();
+
+    const fetchUserRoleAndRedirect = async (uid) => {
+        try {
+            const userDoc = await getDoc(doc(db, "users", uid));
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                if (userData.role === 'agente') {
+                    navigate("/agent-dashboard");
+                } else if (userData.role === 'superadmin') {
+                    navigate("/superadmin");
+                } else {
+                    navigate("/client-dashboard");
+                }
+            } else {
+                // Fallback
+                navigate("/");
+            }
+        } catch (error) {
+            console.error("Error redirecting:", error);
+        }
+    };
+
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            await login(email, password);
-            // Redirect or handle success
+            const credential = await login(email, password);
             toast.success("¡Bienvenido de nuevo!");
+            fetchUserRoleAndRedirect(credential.user.uid);
         } catch (error) {
             toast.error(error.message);
         }
@@ -24,8 +49,9 @@ const Login = () => {
 
     const handleGoogleLogin = async () => {
         try {
-            await loginWithGoogle();
+            const result = await loginWithGoogle();
             toast.success("¡Bienvenido!");
+            fetchUserRoleAndRedirect(result.user.uid);
         } catch (error) {
             toast.error(error.message);
         }
@@ -33,8 +59,9 @@ const Login = () => {
 
     const handleAppleLogin = async () => {
         try {
-            await loginWithApple();
+            const result = await loginWithApple();
             toast.success("¡Bienvenido!");
+            fetchUserRoleAndRedirect(result.user.uid);
         } catch (error) {
             toast.error(error.message);
         }
