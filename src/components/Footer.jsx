@@ -1,10 +1,12 @@
+import logo from '../assets/logo.png';
+
 const Footer = () => {
     return (
         <footer className="bg-[#16151a] text-white py-16">
             <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
                 {/* Brand & Mission */}
                 <div>
-                    <img src="/logo.png" alt="Inmuévete" className="h-12 mb-6" />
+                    <img src={logo} alt="Inmuévete" className="h-12 mb-6" />
                     <p className="text-[#878787] text-sm leading-relaxed mb-6">
                         En Inmuevete trabajamos para conectar a las personas con el espacio ideal para vivir, invertir o crecer.
                         Brindamos soluciones inmobiliarias confiables, transparentes y accesibles.
