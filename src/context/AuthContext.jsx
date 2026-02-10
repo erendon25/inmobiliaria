@@ -51,15 +51,17 @@ export function AuthProvider({ children }) {
             });
     };
 
-    const loginWithGoogle = async () => {
+    const loginWithGoogle = async (role = 'cliente') => {
         try {
             const result = await signInWithPopup(auth, googleProvider);
-            // Check if user exists in Firestore, if not create default as client
+            // Check if user exists in Firestore, if not create default with selected role
             const userDoc = await getDoc(doc(db, "users", result.user.uid));
             if (!userDoc.exists()) {
                 await setDoc(doc(db, "users", result.user.uid), {
                     email: result.user.email,
-                    role: 'cliente',
+                    displayName: result.user.displayName,
+                    phoneNumber: result.user.phoneNumber || '',
+                    role: role,
                     createdAt: new Date()
                 });
             }
@@ -69,14 +71,16 @@ export function AuthProvider({ children }) {
         }
     };
 
-    const loginWithApple = async () => {
+    const loginWithApple = async (role = 'cliente') => {
         try {
             const result = await signInWithPopup(auth, appleProvider);
             const userDoc = await getDoc(doc(db, "users", result.user.uid));
             if (!userDoc.exists()) {
                 await setDoc(doc(db, "users", result.user.uid), {
                     email: result.user.email,
-                    role: 'cliente',
+                    displayName: result.user.displayName,
+                    phoneNumber: result.user.phoneNumber || '',
+                    role: role,
                     createdAt: new Date()
                 });
             }

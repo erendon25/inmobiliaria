@@ -26,7 +26,7 @@ const Register = () => {
 
     const handleGoogleLogin = async () => {
         try {
-            await loginWithGoogle();
+            await loginWithGoogle(role); // Pass selected role
             toast.success("¡Cuenta creada exitosamente!");
         } catch (error) {
             toast.error(error.message);
@@ -35,7 +35,7 @@ const Register = () => {
 
     const handleAppleLogin = async () => {
         try {
-            await loginWithApple();
+            await loginWithApple(role); // Pass selected role
             toast.success("¡Cuenta creada exitosamente!");
         } catch (error) {
             toast.error(error.message);
