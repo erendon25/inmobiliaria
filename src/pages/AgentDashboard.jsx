@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db, storage } from '../lib/firebase';
-import { collection, addDoc, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, updateDoc, doc, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Upload, MapPin, DollarSign, Home, Maximize, Loader2, Plus, X, Lock, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -42,43 +42,40 @@ const AgentDashboard = () => {
     const [inquiries, setInquiries] = useState([]);
     const [loadingProps, setLoadingProps] = useState(true);
 
-    // Fetch Properties
-    const fetchMyProperties = async () => {
-        if (!user) return;
-        try {
-            const q = query(collection(db, "properties"), where("agentId", "==", user.uid));
-            const querySnapshot = await getDocs(q);
-            const props = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // Sort by creation date descending (newest first)
-            props.sort((a, b) => {
-                const dateA = a.createdAt?.seconds || 0;
-                const dateB = b.createdAt?.seconds || 0;
-                return dateB - dateA;
-            });
-            setMyProperties(props);
-        } catch (error) {
-            console.error("Error fetching properties:", error);
-        } finally {
-            setLoadingProps(false);
-        }
-    };
-
-    // Load properties on mount if user is activated
+    // Load properties and inquiries on mount if user is activated using onSnapshot
     useEffect(() => {
-        if (userData?.isActivated) {
-            fetchMyProperties();
+        if (userData?.isActivated && user) {
+            setLoadingProps(true);
 
-            // Fetch Inquiries
-            const fetchInquiries = async () => {
-                try {
-                    const q = query(collection(db, "inquiries"), where("agentId", "==", user.uid));
-                    const snap = await getDocs(q);
-                    setInquiries(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-                } catch (error) {
-                    console.error("Error fetching inquiries:", error);
-                }
+            // Real-time Properties Listener
+            const qProps = query(collection(db, "properties"), where("agentId", "==", user.uid));
+            const unsubProps = onSnapshot(qProps, (snapshot) => {
+                const props = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Sort by creation date descending (newest first)
+                props.sort((a, b) => {
+                    const dateA = a.createdAt?.seconds || 0;
+                    const dateB = b.createdAt?.seconds || 0;
+                    return dateB - dateA;
+                });
+                setMyProperties(props);
+                setLoadingProps(false);
+            }, (error) => {
+                console.error("Error fetching properties:", error);
+                setLoadingProps(false);
+            });
+
+            // Real-time Inquiries Listener
+            const qInquiries = query(collection(db, "inquiries"), where("agentId", "==", user.uid));
+            const unsubInquiries = onSnapshot(qInquiries, (snapshot) => {
+                setInquiries(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            }, (error) => {
+                console.error("Error fetching inquiries:", error);
+            });
+
+            return () => {
+                unsubProps();
+                unsubInquiries();
             };
-            fetchInquiries();
         }
     }, [user, userData]);
 
@@ -130,7 +127,7 @@ const AgentDashboard = () => {
                 status: newStatus
             });
             toast.success(`Estado actualizado a: ${newStatus === 'disponible' ? 'Disponible' : 'No Disponible'}`);
-            fetchMyProperties(); // Refresh list
+            // Listener handles update
         } catch (error) {
             console.error("Error updating status:", error);
             toast.error("No se pudo actualizar el estado.");
@@ -143,7 +140,7 @@ const AgentDashboard = () => {
                 isPromoted: !currentPromoted
             });
             toast.success(!currentPromoted ? "¡Propiedad destacada!" : "Propiedad ya no está destacada");
-            fetchMyProperties();
+            // Listener handles update
         } catch (error) {
             console.error("Error updating promotion:", error);
             toast.error("Error al destacar propiedad");
@@ -161,20 +158,11 @@ const AgentDashboard = () => {
         const previewToRemove = imagePreviews[index];
 
         if (previewToRemove.startsWith('blob:')) {
-            // It is a new local file.
-            // We need to find which file in 'images' corresponds to this preview.
-            // 'images' contains only the new files.
-            // 'imagePreviews' contains [old_remote_urls..., new_local_blobs...] (usually appended)
-            // But if user deletes one in the middle, order is maintained.
-
-            // To be precise:
-            // Calculate how many 'blob:' urls are strictly before this index to find the index in 'images' array.
+            // It's a new file.
             const blobsBefore = imagePreviews.slice(0, index).filter(url => url.startsWith('blob:')).length;
-
             setImages(prev => prev.filter((_, i) => i !== blobsBefore));
         }
 
-        // Remove from previews (which drives the UI)
         setImagePreviews(prev => prev.filter((_, i) => i !== index));
     };
 
@@ -250,8 +238,6 @@ const AgentDashboard = () => {
                     antiquityYears: formData.antiquityType === 'used' ? parseInt(formData.antiquityYears) : 0,
                 };
 
-                // Combine retained old images (from previews) with new uploaded images
-                // Only keep previews that are NOT blobs (so they are existing remote URLs)
                 const retainedImages = imagePreviews.filter(url => !url.startsWith('blob:'));
 
                 updateData.images = [...retainedImages, ...newImageUrls];
@@ -281,7 +267,7 @@ const AgentDashboard = () => {
 
             // Reset form
             handleCancelEdit();
-            fetchMyProperties();
+            // Listener handles list update
 
         } catch (error) {
             console.error("Error adding property: ", error);
@@ -681,8 +667,6 @@ const AgentDashboard = () => {
                                 ))}
                             </div>
                         )}
-
-
 
                         {/* Inquiries Section */}
                         <div className="space-y-6 mt-8 border-t border-gray-200 pt-8">

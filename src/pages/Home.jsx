@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import PropertyCard from '../components/PropertyCard';
 import { Palmtree, Mountain, Waves, Building, Warehouse, ArrowRight, Search, MapPin, ListFilter, Home as HomeIcon, Key, Briefcase, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -66,37 +66,36 @@ const Home = () => {
     const [loadingProperties, setLoadingProperties] = useState(true);
 
     useEffect(() => {
-        const fetchProperties = async () => {
-            try {
-                // Fetch all properties
-                const q = query(
-                    collection(db, "properties")
-                );
+        setLoadingProperties(true);
+        const q = query(
+            collection(db, "properties")
+        );
 
-                const querySnapshot = await getDocs(q);
-                let props = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Real-time listener
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const props = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-                // Sort properties: Promoted first, then Newest first
-                props.sort((a, b) => {
-                    // 1. Promoted check (Promoted items at top)
-                    if (a.isPromoted && !b.isPromoted) return -1;
-                    if (!a.isPromoted && b.isPromoted) return 1;
+            // Sort properties: Promoted first, then Newest first
+            props.sort((a, b) => {
+                // 1. Promoted check (Promoted items at top)
+                if (a.isPromoted && !b.isPromoted) return -1;
+                if (!a.isPromoted && b.isPromoted) return 1;
 
-                    // 2. Date check (Newest first)
-                    const dateA = a.createdAt?.seconds || 0;
-                    const dateB = b.createdAt?.seconds || 0;
-                    return dateB - dateA;
-                });
+                // 2. Date check (Newest first)
+                const dateA = a.createdAt?.seconds || 0;
+                const dateB = b.createdAt?.seconds || 0;
+                return dateB - dateA;
+            });
 
-                setProperties(props);
-            } catch (error) {
-                console.error("Error fetching properties:", error);
-            } finally {
-                setLoadingProperties(false);
-            }
-        };
+            setProperties(props);
+            setLoadingProperties(false);
+        }, (error) => {
+            console.error("Error fetching properties:", error);
+            setLoadingProperties(false);
+        });
 
-        fetchProperties();
+        // Cleanup subscription
+        return () => unsubscribe();
     }, []);
 
     return (
