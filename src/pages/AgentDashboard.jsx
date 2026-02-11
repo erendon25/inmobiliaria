@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { db, storage } from '../lib/firebase';
 import { collection, addDoc, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Upload, MapPin, DollarSign, Home, Maximize, Loader2, Plus, X, Lock } from 'lucide-react';
+import { Upload, MapPin, DollarSign, Home, Maximize, Loader2, Plus, X, Lock, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 import MapPicker from '../components/MapPicker';
 
@@ -159,21 +159,21 @@ const AgentDashboard = () => {
 
     const removeImage = (index) => {
         const previewToRemove = imagePreviews[index];
-        
+
         if (previewToRemove.startsWith('blob:')) {
             // It is a new local file.
             // We need to find which file in 'images' corresponds to this preview.
             // 'images' contains only the new files.
             // 'imagePreviews' contains [old_remote_urls..., new_local_blobs...] (usually appended)
             // But if user deletes one in the middle, order is maintained.
-            
+
             // To be precise:
             // Calculate how many 'blob:' urls are strictly before this index to find the index in 'images' array.
             const blobsBefore = imagePreviews.slice(0, index).filter(url => url.startsWith('blob:')).length;
-            
+
             setImages(prev => prev.filter((_, i) => i !== blobsBefore));
         }
-        
+
         // Remove from previews (which drives the UI)
         setImagePreviews(prev => prev.filter((_, i) => i !== index));
     };
@@ -253,7 +253,7 @@ const AgentDashboard = () => {
                 // Combine retained old images (from previews) with new uploaded images
                 // Only keep previews that are NOT blobs (so they are existing remote URLs)
                 const retainedImages = imagePreviews.filter(url => !url.startsWith('blob:'));
-                
+
                 updateData.images = [...retainedImages, ...newImageUrls];
 
                 await updateDoc(doc(db, "properties", editingId), updateData);
@@ -263,10 +263,10 @@ const AgentDashboard = () => {
                 await addDoc(collection(db, "properties"), {
                     ...formData,
                     agentId: user.uid,
-                    agentName: userData.displayName || 'Agente', 
+                    agentName: userData.displayName || 'Agente',
                     images: newImageUrls,
                     createdAt: new Date(),
-                    status: 'disponible', 
+                    status: 'disponible',
                     views: 0,
                     isPromoted: false,
                     price: parseFloat(formData.price),
@@ -278,10 +278,10 @@ const AgentDashboard = () => {
 
                 toast.success("¡Propiedad publicada con éxito!");
             }
-            
+
             // Reset form
             handleCancelEdit();
-            fetchMyProperties(); 
+            fetchMyProperties();
 
         } catch (error) {
             console.error("Error adding property: ", error);
@@ -641,7 +641,14 @@ const AgentDashboard = () => {
                                                 </span>
                                             </div>
                                             <p className="text-gray-500 text-xs mt-1">{property.location}</p>
-                                            <p className="text-[#fc7f51] font-bold text-sm mt-1">${property.price?.toLocaleString()}</p>
+
+                                            <div className="flex items-center justify-between mt-1">
+                                                <p className="text-[#fc7f51] font-bold text-sm">${property.price?.toLocaleString()}</p>
+                                                <div className="flex items-center gap-1 text-gray-400 text-xs bg-gray-50 px-2 py-1 rounded-md" title="Vistas Totales">
+                                                    <Eye className="w-3 h-3" />
+                                                    {property.views || 0}
+                                                </div>
+                                            </div>
 
                                             <div className="mt-3 flex gap-2">
                                                 <button
@@ -655,8 +662,8 @@ const AgentDashboard = () => {
                                                 </button>
                                                 <button
                                                     onClick={() => handlePromoteToggle(property.id, property.isPromoted)}
-                                                    className={`px-2 py-1.5 rounded-lg text-xs font-bold transition text-center border ${property.isPromoted 
-                                                        ? 'bg-yellow-50 text-yellow-600 border-yellow-200' 
+                                                    className={`px-2 py-1.5 rounded-lg text-xs font-bold transition text-center border ${property.isPromoted
+                                                        ? 'bg-yellow-50 text-yellow-600 border-yellow-200'
                                                         : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
                                                     title={property.isPromoted ? "Quitar Destacado" : "Destacar Propiedad"}
                                                 >

@@ -60,16 +60,22 @@ const PropertyDetail = () => {
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
-                    setProperty({ id: docSnap.id, ...docSnap.data() });
+                    const data = docSnap.data();
 
                     // Increment view counter locally and in DB if not already viewed in this session
                     if (!hasViewedRef.current) {
                         hasViewedRef.current = true;
-                        // Fire and forget update
+
+                        // Fire and forget DB update
                         updateDoc(docRef, {
                             views: increment(1)
                         }).catch(err => console.error("Error incrementing views", err));
+
+                        // Optimistic UI update
+                        data.views = (data.views || 0) + 1;
                     }
+
+                    setProperty({ id: docSnap.id, ...data });
                 } else {
                     console.log("No such document!");
                 }
