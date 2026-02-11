@@ -78,14 +78,11 @@ const PropertyCard = ({ property }) => {
                 </div>
             </div>
 
-            <div className="flex justify-between items-start">
-                <h3 className="font-bold text-gray-900 truncate pr-4 text-sm">{property.location || property.address}</h3>
-                <div className="flex items-center gap-3">
-                    {/* View Counter */}
-                    <div className="flex items-center gap-1 text-gray-400 text-xs" title="Vistas">
-                        <Eye className="w-3 h-3" />
-                        {property.views || 0}
-                    </div>
+            <div className="flex justify-between items-center mb-1">
+                <h3 className="font-semibold text-gray-500 truncate pr-2 text-xs uppercase tracking-wide">{property.location || property.address}</h3>
+                <div className="flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-full" title="Vistas">
+                    <Eye className="w-3 h-3 text-[#fc7f51]" />
+                    <span className="text-xs font-bold text-gray-700">{property.views || 0}</span>
                 </div>
             </div>
 
