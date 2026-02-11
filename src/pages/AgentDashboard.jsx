@@ -30,7 +30,11 @@ const AgentDashboard = () => {
         location: '',
         footage: '',
         bedrooms: '',
-        bathrooms: ''
+        bathrooms: '',
+        antiquityType: 'estreno', // estreno, used
+        antiquityYears: '',
+        lat: '',
+        lng: ''
     });
 
     // Property List State
@@ -45,6 +49,12 @@ const AgentDashboard = () => {
             const q = query(collection(db, "properties"), where("agentId", "==", user.uid));
             const querySnapshot = await getDocs(q);
             const props = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // Sort by creation date descending (newest first)
+            props.sort((a, b) => {
+                const dateA = a.createdAt?.seconds || 0;
+                const dateB = b.createdAt?.seconds || 0;
+                return dateB - dateA;
+            });
             setMyProperties(props);
         } catch (error) {
             console.error("Error fetching properties:", error);
@@ -127,6 +137,19 @@ const AgentDashboard = () => {
         }
     };
 
+    const handlePromoteToggle = async (propertyId, currentPromoted) => {
+        try {
+            await updateDoc(doc(db, "properties", propertyId), {
+                isPromoted: !currentPromoted
+            });
+            toast.success(!currentPromoted ? "¡Propiedad destacada!" : "Propiedad ya no está destacada");
+            fetchMyProperties();
+        } catch (error) {
+            console.error("Error updating promotion:", error);
+            toast.error("Error al destacar propiedad");
+        }
+    };
+
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
         const newPreviews = files.map(file => URL.createObjectURL(file));
@@ -135,7 +158,23 @@ const AgentDashboard = () => {
     };
 
     const removeImage = (index) => {
-        setImages(prev => prev.filter((_, i) => i !== index));
+        const previewToRemove = imagePreviews[index];
+        
+        if (previewToRemove.startsWith('blob:')) {
+            // It is a new local file.
+            // We need to find which file in 'images' corresponds to this preview.
+            // 'images' contains only the new files.
+            // 'imagePreviews' contains [old_remote_urls..., new_local_blobs...] (usually appended)
+            // But if user deletes one in the middle, order is maintained.
+            
+            // To be precise:
+            // Calculate how many 'blob:' urls are strictly before this index to find the index in 'images' array.
+            const blobsBefore = imagePreviews.slice(0, index).filter(url => url.startsWith('blob:')).length;
+            
+            setImages(prev => prev.filter((_, i) => i !== blobsBefore));
+        }
+        
+        // Remove from previews (which drives the UI)
         setImagePreviews(prev => prev.filter((_, i) => i !== index));
     };
 
@@ -152,6 +191,8 @@ const AgentDashboard = () => {
             footage: property.footage,
             bedrooms: property.bedrooms || '',
             bathrooms: property.bathrooms || '',
+            antiquityType: property.antiquityType || 'estreno',
+            antiquityYears: property.antiquityYears || '',
             lat: property.lat || '',
             lng: property.lng || ''
         });
@@ -168,12 +209,17 @@ const AgentDashboard = () => {
             title: '',
             description: '',
             type: 'venta',
+            currency: 'USD',
             price: '',
             category: 'construido',
             location: '',
             footage: '',
             bedrooms: '',
-            bathrooms: ''
+            bathrooms: '',
+            antiquityType: 'estreno',
+            antiquityYears: '',
+            lat: '',
+            lng: ''
         });
         setImagePreviews([]);
         setImages([]);
@@ -184,13 +230,14 @@ const AgentDashboard = () => {
         setLoading(true);
 
         try {
-            const imageUrls = [];
-            for (const image of images) {
+            // Parallel Uploads
+            const uploadPromises = images.map(async (image) => {
                 const storageRef = ref(storage, `properties/${user.uid}/${Date.now()}_${image.name}`);
                 const snapshot = await uploadBytes(storageRef, image);
-                const url = await getDownloadURL(snapshot.ref);
-                imageUrls.push(url);
-            }
+                return await getDownloadURL(snapshot.ref);
+            });
+
+            const newImageUrls = await Promise.all(uploadPromises);
 
             if (editingId) {
                 // Update existing property
@@ -200,22 +247,14 @@ const AgentDashboard = () => {
                     footage: parseFloat(formData.footage),
                     bedrooms: formData.category === 'construido' ? parseInt(formData.bedrooms) : 0,
                     bathrooms: formData.category === 'construido' ? parseInt(formData.bathrooms) : 0,
+                    antiquityYears: formData.antiquityType === 'used' ? parseInt(formData.antiquityYears) : 0,
                 };
 
-                // Only update images if new ones are added? 
-                // Current logic appends new images to existing ones in state?
-                // The state `images` contains new files. `imagePreviews` contains URLs of both old and new?
-                // Actually `images` state only holds *new files* to upload.
-                // We need to handle preserving old images if we are editing.
-
-                // Simplified: If new images uploaded, append them. 
-                // If we want to keep old images, we need to know which ones are old.
-                // In handleEdit we populate logic.
-                // For now, let's assume we just add new ones to the array.
-                if (imageUrls.length > 0) {
-                    updateData.images = [...(imagePreviews.filter(url => url.startsWith('http'))), ...imageUrls];
-                    // Note: This logic assumes imagePreviews has all current images.
-                }
+                // Combine retained old images (from previews) with new uploaded images
+                // Only keep previews that are NOT blobs (so they are existing remote URLs)
+                const retainedImages = imagePreviews.filter(url => !url.startsWith('blob:'));
+                
+                updateData.images = [...retainedImages, ...newImageUrls];
 
                 await updateDoc(doc(db, "properties", editingId), updateData);
                 toast.success("¡Propiedad actualizada con éxito!");
@@ -224,36 +263,26 @@ const AgentDashboard = () => {
                 await addDoc(collection(db, "properties"), {
                     ...formData,
                     agentId: user.uid,
-                    // ... rest of fields
-
-                    agentName: userData.displayName || 'Agente', // Add agent name for display
-                    images: imageUrls,
+                    agentName: userData.displayName || 'Agente', 
+                    images: newImageUrls,
                     createdAt: new Date(),
-                    status: 'disponible', // Default status
+                    status: 'disponible', 
+                    views: 0,
+                    isPromoted: false,
                     price: parseFloat(formData.price),
                     footage: parseFloat(formData.footage),
                     bedrooms: formData.category === 'construido' ? parseInt(formData.bedrooms) : 0,
                     bathrooms: formData.category === 'construido' ? parseInt(formData.bathrooms) : 0,
+                    antiquityYears: formData.antiquityType === 'used' ? parseInt(formData.antiquityYears) : 0,
                 });
 
                 toast.success("¡Propiedad publicada con éxito!");
-                setFormData({
-                    title: '',
-                    description: '',
-                    type: 'venta',
-                    currency: 'USD',
-                    price: '',
-                    category: 'construido',
-                    location: '',
-                    footage: '',
-                    bedrooms: '',
-                    bathrooms: ''
-                });
-                setImages([]);
-                setImagePreviews([]);
-                setEditingId(null); // Reset edit state
-                fetchMyProperties(); // Update list
             }
+            
+            // Reset form
+            handleCancelEdit();
+            fetchMyProperties(); 
+
         } catch (error) {
             console.error("Error adding property: ", error);
             toast.error("Hubo un error al publicar la propiedad.");
@@ -262,11 +291,9 @@ const AgentDashboard = () => {
         }
     };
 
-    // Dev Helper: Ensure an activation code exists
-    // Dev Helper: Ensure an activation code exists
+    // Dev Helper
     useEffect(() => {
         const ensureCode = async () => {
-            // Check if AGENT2024 exists
             const q = query(collection(db, "activation_codes"), where("code", "==", "AGENT2024"));
             const snapshot = await getDocs(q);
             if (snapshot.empty) {
@@ -276,13 +303,11 @@ const AgentDashboard = () => {
                     createdAt: new Date(),
                     type: 'standard'
                 });
-                console.log("Created default activation code: AGENT2024");
             }
         };
         ensureCode();
     }, []);
 
-    // REFACTOR: Don't return early. Render the dashboard, but block the form.
     const isActivated = userData?.isActivated;
 
     return (
@@ -404,28 +429,56 @@ const AgentDashboard = () => {
                                 </div>
 
                                 {formData.category === 'construido' && (
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">Habitaciones</label>
-                                            <input
-                                                required
-                                                type="number"
-                                                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
-                                                value={formData.bedrooms}
-                                                onChange={e => setFormData({ ...formData, bedrooms: e.target.value })}
-                                            />
+                                    <>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Habitaciones</label>
+                                                <input
+                                                    required
+                                                    type="number"
+                                                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
+                                                    value={formData.bedrooms}
+                                                    onChange={e => setFormData({ ...formData, bedrooms: e.target.value })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Baños</label>
+                                                <input
+                                                    required
+                                                    type="number"
+                                                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
+                                                    value={formData.bathrooms}
+                                                    onChange={e => setFormData({ ...formData, bathrooms: e.target.value })}
+                                                />
+                                            </div>
                                         </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">Baños</label>
-                                            <input
-                                                required
-                                                type="number"
-                                                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
-                                                value={formData.bathrooms}
-                                                onChange={e => setFormData({ ...formData, bathrooms: e.target.value })}
-                                            />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Antigüedad</label>
+                                                <select
+                                                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition bg-white"
+                                                    value={formData.antiquityType}
+                                                    onChange={e => setFormData({ ...formData, antiquityType: e.target.value })}
+                                                >
+                                                    <option value="estreno">De Estreno</option>
+                                                    <option value="used">Usado</option>
+                                                </select>
+                                            </div>
+                                            {formData.antiquityType === 'used' && (
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Años</label>
+                                                    <input
+                                                        required
+                                                        type="number"
+                                                        className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
+                                                        placeholder="5"
+                                                        value={formData.antiquityYears}
+                                                        onChange={e => setFormData({ ...formData, antiquityYears: e.target.value })}
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
+                                    </>
                                 )}
 
                                 <div>
@@ -468,6 +521,7 @@ const AgentDashboard = () => {
                                             </div>
                                             <div className="flex-grow p-0">
                                                 <MapPicker
+                                                    initialLocation={formData.lat ? { lat: formData.lat, lng: formData.lng, address: formData.location } : null}
                                                     onConfirm={(loc) => {
                                                         setFormData({
                                                             ...formData,
@@ -564,12 +618,17 @@ const AgentDashboard = () => {
                             <div className="grid gap-4">
                                 {myProperties.map(property => (
                                     <div key={property.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4">
-                                        <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                                        <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 relative">
                                             <img
                                                 src={property.images?.[0] || 'https://via.placeholder.com/150'}
                                                 alt={property.title}
                                                 className="w-full h-full object-cover"
                                             />
+                                            {property.isPromoted && (
+                                                <div className="absolute top-0 left-0 bg-[#fc7f51] text-white text-[10px] font-bold px-2 py-0.5 rounded-br-lg">
+                                                    TOP
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="flex-grow">
                                             <div className="flex justify-between items-start">
@@ -587,12 +646,21 @@ const AgentDashboard = () => {
                                             <div className="mt-3 flex gap-2">
                                                 <button
                                                     onClick={() => handleStatusToggle(property.id, property.status)}
-                                                    className={`tx-xs px-3 py-1.5 rounded-lg text-xs font-bold transition flex-1 text-center ${property.status === 'disponible'
+                                                    className={`tx-xs px-2 py-1.5 rounded-lg text-xs font-bold transition flex-1 text-center ${property.status === 'disponible'
                                                         ? 'bg-red-50 text-red-600 hover:bg-red-100'
                                                         : 'bg-green-50 text-green-600 hover:bg-green-100'
                                                         }`}
                                                 >
-                                                    {property.status === 'disponible' ? 'Marcar Vendido/Alquilado' : 'Marcar Disponible'}
+                                                    {property.status === 'disponible' ? 'Vendida' : 'Disp.'}
+                                                </button>
+                                                <button
+                                                    onClick={() => handlePromoteToggle(property.id, property.isPromoted)}
+                                                    className={`px-2 py-1.5 rounded-lg text-xs font-bold transition text-center border ${property.isPromoted 
+                                                        ? 'bg-yellow-50 text-yellow-600 border-yellow-200' 
+                                                        : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
+                                                    title={property.isPromoted ? "Quitar Destacado" : "Destacar Propiedad"}
+                                                >
+                                                    <DollarSign className="w-3 h-3" />
                                                 </button>
                                                 <button
                                                     onClick={() => handleEdit(property)}

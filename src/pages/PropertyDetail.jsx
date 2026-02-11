@@ -1,13 +1,16 @@
 import { useParams, Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { db } from '../lib/firebase';
-import { doc, getDoc, addDoc, collection } from 'firebase/firestore';
-import { MapPin, ArrowLeft, Heart, Share, Star, ShieldCheck, DoorOpen, Calendar, User, Phone, Mail, X, Loader2 } from 'lucide-react';
+import { doc, getDoc, addDoc, updateDoc, increment, collection } from 'firebase/firestore';
+import { MapPin, ArrowLeft, Heart, Share, Star, ShieldCheck, DoorOpen, Calendar, User, Phone, Mail, X, Loader2, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
+
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 const PropertyDetail = () => {
     const { id } = useParams();
@@ -15,6 +18,9 @@ const PropertyDetail = () => {
     const [loading, setLoading] = useState(true);
     const [showContact, setShowContact] = useState(false);
     const [contactLoading, setContactLoading] = useState(false);
+    const hasViewedRef = useRef(false);
+
+    // Contact Form
     const [contactForm, setContactForm] = useState({
         name: '',
         phone: '',
@@ -33,7 +39,7 @@ const PropertyDetail = () => {
                 clientPhone: contactForm.phone,
                 clientMessage: contactForm.message,
                 timestamp: new Date(),
-                status: 'pending' // pending, contacted, closed
+                status: 'pending'
             });
             toast.success("¡Tu solicitud ha sido enviada! El agente te contactará pronto.");
             setShowContact(false);
@@ -48,24 +54,24 @@ const PropertyDetail = () => {
 
     useEffect(() => {
         const fetchProperty = async () => {
-            console.log("Fetching property with ID:", id);
             try {
-                if (!id) {
-                    console.error("No ID provided");
-                    setLoading(false);
-                    return;
-                }
+                if (!id) return;
                 const docRef = doc(db, "properties", id);
-                console.log("Document Reference path:", docRef.path);
-
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
-                    console.log("Document found:", docSnap.data());
                     setProperty({ id: docSnap.id, ...docSnap.data() });
+
+                    // Increment view counter locally and in DB if not already viewed in this session
+                    if (!hasViewedRef.current) {
+                        hasViewedRef.current = true;
+                        // Fire and forget update
+                        updateDoc(docRef, {
+                            views: increment(1)
+                        }).catch(err => console.error("Error incrementing views", err));
+                    }
                 } else {
                     console.log("No such document!");
-                    console.log("Attempted ID:", id);
                 }
             } catch (error) {
                 console.error("Error fetching property:", error);
@@ -94,18 +100,28 @@ const PropertyDetail = () => {
         );
     }
 
-    // Google Maps Link Logic
+    // Exchange Rate Logic
+    const EXCHANGE_RATE = 3.75;
+    const price = typeof property.price === 'number' ? property.price : parseFloat(property.price);
+    const currency = property.currency || 'USD';
+
+    let priceUSD, pricePEN;
+    if (currency === 'USD') {
+        priceUSD = price;
+        pricePEN = price * EXCHANGE_RATE;
+    } else {
+        pricePEN = price;
+        priceUSD = price / EXCHANGE_RATE;
+    }
+
     const mapUrl = property.lat && property.lng
         ? `https://www.google.com/maps/search/?api=1&query=${property.lat},${property.lng}`
         : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.location)}`;
 
     return (
         <div className="min-h-screen bg-white font-sans text-[#262626]">
-            {/* Navbar is rendered via App.jsx usually, but if this page is standalone, render specific Navbar */}
-            {/* Assuming App.jsx renders Navbar on this route, let's just add container padding */}
-
             <main className="container mx-auto px-6 pt-32 pb-12">
-                {/* Header: Title and Actions */}
+                {/* Header */}
                 <div className="mb-6">
                     <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{property.title}</h1>
                     <div className="flex flex-col md:flex-row md:justify-between md:items-center text-sm gap-4">
@@ -127,7 +143,7 @@ const PropertyDetail = () => {
                 </div>
 
                 {/* Image Carousel (Swiper) */}
-                <div className="rounded-2xl overflow-hidden mb-12 shadow-2xl relative h-[400px] md:h-[600px] bg-gray-100">
+                <div className="rounded-2xl overflow-hidden mb-12 shadow-2xl relative h-[400px] md:h-[600px] bg-gray-100 group">
                     <Swiper
                         modules={[Navigation, Pagination]}
                         navigation
@@ -149,22 +165,26 @@ const PropertyDetail = () => {
                             </SwiperSlide>
                         )}
                     </Swiper>
+
+                    {/* Floating Counter */}
+                    <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs z-10 font-bold flex items-center gap-2">
+                        <User className="w-3 h-3" /> {property.views || 0} Vistas
+                    </div>
                 </div>
 
-                {/* Main Content Layout */}
+                {/* Main Content */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-
-                    {/* Left Column: Details */}
+                    {/* Left Column */}
                     <div className="lg:col-span-2">
                         {/* Agent Info */}
                         <div className="border-b border-gray-200 pb-8 mb-8 flex justify-between items-center">
                             <div>
                                 <h2 className="text-2xl font-bold mb-1">Publicado por {property.agentName || 'Agente Inmuévete'}</h2>
                                 <p className="text-gray-600 mb-0">
-                                    {property.bedrooms} Habitaciones · {property.bathrooms} Baños · {property.footage} m²
+                                    {property.bedrooms || 0} Habitaciones · {property.bathrooms || 0} Baños · {property.footage} m²
                                 </p>
                             </div>
-                            <div className="w-14 h-14 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                            <div className="w-14 h-14 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
                                 <User className="w-8 h-8 text-gray-400" />
                             </div>
                         </div>
@@ -177,12 +197,12 @@ const PropertyDetail = () => {
                             </p>
                         </div>
 
-                        {/* Features List if available (Creating placeholders based on data) */}
+                        {/* Details Grid */}
                         <div className="border-b border-gray-200 pb-8 mb-8">
                             <h3 className="text-xl font-bold mb-4">Detalles</h3>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex justify-between py-2 border-b border-gray-50">
-                                    <span className="text-gray-500">Tipo de Inmueble</span>
+                                    <span className="text-gray-500">Tipo</span>
                                     <span className="font-semibold capitalize">{property.type}</span>
                                 </div>
                                 <div className="flex justify-between py-2 border-b border-gray-50">
@@ -199,6 +219,18 @@ const PropertyDetail = () => {
                                         {property.status}
                                     </span>
                                 </div>
+
+                                {/* New Antiquity Field */}
+                                <div className="flex justify-between py-2 border-b border-gray-50">
+                                    <span className="text-gray-500">Antigüedad</span>
+                                    <span className="font-semibold flex items-center gap-1">
+                                        <Clock className="w-3 h-3 text-[#fc7f51]" />
+                                        {property.antiquityType === 'estreno'
+                                            ? <span className="text-green-600 font-bold uppercase text-xs border border-green-200 bg-green-50 px-2 py-0.5 rounded-full">De Estreno</span>
+                                            : `${property.antiquityYears} Años`
+                                        }
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
@@ -208,7 +240,6 @@ const PropertyDetail = () => {
                             <p className="text-gray-500 mb-4">{property.location}</p>
 
                             <div className="h-96 w-full rounded-xl overflow-hidden bg-gray-100 shadow-inner relative group">
-                                {/* Simple Map Image Placeholder or Map Frame if lat/lng */}
                                 {property.lat && property.lng ? (
                                     <iframe
                                         width="100%"
@@ -243,11 +274,11 @@ const PropertyDetail = () => {
                     <div className="lg:col-span-1">
                         <div className="sticky top-32 bg-white rounded-xl shadow-card border border-gray-200 p-6">
                             <div className="mb-6">
-                                <span className="block text-3xl font-bold text-gray-900">
-                                    {(property.currency === 'PEN' ? property.price / 3.75 : property.price).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}
+                                <span className="block text-3xl font-bold text-[#fc7f51]">
+                                    {priceUSD.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}
                                 </span>
-                                <span className="block text-xl font-bold text-gray-500 mt-1">
-                                    {(property.currency === 'PEN' ? property.price : property.price * 3.75).toLocaleString('en-US', { style: 'currency', currency: 'PEN', maximumFractionDigits: 0 })}
+                                <span className="block text-xl font-bold text-gray-400 mt-1">
+                                    {pricePEN.toLocaleString('en-US', { style: 'currency', currency: 'PEN', maximumFractionDigits: 0 })}
                                 </span>
                                 {property.type === 'alquiler' && <span className="text-gray-500 text-sm block mt-1">Precio por mes</span>}
                             </div>
@@ -272,6 +303,7 @@ const PropertyDetail = () => {
                     </div>
                 </div>
             </main>
+
             {/* Contact Modal */}
             {showContact && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
