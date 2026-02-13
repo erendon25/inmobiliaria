@@ -1,9 +1,10 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { db } from '../lib/firebase';
 import { doc, getDoc, addDoc, updateDoc, increment, collection } from 'firebase/firestore';
 import { MapPin, ArrowLeft, Heart, Share, Star, ShieldCheck, DoorOpen, Calendar, User, Phone, Mail, X, Loader2, Clock, Car, Building2, ArrowUpFromLine, Layers, Waves, Dumbbell, Armchair, ArrowUpDown, Maximize, Bath, BedDouble } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 
@@ -14,11 +15,20 @@ import 'swiper/css/pagination';
 
 const PropertyDetail = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { user, userData } = useAuth();
     const [property, setProperty] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showContact, setShowContact] = useState(false);
     const [contactLoading, setContactLoading] = useState(false);
     const hasViewedRef = useRef(false);
+
+    // Visit State
+    const [showVisitModal, setShowVisitModal] = useState(false);
+    const [visitDate, setVisitDate] = useState('');
+    const [visitTime, setVisitTime] = useState('');
+    const [visitLoading, setVisitLoading] = useState(false);
 
     // Contact Form
     const [contactForm, setContactForm] = useState({
@@ -49,6 +59,44 @@ const PropertyDetail = () => {
             toast.error("Hubo un error al enviar tu solicitud.");
         } finally {
             setContactLoading(false);
+        }
+    };
+
+    const handleScheduleVisit = () => {
+        if (!user) {
+            toast.error("Debes iniciar sesión para agendar una visita.");
+            navigate('/login', { state: { from: location.pathname } });
+            return;
+        }
+        setShowVisitModal(true);
+    };
+
+    const submitVisit = async (e) => {
+        e.preventDefault();
+        setVisitLoading(true);
+        try {
+            await addDoc(collection(db, "visits"), {
+                propertyId: property.id,
+                propertyTitle: property.title,
+                agentId: property.agentId,
+                clientId: user.uid,
+                clientName: userData?.displayName || user.displayName || 'Cliente',
+                clientPhone: userData?.phoneNumber || 'No especificado',
+                clientEmail: user.email,
+                visitDate,
+                visitTime,
+                status: 'pending',
+                timestamp: new Date()
+            });
+            toast.success("¡Visita agendada con éxito! El agente confirmará la fecha.");
+            setShowVisitModal(false);
+            setVisitDate('');
+            setVisitTime('');
+        } catch (error) {
+            console.error("Error scheduling visit:", error);
+            toast.error("Error al agendar la visita.");
+        } finally {
+            setVisitLoading(false);
         }
     };
 
@@ -197,8 +245,14 @@ const PropertyDetail = () => {
                             <button onClick={handleShare} className="flex items-center gap-2 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-semibold text-sm transition">
                                 <Share className="w-4 h-4" /> Compartir
                             </button>
+                            <button onClick={handleShare} className="flex items-center gap-2 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-semibold text-sm transition">
+                                <Share className="w-4 h-4" /> Compartir
+                            </button>
                             <button onClick={handleSave} className="flex items-center gap-2 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-semibold text-sm transition">
                                 <Heart className="w-4 h-4" /> Guardar
+                            </button>
+                            <button onClick={handleScheduleVisit} className="flex items-center gap-2 bg-[#fc7f51] text-white hover:bg-[#e56b3e] px-4 py-1.5 rounded-lg font-bold text-sm transition shadow-sm">
+                                <Calendar className="w-4 h-4" /> Agendar Visita
                             </button>
                         </div>
                     </div>
@@ -532,6 +586,52 @@ const PropertyDetail = () => {
                     </div>
                 )
             }
+            {/* Visit Modal */}
+            {showVisitModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative p-8">
+                        <button
+                            onClick={() => setShowVisitModal(false)}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+                        <h3 className="text-xl font-bold text-gray-800 mb-2">Agendar Visita</h3>
+                        <p className="text-sm text-gray-500 mb-6">Selecciona una fecha y hora preferida para visitar la propiedad.</p>
+
+                        <form onSubmit={submitVisit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
+                                <input
+                                    type="date"
+                                    required
+                                    min={new Date().toISOString().split('T')[0]}
+                                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none"
+                                    value={visitDate}
+                                    onChange={e => setVisitDate(e.target.value)}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Hora</label>
+                                <input
+                                    type="time"
+                                    required
+                                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none"
+                                    value={visitTime}
+                                    onChange={e => setVisitTime(e.target.value)}
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={visitLoading}
+                                className="w-full bg-[#fc7f51] text-white font-bold py-3 rounded-lg hover:bg-[#e56b3e] transition mt-4"
+                            >
+                                {visitLoading ? 'Agendando...' : 'Confirmar Solicitud'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div >
     );
 };

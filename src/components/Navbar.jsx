@@ -46,8 +46,13 @@ const Navbar = () => {
                 <div className="flex items-center gap-4">
                     <div className="hidden md:flex items-center gap-8">
                         <Link to="/" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Propiedades</Link>
-                        <Link to="/about" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Nosotros</Link>
-                        <Link to="/contact" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Contacto</Link>
+                        <Link to="/" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Propiedades</Link>
+                        {userData?.role !== 'agente' && (
+                            <>
+                                <Link to="/about" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Nosotros</Link>
+                                <Link to="/contact" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Contacto</Link>
+                            </>
+                        )}
                     </div>
 
                     {user ? (
@@ -56,7 +61,7 @@ const Navbar = () => {
                                 to={userData?.role === 'agente' ? '/agent-dashboard' : '/client-dashboard'}
                                 className="text-white hover:text-[#fc7f51] transition font-medium mr-2"
                             >
-                                Hola, {user.displayName ? user.displayName.split(' ')[0] : 'Usuario'}
+                                Hola, {user.displayName ? user.displayName.split(' ')[0] : (userData?.role === 'agente' ? 'Agente' : 'Usuario')}
                             </Link>
                             <button
                                 onClick={logout}

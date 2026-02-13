@@ -64,8 +64,9 @@ const AgentDashboard = () => {
 
     // Property List State
     const [myProperties, setMyProperties] = useState([]);
-    const [inquiries, setInquiries] = useState([]);
+    const [visits, setVisits] = useState([]); // Replaces inquiries
     const [loadingProps, setLoadingProps] = useState(true);
+    const [profileImage, setProfileImage] = useState(null);
 
     // Fetch my properties function
     const fetchMyProperties = async () => {
@@ -106,17 +107,17 @@ const AgentDashboard = () => {
         if (userData?.isActivated) {
             fetchMyProperties();
 
-            // Also fetch inquiries
-            const fetchInquiries = async () => {
+            // Also fetch visits
+            const fetchVisits = async () => {
                 try {
-                    const q = query(collection(db, "inquiries"), where("agentId", "==", user.uid));
+                    const q = query(collection(db, "visits"), where("agentId", "==", user.uid));
                     const snap = await getDocs(q);
-                    setInquiries(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                    setVisits(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
                 } catch (error) {
-                    console.error("Error fetching inquiries:", error);
+                    console.error("Error fetching visits:", error);
                 }
             };
-            fetchInquiries();
+            fetchVisits();
 
             // Fetch tips if active tab or first load
             fetchMyTips();
@@ -127,9 +128,22 @@ const AgentDashboard = () => {
             displayName: userData?.displayName || user?.displayName || '',
             email: userData?.email || user?.email || '',
             phoneNumber: userData?.phoneNumber || '',
-            newPassword: ''
+            newPassword: '',
+            photoURL: userData?.photoURL || user?.photoURL || ''
         });
     }, [user, userData]);
+
+    const handleDelete = async (id) => {
+        if (!window.confirm("¿Estás seguro de que deseas eliminar esta propiedad?")) return;
+        try {
+            await deleteDoc(doc(db, "properties", id));
+            toast.success("Propiedad eliminada correctamente.");
+            fetchMyProperties();
+        } catch (error) {
+            console.error("Error deleting property:", error);
+            toast.error("Error al eliminar la propiedad.");
+        }
+    };
 
     const handleActivation = async (e) => {
         e.preventDefault();
@@ -186,11 +200,22 @@ const AgentDashboard = () => {
                 await updateEmail(user, profileData.email);
             }
 
+            let photoURL = user.photoURL;
+
+            // 0. Update Profile Photo if selected
+            if (profileImage) {
+                const storageRef = ref(storage, `profile_photos/${user.uid}/${Date.now()}_${profileImage.name}`);
+                const snapshot = await uploadBytes(storageRef, profileImage);
+                photoURL = await getDownloadURL(snapshot.ref);
+                await updateProfile(user, { photoURL });
+            }
+
             // 3. Update Firestore User Doc
             await updateDoc(doc(db, "users", user.uid), {
                 displayName: profileData.displayName,
                 email: profileData.email,
-                phoneNumber: profileData.phoneNumber
+                phoneNumber: profileData.phoneNumber,
+                photoURL: photoURL
             });
 
             // 3.5 Update Password (if provided)
@@ -513,7 +538,7 @@ const AgentDashboard = () => {
                             onClick={() => setActiveTab('inquiries')}
                             className={`pb-3 px-4 text-sm font-bold transition border-b-2 ${activeTab === 'inquiries' ? 'border-[#fc7f51] text-[#fc7f51]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                         >
-                            Solicitudes
+                            Visitas Agendadas
                         </button>
                         <button
                             onClick={() => setActiveTab('tips')}
@@ -571,7 +596,7 @@ const AgentDashboard = () => {
                                         {/* Basic Info */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">Título</label>
-                                            <input required type="text" className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none" placeholder="Ej: Departamento en Miraflores" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
+                                            <input required type="text" className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none uppercase" placeholder="Ej: Departamento en Miraflores" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
                                         </div>
 
                                         {/* Global Details: Price, Type, Category */}
@@ -723,7 +748,7 @@ const AgentDashboard = () => {
                                                     <input
                                                         required
                                                         type="text"
-                                                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
+                                                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition uppercase"
                                                         placeholder="Dirección o Link Maps"
                                                         value={formData.location}
                                                         onChange={e => setFormData({ ...formData, location: e.target.value })}
@@ -864,6 +889,12 @@ const AgentDashboard = () => {
                                                             >
                                                                 Editar
                                                             </button>
+                                                            <button
+                                                                onClick={() => handleDelete(property.id)}
+                                                                className="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-100 transition"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -881,6 +912,26 @@ const AgentDashboard = () => {
                                     <User className="w-6 h-6 text-[#fc7f51]" /> Editar Perfil
                                 </h2>
                                 <form onSubmit={handleProfileUpdate} className="space-y-6">
+                                    {/* Profile Photo */}
+                                    <div className="flex flex-col items-center mb-6">
+                                        <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 border-2 border-white shadow-md relative group">
+                                            <img
+                                                src={profileImage ? URL.createObjectURL(profileImage) : (profileData.photoURL || user.photoURL || 'https://placehold.co/150x150/e2e8f0/94a3b8?text=Perfil')}
+                                                alt="Profile"
+                                                className="w-full h-full object-cover"
+                                            />
+                                            <label className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition">
+                                                <Upload className="w-6 h-6 text-white" />
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="hidden"
+                                                    onChange={e => e.target.files?.[0] && setProfileImage(e.target.files[0])}
+                                                />
+                                            </label>
+                                        </div>
+                                        <span className="text-xs text-gray-500 mt-2">Click para cambiar foto</span>
+                                    </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Nombre Publico</label>
                                         <input type="text" className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none" value={profileData.displayName} onChange={e => setProfileData({ ...profileData, displayName: e.target.value })} required />
@@ -912,30 +963,36 @@ const AgentDashboard = () => {
                             </div>
                         )}
 
-                        {/* INQUIRIES TAB */}
+                        {/* VISITS TAB (Formerly Inquiries) */}
                         {activeTab === 'inquiries' && (
                             <div className="max-w-4xl mx-auto">
-                                <h2 className="text-2xl font-bold text-gray-800 mb-6">Solicitudes de Clientes</h2>
-                                {inquiries.length === 0 ? (
+                                <h2 className="text-2xl font-bold text-gray-800 mb-6">Visitas Agendadas</h2>
+                                {visits.length === 0 ? (
                                     <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500">
-                                        No tienes solicitudes de contacto pendientes.
+                                        No tienes visitas programadas.
                                     </div>
                                 ) : (
                                     <div className="space-y-4">
-                                        {inquiries.map(inq => (
-                                            <div key={inq.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <div>
-                                                        <h3 className="font-bold text-gray-800">{inq.clientName}</h3>
-                                                        <p className="text-sm text-gray-500">{inq.clientPhone} • {inq.clientEmail || 'Sin email'}</p>
+                                        {visits.map(visit => (
+                                            <div key={visit.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+                                                <div>
+                                                    <h3 className="font-bold text-gray-800 text-lg uppercase">{visit.propertyTitle}</h3>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <User className="w-4 h-4 text-[#fc7f51]" />
+                                                        <span className="font-medium text-gray-700">{visit.clientName}</span>
                                                     </div>
-                                                    <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">
-                                                        {inq.timestamp?.seconds ? new Date(inq.timestamp.seconds * 1000).toLocaleDateString() : 'Reciente'}
-                                                    </span>
+                                                    <div className="flex items-center gap-2 mt-1 text-sm text-gray-500">
+                                                        <Phone className="w-3 h-3" /> {visit.clientPhone}
+                                                    </div>
                                                 </div>
-                                                <p className="text-gray-700 bg-gray-50 p-3 rounded-lg text-sm italic">"{inq.clientMessage}"</p>
-                                                <div className="mt-2 text-xs text-[#fc7f51] font-bold">
-                                                    Interesado en: {inq.propertyTitle}
+                                                <div className="text-right bg-orange-50 px-4 py-2 rounded-lg border border-orange-100">
+                                                    <div className="text-xs text-gray-500 font-bold uppercase mb-1">Fecha de Visita</div>
+                                                    <div className="font-bold text-[#fc7f51] text-lg">
+                                                        {visit.visitDate ? new Date(visit.visitDate).toLocaleDateString() : 'Por definir'}
+                                                    </div>
+                                                    <div className="text-sm font-medium text-gray-700">
+                                                        {visit.visitTime || 'Hora por definir'}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}

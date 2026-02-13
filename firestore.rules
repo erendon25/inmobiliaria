@@ -53,5 +53,16 @@ service cloud.firestore {
         allow create: if request.auth != null;
         allow update, delete: if request.auth != null && (resource.data.agentId == request.auth.uid || isSuperAdmin());
     }
+
+    // VISITS:
+    // - Authenticated users (clients) can create visit requests
+    // - Agents can read visits assigned to them
+    // - Clients can read their own visit requests
+    // - Agents and SuperAdmins can update/delete
+    match /visits/{visitId} {
+        allow create: if request.auth != null;
+        allow read: if request.auth != null && (resource.data.agentId == request.auth.uid || resource.data.clientId == request.auth.uid || isSuperAdmin());
+        allow update, delete: if request.auth != null && (resource.data.agentId == request.auth.uid || isSuperAdmin());
+    }
   }
 }
