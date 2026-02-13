@@ -730,15 +730,13 @@ const AgentDashboard = () => {
                                                             </button>
                                                         </div>
                                                     </div>
-                                    ))}
                                                 </div>
-                            </div>
+                                            ))}
+                                        </div>
                                     )}
-
-
-                                </div> {/* End Right Column */}
-                            </div> {/* End Main Grid */}
-                            )} {/* End Properties Tab */}
+                                </div>
+                            </div>
+                        )}
 
                         {/* PROFILE TAB */}
                         {activeTab === 'profile' && (
@@ -873,10 +871,6 @@ const AgentDashboard = () => {
                 )}
             </div>
         </div>
-    )
-}
-            </div >
-        </div >
     );
 };
 
