@@ -99,34 +99,7 @@ const Home = () => {
         return () => unsubscribe();
     }, []);
 
-    // Fetch Tips
-    const [tips, setTips] = useState([]);
-    const [loadingTips, setLoadingTips] = useState(true);
 
-    useEffect(() => {
-        const fetchTips = async () => {
-            try {
-                const q = query(collection(db, "tips"), limit(3)); // Get latest 3 tips
-                // Note: orderBy("createdAt", "desc") requires index. 
-                // Since this is a small app for now, we can fetch and sort client-side or just fetch default.
-                // Or better, catch the index error if it happens.
-
-                // Let's try simple fetch first.
-                const querySnapshot = await getDocs(q);
-                const fetchedTips = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                // Client-side sort by date if needed
-                fetchedTips.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-
-                setTips(fetchedTips);
-            } catch (error) {
-                console.error("Error fetching tips:", error);
-            } finally {
-                setLoadingTips(false);
-            }
-        };
-        fetchTips();
-    }, []);
 
     return (
         <div className="min-h-screen bg-white font-sans text-[#262626]">
@@ -321,7 +294,7 @@ const Home = () => {
                         </div>
                     </div>
 
-                    {/* Right Side: Owner CTA (Floating) */}
+                    {/* Right Side: Owner CTA (Floating) - Desktop */}
                     <div className="hidden lg:block lg:col-span-7">
                         {/* Floating elements styling */}
                         <div className="flex flex-col items-end space-y-4">
@@ -331,8 +304,8 @@ const Home = () => {
                                         <Briefcase className="w-6 h-6 text-[#fc7f51]" />
                                     </div>
                                     <div>
-                                        <h3 className="font-bold text-gray-800 text-lg">¿Eres Propietario?</h3>
-                                        <p className="text-gray-600 text-sm">Publica tu propiedad con nosotros y véndela más rápido.</p>
+                                        <h3 className="font-bold text-gray-800 text-lg">¿Deseas adquirir una propiedad?</h3>
+                                        <p className="text-gray-600 text-sm">Contáctanos para conseguir una al mejor precio.</p>
                                     </div>
                                 </div>
                                 <Link to="/contact" className="mt-4 block text-center bg-[#262626] text-white py-2 rounded-lg font-bold text-sm hover:bg-black transition">
@@ -350,11 +323,44 @@ const Home = () => {
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-gray-800 text-lg">¿Vendes tu Propiedad?</h3>
-                                        <p className="text-gray-600 text-sm">Contáctanos para vender rápido y seguro al mejor precio.</p>
+                                        <p className="text-gray-600 text-sm">Publica tu propiedad con nosotros y véndela más rápido.</p>
                                     </div>
                                 </div>
                             </button>
                         </div>
+                    </div>
+
+                    {/* Owner CTA - Mobile Version (Appears below search card) */}
+                    <div className="lg:hidden col-span-1 space-y-4">
+                        <div className="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl border-l-4 border-[#fc7f51]">
+                            <div className="flex items-center gap-4">
+                                <div className="bg-orange-100 p-3 rounded-full">
+                                    <Briefcase className="w-6 h-6 text-[#fc7f51]" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-gray-800 text-lg">¿Eres Propietario?</h3>
+                                    <p className="text-gray-600 text-sm">Publica tu propiedad con nosotros.</p>
+                                </div>
+                            </div>
+                            <Link to="/contact" className="mt-4 block text-center bg-[#262626] text-white py-2 rounded-lg font-bold text-sm hover:bg-black transition">
+                                Contactar a un Agente
+                            </Link>
+                        </div>
+
+                        <button
+                            onClick={() => setShowSellModal(true)}
+                            className="block w-full text-left bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl border-l-4 border-blue-500"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="bg-blue-100 p-3 rounded-full">
+                                    <Key className="w-6 h-6 text-blue-500" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-gray-800 text-lg">¿Vendes tu Propiedad?</h3>
+                                    <p className="text-gray-600 text-sm">Contáctanos para vender rápido.</p>
+                                </div>
+                            </div>
+                        </button>
                     </div>
 
                 </div>
@@ -511,39 +517,6 @@ const Home = () => {
                 </div>
             </main>
 
-
-            {/* Tips Section */}
-            <section className="bg-gray-50 py-20 border-t border-gray-200">
-                <div className="container mx-auto px-6">
-                    <div className="text-center mb-12">
-                        <span className="text-[#fc7f51] font-bold text-sm tracking-widest uppercase mb-2 block">Consejos de Expertos</span>
-                        <h2 className="text-3xl font-bold text-[#262626]">Tips Inmobiliarios</h2>
-                    </div>
-
-                    {loadingTips ? (
-                        <div className="flex justify-center">
-                            <div className="inline-block w-8 h-8 border-4 border-[#fc7f51] border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                    ) : tips.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            {tips.map((tip) => (
-                                <div key={tip.id} className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition border border-gray-100 group">
-                                    <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center mb-6 text-[#fc7f51] group-hover:bg-[#fc7f51] group-hover:text-white transition">
-                                        <Lightbulb className="w-6 h-6" />
-                                    </div>
-                                    <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-[#fc7f51] transition">{tip.title}</h3>
-                                    <p className="text-gray-600 leading-relaxed text-sm mb-4 line-clamp-4">{tip.content}</p>
-                                    <div className="text-xs text-gray-400 font-medium">
-                                        Por {tip.agentName || 'Agente'} • {tip.createdAt?.seconds ? new Date(tip.createdAt.seconds * 1000).toLocaleDateString() : 'Reciente'}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center text-gray-500">Pronto publicaremos consejos útiles para ti.</div>
-                    )}
-                </div>
-            </section>
 
 
             {/* CTA Section - Note: Removed Footer from here */}

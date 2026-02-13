@@ -97,6 +97,21 @@ const PropertyDetail = () => {
                 status: 'pending',
                 timestamp: new Date()
             });
+
+            // Remove the booked slot from the property's available slots
+            const propertyRef = doc(db, "properties", property.id);
+            const newSlots = property.availableVisitSlots.filter(slot => slot.id !== selectedSlot.id);
+
+            await updateDoc(propertyRef, {
+                availableVisitSlots: newSlots
+            });
+
+            // Update local state to reflect change immediately
+            setProperty(prev => ({
+                ...prev,
+                availableVisitSlots: newSlots
+            }));
+
             toast.success("¡Visita agendada con éxito! El agente confirmará la fecha.");
             setShowVisitModal(false);
             setSelectedSlot(null);

@@ -7,6 +7,8 @@ import PropertyDetail from './pages/PropertyDetail';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import SearchResults from './pages/SearchResults';
+import Tips from './pages/Tips';
+import TipDetail from './pages/TipDetail';
 
 // Auth Pages
 import Login from './pages/Login';
@@ -35,6 +37,8 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/properties/:id" element={<PropertyDetail />} />
             <Route path="/search" element={<SearchResults />} />
+            <Route path="/tips" element={<Tips />} />
+            <Route path="/tips/:id" element={<TipDetail />} />
 
             {/* Authentication Routes */}
             <Route path="/login" element={<Login />} />

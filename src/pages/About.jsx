@@ -26,8 +26,13 @@ const About = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center mb-24">
                     <div>
                         <span className="text-[#fc7f51] font-bold tracking-widest uppercase text-sm mb-2 block">Quiénes Somos</span>
-                        {/* Always show full logo here as requested */}
-                        <img src={logo} alt="Inmuévete" className="h-16 mb-6 object-contain" />
+
+                        {/* Responsive Logo Display: Icon only on mobile, Full Logo (Icon + Text) on desktop if spacious */}
+                        <div className="flex items-center gap-4 mb-6">
+                            <img src={logo} alt="Inmuévete" className="h-16 object-contain" />
+                            <span className="text-5xl font-bold text-[#fc7f51] tracking-tight hidden md:block">Inmuévete</span>
+                        </div>
+
                         <h2 className="text-3xl md:text-4xl font-bold mb-6 leading-tight">Concepto de Marca</h2>
                         <p className="text-[#878787] text-lg leading-relaxed mb-6">
                             Más que vender inmuebles, inspiramos movimiento. <strong className="text-[#262626]">Inmuévete</strong> es la inmobiliaria que impulsa a las personas a dar el paso hacia nuevas etapas de su vida: un nuevo hogar, una inversión segura o un espacio para crecer.
@@ -37,8 +42,8 @@ const About = () => {
                         </p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <img src="https://images.unsplash.com/photo-1600596542815-e3287135f5cf?q=80&w=2072&auto=format&fit=crop" className="rounded-tl-[40px] rounded-br-[40px] w-full h-64 object-cover shadow-card" alt="Concept 1" />
-                        <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=2053&auto=format&fit=crop" className="rounded-tr-[40px] rounded-bl-[40px] w-full h-64 object-cover shadow-card mt-8" alt="Concept 2" />
+                        <img src="/images/house_ext.png" className="rounded-tl-[40px] rounded-br-[40px] w-full h-64 object-cover shadow-card" alt="Concept 1" />
+                        <img src="/images/house_int.png" className="rounded-tr-[40px] rounded-bl-[40px] w-full h-64 object-cover shadow-card mt-8" alt="Concept 2" />
                     </div>
                 </div>
 

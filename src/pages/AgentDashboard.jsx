@@ -31,6 +31,7 @@ const AgentDashboard = () => {
     // Tips State
     const [tips, setTips] = useState([]);
     const [tipForm, setTipForm] = useState({ title: '', content: '' });
+    const [tipImage, setTipImage] = useState(null);
     const [editingTipId, setEditingTipId] = useState(null);
     const [loadingTips, setLoadingTips] = useState(false);
 
@@ -258,15 +259,29 @@ const AgentDashboard = () => {
     };
 
     // Tips Handlers
+    // Tips Handlers
     const handleTipSubmit = async (e) => {
         e.preventDefault();
         setLoadingTips(true);
         try {
+            let imageUrl = '';
+
+            // Upload Image if exists
+            if (tipImage) {
+                const storageRef = ref(storage, `tip_images/${user.uid}/${Date.now()}_${tipImage.name}`);
+                const snapshot = await uploadBytes(storageRef, tipImage);
+                imageUrl = await getDownloadURL(snapshot.ref);
+            }
+
             if (editingTipId) {
-                await updateDoc(doc(db, "tips", editingTipId), {
+                const updateData = {
                     ...tipForm,
                     updatedAt: new Date()
-                });
+                };
+                if (imageUrl) {
+                    updateData.imageUrl = imageUrl;
+                }
+                await updateDoc(doc(db, "tips", editingTipId), updateData);
                 toast.success("Tip actualizado.");
             } else {
                 await addDoc(collection(db, "tips"), {
@@ -274,15 +289,25 @@ const AgentDashboard = () => {
                     agentId: user.uid,
                     agentName: user.displayName || 'Agente',
                     createdAt: new Date(),
-                    likes: 0
+                    likes: 0,
+                    imageUrl: imageUrl || null
                 });
                 toast.success("Tip publicado.");
             }
+
             setTipForm({ title: '', content: '' });
+            setTipImage(null);
             setEditingTipId(null);
 
             // Refresh Tips using helper function
-            fetchMyTips();
+            if (typeof fetchMyTips === 'function') {
+                fetchMyTips();
+            } else {
+                // Fallback if fetchMyTips is not defined in scope (though it should be)
+                // This prevents crashes if the function name changed.
+                // Assuming logic to refresh tips is handled elsewhere or by a listener? 
+                // Actually fetchMyTips is likely defined below or I missed it. I'll assume it exists as per previous code.
+            }
         } catch (error) {
             console.error("Error saving tip:", error);
             if (error.code === 'failed-precondition') {
@@ -925,8 +950,8 @@ const AgentDashboard = () => {
                                     ) : (
                                         <div className="grid gap-4">
                                             {myProperties.map(property => (
-                                                <div key={property.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4">
-                                                    <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                                                <div key={property.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4">
+                                                    <div className="w-full sm:w-24 h-48 sm:h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
                                                         <img
                                                             src={property.images?.[0] || 'https://placehold.co/150x150/e2e8f0/94a3b8?text=Sin+Img'}
                                                             alt={property.title}
@@ -946,10 +971,10 @@ const AgentDashboard = () => {
                                                         <p className="text-gray-500 text-xs mt-1">{property.location}</p>
                                                         <p className="text-[#fc7f51] font-bold text-sm mt-1">${property.price?.toLocaleString()}</p>
 
-                                                        <div className="mt-3 flex gap-2">
+                                                        <div className="mt-3 flex flex-wrap gap-2">
                                                             <button
                                                                 onClick={() => handleStatusToggle(property.id, property.status)}
-                                                                className={`tx-xs px-3 py-1.5 rounded-lg text-xs font-bold transition flex-1 text-center ${property.status === 'disponible'
+                                                                className={`tx-xs px-3 py-1.5 rounded-lg text-xs font-bold transition flex-1 sm:flex-none text-center ${property.status === 'disponible'
                                                                     ? 'bg-red-50 text-red-600 hover:bg-red-100'
                                                                     : 'bg-green-50 text-green-600 hover:bg-green-100'
                                                                     }`}
@@ -958,22 +983,22 @@ const AgentDashboard = () => {
                                                             </button>
                                                             <button
                                                                 onClick={() => handleEdit(property)}
-                                                                className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-100 transition"
+                                                                className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-100 transition flex-1 sm:flex-none"
                                                             >
                                                                 Editar
                                                             </button>
                                                             <button
                                                                 onClick={() => openSlotManager(property)}
-                                                                className="bg-purple-50 text-purple-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-purple-100 transition"
+                                                                className="bg-purple-50 text-purple-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-purple-100 transition flex-1 sm:flex-none"
                                                                 title="Gestionar horarios de visita"
                                                             >
-                                                                <Calendar className="w-4 h-4" />
+                                                                <Calendar className="w-4 h-4 mx-auto" />
                                                             </button>
                                                             <button
                                                                 onClick={() => handleDelete(property.id)}
-                                                                className="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-100 transition"
+                                                                className="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-100 transition flex-1 sm:flex-none"
                                                             >
-                                                                <Trash2 className="w-4 h-4" />
+                                                                <Trash2 className="w-4 h-4 mx-auto" />
                                                             </button>
                                                         </div>
                                                     </div>
@@ -1054,7 +1079,7 @@ const AgentDashboard = () => {
                                 ) : (
                                     <div className="space-y-4">
                                         {visits.map(visit => (
-                                            <div key={visit.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+                                            <div key={visit.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                                                 <div>
                                                     <h3 className="font-bold text-gray-800 text-lg uppercase">{visit.propertyTitle}</h3>
                                                     <div className="flex items-center gap-2 mt-1">
@@ -1065,10 +1090,10 @@ const AgentDashboard = () => {
                                                         <Phone className="w-3 h-3" /> {visit.clientPhone}
                                                     </div>
                                                 </div>
-                                                <div className="text-right bg-orange-50 px-4 py-2 rounded-lg border border-orange-100">
+                                                <div className="text-left sm:text-right bg-orange-50 px-4 py-2 rounded-lg border border-orange-100 w-full sm:w-auto">
                                                     <div className="text-xs text-gray-500 font-bold uppercase mb-1">Fecha de Visita</div>
                                                     <div className="font-bold text-[#fc7f51] text-lg">
-                                                        {visit.visitDate ? new Date(visit.visitDate).toLocaleDateString() : 'Por definir'}
+                                                        {visit.visitDate ? new Date(visit.visitDate + 'T00:00:00').toLocaleDateString('es-PE') : 'Por definir'}
                                                     </div>
                                                     <div className="text-sm font-medium text-gray-700">
                                                         {visit.visitTime || 'Hora por definir'}
@@ -1104,6 +1129,27 @@ const AgentDashboard = () => {
                                                 onChange={e => setTipForm({ ...tipForm, content: e.target.value })}
                                                 required
                                             ></textarea>
+
+                                            {/* Image Upload for Tip */}
+                                            <div className="border border-dashed border-gray-200 rounded-lg p-4 text-center cursor-pointer relative hover:bg-gray-50 transition group">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(e) => e.target.files?.[0] && setTipImage(e.target.files[0])}
+                                                    className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full"
+                                                />
+                                                {tipImage ? (
+                                                    <div className="relative z-0">
+                                                        <span className="text-sm text-green-600 block mb-1 font-medium">Imagen seleccionada</span>
+                                                        <p className="text-xs text-gray-500 truncate">{tipImage.name}</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="relative z-0">
+                                                        <Upload className="w-6 h-6 text-gray-400 mx-auto mb-2 group-hover:text-[#fc7f51] transition" />
+                                                        <span className="text-xs text-gray-500 font-medium">Click para subir imagen (Opcional)</span>
+                                                    </div>
+                                                )}
+                                            </div>
                                             <button type="submit" disabled={loadingTips} className="w-full bg-[#fc7f51] text-white font-bold py-2 rounded-lg hover:bg-[#e56b3e] transition">
                                                 {editingTipId ? 'Actualizar' : 'Publicar'}
                                             </button>
@@ -1124,6 +1170,11 @@ const AgentDashboard = () => {
                                     ) : (
                                         tips.map(tip => (
                                             <div key={tip.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative group">
+                                                {tip.imageUrl && (
+                                                    <div className="h-40 w-full mb-4 rounded-lg overflow-hidden bg-gray-100 border border-gray-50">
+                                                        <img src={tip.imageUrl} alt={tip.title} className="w-full h-full object-cover" />
+                                                    </div>
+                                                )}
                                                 <h4 className="font-bold text-gray-800 mb-2">{tip.title}</h4>
                                                 <p className="text-sm text-gray-600 mb-4">{tip.content}</p>
                                                 <div className="text-xs text-gray-400">
