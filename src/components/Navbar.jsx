@@ -46,7 +46,6 @@ const Navbar = () => {
                 <div className="flex items-center gap-4">
                     <div className="hidden md:flex items-center gap-8">
                         <Link to="/" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Propiedades</Link>
-                        <Link to="/" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Propiedades</Link>
                         {userData?.role !== 'agente' && (
                             <>
                                 <Link to="/about" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Nosotros</Link>

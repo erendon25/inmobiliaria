@@ -4,7 +4,7 @@ import { db, storage } from '../lib/firebase';
 import { collection, addDoc, query, where, getDocs, updateDoc, doc, deleteDoc, writeBatch, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateProfile, updateEmail, updatePassword } from 'firebase/auth';
-import { Upload, MapPin, DollarSign, Home, Maximize, Loader2, Plus, X, Lock, User, FileText, Trash2 } from 'lucide-react';
+import { Upload, MapPin, DollarSign, Home, Maximize, Loader2, Plus, X, Lock, User, FileText, Trash2, Calendar, Phone, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import MapPicker from '../components/MapPicker';
 
@@ -67,6 +67,14 @@ const AgentDashboard = () => {
     const [visits, setVisits] = useState([]); // Replaces inquiries
     const [loadingProps, setLoadingProps] = useState(true);
     const [profileImage, setProfileImage] = useState(null);
+
+    // Visit Slot Management
+    const [showSlotModal, setShowSlotModal] = useState(false);
+    const [slotPropertyId, setSlotPropertyId] = useState(null);
+    const [slotPropertyTitle, setSlotPropertyTitle] = useState('');
+    const [currentSlots, setCurrentSlots] = useState([]);
+    const [newSlotDate, setNewSlotDate] = useState('');
+    const [newSlotTime, setNewSlotTime] = useState('');
 
     // Fetch my properties function
     const fetchMyProperties = async () => {
@@ -309,15 +317,58 @@ const AgentDashboard = () => {
 
     const handleStatusToggle = async (propertyId, currentStatus) => {
         const newStatus = currentStatus === 'disponible' ? 'tomada' : 'disponible';
+        // Optimistic update: update local state immediately
+        setMyProperties(prev => prev.map(p => p.id === propertyId ? { ...p, status: newStatus } : p));
+        toast.success(`Estado actualizado a: ${newStatus === 'disponible' ? 'Disponible' : 'No Disponible'}`);
         try {
             await updateDoc(doc(db, "properties", propertyId), {
                 status: newStatus
             });
-            toast.success(`Estado actualizado a: ${newStatus === 'disponible' ? 'Disponible' : 'No Disponible'}`);
-            // Listener handles update
         } catch (error) {
+            // Revert on error
+            setMyProperties(prev => prev.map(p => p.id === propertyId ? { ...p, status: currentStatus } : p));
             console.error("Error updating status:", error);
             toast.error("No se pudo actualizar el estado.");
+        }
+    };
+
+    // Visit Slot Management
+    const openSlotManager = (property) => {
+        setSlotPropertyId(property.id);
+        setSlotPropertyTitle(property.title);
+        setCurrentSlots(property.availableVisitSlots || []);
+        setNewSlotDate('');
+        setNewSlotTime('');
+        setShowSlotModal(true);
+    };
+
+    const addSlot = () => {
+        if (!newSlotDate || !newSlotTime) {
+            toast.error('Selecciona fecha y hora.');
+            return;
+        }
+        const newSlot = { date: newSlotDate, time: newSlotTime, id: Date.now().toString() };
+        setCurrentSlots(prev => [...prev, newSlot]);
+        setNewSlotDate('');
+        setNewSlotTime('');
+    };
+
+    const removeSlot = (slotId) => {
+        setCurrentSlots(prev => prev.filter(s => s.id !== slotId));
+    };
+
+    const saveSlots = async () => {
+        try {
+            await updateDoc(doc(db, "properties", slotPropertyId), {
+                availableVisitSlots: currentSlots
+            });
+            // Optimistic: update local
+            setMyProperties(prev => prev.map(p => p.id === slotPropertyId ? { ...p, availableVisitSlots: currentSlots } : p));
+            toast.success('Horarios de visita guardados.');
+            setShowSlotModal(false);
+        } catch (error) {
+            console.error('Error saving slots:', error);
+            toast.error('Error al guardar horarios.');
         }
     };
 
@@ -912,6 +963,13 @@ const AgentDashboard = () => {
                                                                 Editar
                                                             </button>
                                                             <button
+                                                                onClick={() => openSlotManager(property)}
+                                                                className="bg-purple-50 text-purple-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-purple-100 transition"
+                                                                title="Gestionar horarios de visita"
+                                                            >
+                                                                <Calendar className="w-4 h-4" />
+                                                            </button>
+                                                            <button
                                                                 onClick={() => handleDelete(property.id)}
                                                                 className="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-100 transition"
                                                             >
@@ -1085,6 +1143,85 @@ const AgentDashboard = () => {
                     </div>
                 )}
             </div>
+
+            {/* Visit Slot Manager Modal */}
+            {showSlotModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden relative">
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                            <div>
+                                <h3 className="font-bold text-lg text-gray-800">Gestionar Horarios de Visita</h3>
+                                <p className="text-sm text-gray-500 mt-1 uppercase">{slotPropertyTitle}</p>
+                            </div>
+                            <button onClick={() => setShowSlotModal(false)} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-200 rounded-full transition">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            {/* Add New Slot */}
+                            <div className="flex gap-2 items-end">
+                                <div className="flex-1">
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">Fecha</label>
+                                    <input
+                                        type="date"
+                                        min={new Date().toISOString().split('T')[0]}
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none text-sm"
+                                        value={newSlotDate}
+                                        onChange={e => setNewSlotDate(e.target.value)}
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">Hora</label>
+                                    <input
+                                        type="time"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none text-sm"
+                                        value={newSlotTime}
+                                        onChange={e => setNewSlotTime(e.target.value)}
+                                    />
+                                </div>
+                                <button
+                                    onClick={addSlot}
+                                    className="bg-[#fc7f51] text-white px-4 py-2 rounded-lg hover:bg-[#e56b3e] transition font-bold text-sm"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            {/* Slots List */}
+                            <div className="max-h-64 overflow-y-auto space-y-2">
+                                {currentSlots.length === 0 ? (
+                                    <p className="text-center text-gray-400 text-sm py-4">No hay horarios disponibles. Agrega fechas y horas.</p>
+                                ) : (
+                                    currentSlots.sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time)).map(slot => (
+                                        <div key={slot.id} className="flex items-center justify-between bg-gray-50 px-4 py-2.5 rounded-lg border border-gray-100">
+                                            <div className="flex items-center gap-3">
+                                                <Calendar className="w-4 h-4 text-[#fc7f51]" />
+                                                <span className="font-medium text-gray-700 text-sm">
+                                                    {new Date(slot.date + 'T00:00:00').toLocaleDateString('es-PE', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                                </span>
+                                                <span className="text-gray-500 text-sm flex items-center gap-1">
+                                                    <Clock className="w-3 h-3" /> {slot.time}
+                                                </span>
+                                            </div>
+                                            <button onClick={() => removeSlot(slot.id)} className="text-red-400 hover:text-red-600 transition">
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            {/* Save Button */}
+                            <button
+                                onClick={saveSlots}
+                                className="w-full bg-[#fc7f51] text-white font-bold py-3 rounded-lg hover:bg-[#e56b3e] transition"
+                            >
+                                Guardar Horarios ({currentSlots.length})
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

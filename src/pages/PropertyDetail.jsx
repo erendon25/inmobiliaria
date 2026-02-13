@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { db } from '../lib/firebase';
 import { doc, getDoc, addDoc, updateDoc, increment, collection } from 'firebase/firestore';
-import { MapPin, ArrowLeft, Heart, Share, Star, ShieldCheck, DoorOpen, Calendar, User, Phone, Mail, X, Loader2, Clock, Car, Building2, ArrowUpFromLine, Layers, Waves, Dumbbell, Armchair, ArrowUpDown, Maximize, Bath, BedDouble } from 'lucide-react';
+import { MapPin, ArrowLeft, Heart, Share, Star, ShieldCheck, DoorOpen, Calendar, User, Phone, Mail, X, Loader2, Clock, Car, Building2, ArrowUpFromLine, Layers, Waves, Dumbbell, Armchair, ArrowUpDown, Maximize, Bath, BedDouble, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -26,8 +26,7 @@ const PropertyDetail = () => {
 
     // Visit State
     const [showVisitModal, setShowVisitModal] = useState(false);
-    const [visitDate, setVisitDate] = useState('');
-    const [visitTime, setVisitTime] = useState('');
+    const [selectedSlot, setSelectedSlot] = useState(null);
     const [visitLoading, setVisitLoading] = useState(false);
 
     // Contact Form
@@ -68,11 +67,21 @@ const PropertyDetail = () => {
             navigate('/login', { state: { from: location.pathname } });
             return;
         }
+        const slots = property?.availableVisitSlots || [];
+        if (slots.length === 0) {
+            toast.error("El agente aún no ha definido horarios de visita para esta propiedad.");
+            return;
+        }
+        setSelectedSlot(null);
         setShowVisitModal(true);
     };
 
     const submitVisit = async (e) => {
         e.preventDefault();
+        if (!selectedSlot) {
+            toast.error("Selecciona un horario.");
+            return;
+        }
         setVisitLoading(true);
         try {
             await addDoc(collection(db, "visits"), {
@@ -83,15 +92,14 @@ const PropertyDetail = () => {
                 clientName: userData?.displayName || user.displayName || 'Cliente',
                 clientPhone: userData?.phoneNumber || 'No especificado',
                 clientEmail: user.email,
-                visitDate,
-                visitTime,
+                visitDate: selectedSlot.date,
+                visitTime: selectedSlot.time,
                 status: 'pending',
                 timestamp: new Date()
             });
             toast.success("¡Visita agendada con éxito! El agente confirmará la fecha.");
             setShowVisitModal(false);
-            setVisitDate('');
-            setVisitTime('');
+            setSelectedSlot(null);
         } catch (error) {
             console.error("Error scheduling visit:", error);
             toast.error("Error al agendar la visita.");
@@ -586,7 +594,7 @@ const PropertyDetail = () => {
                     </div>
                 )
             }
-            {/* Visit Modal */}
+            {/* Visit Modal - Slot Picker */}
             {showVisitModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative p-8">
@@ -597,38 +605,41 @@ const PropertyDetail = () => {
                             <X className="w-6 h-6" />
                         </button>
                         <h3 className="text-xl font-bold text-gray-800 mb-2">Agendar Visita</h3>
-                        <p className="text-sm text-gray-500 mb-6">Selecciona una fecha y hora preferida para visitar la propiedad.</p>
+                        <p className="text-sm text-gray-500 mb-6">Selecciona uno de los horarios disponibles del agente.</p>
 
-                        <form onSubmit={submitVisit} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
-                                <input
-                                    type="date"
-                                    required
-                                    min={new Date().toISOString().split('T')[0]}
-                                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none"
-                                    value={visitDate}
-                                    onChange={e => setVisitDate(e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Hora</label>
-                                <input
-                                    type="time"
-                                    required
-                                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none"
-                                    value={visitTime}
-                                    onChange={e => setVisitTime(e.target.value)}
-                                />
-                            </div>
-                            <button
-                                type="submit"
-                                disabled={visitLoading}
-                                className="w-full bg-[#fc7f51] text-white font-bold py-3 rounded-lg hover:bg-[#e56b3e] transition mt-4"
-                            >
-                                {visitLoading ? 'Agendando...' : 'Confirmar Solicitud'}
-                            </button>
-                        </form>
+                        <div className="space-y-2 max-h-72 overflow-y-auto mb-6">
+                            {(property?.availableVisitSlots || []).sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time)).map(slot => (
+                                <button
+                                    key={slot.id}
+                                    type="button"
+                                    onClick={() => setSelectedSlot(slot)}
+                                    className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border-2 transition ${selectedSlot?.id === slot.id
+                                            ? 'border-[#fc7f51] bg-orange-50'
+                                            : 'border-gray-100 hover:border-gray-300 bg-gray-50'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Calendar className="w-4 h-4 text-[#fc7f51]" />
+                                        <span className="font-medium text-gray-700 text-sm">
+                                            {new Date(slot.date + 'T00:00:00').toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="w-3 h-3 text-gray-400" />
+                                        <span className="text-sm font-bold text-gray-600">{slot.time}</span>
+                                        {selectedSlot?.id === slot.id && <CheckCircle className="w-5 h-5 text-[#fc7f51]" />}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={submitVisit}
+                            disabled={visitLoading || !selectedSlot}
+                            className="w-full bg-[#fc7f51] text-white font-bold py-3 rounded-lg hover:bg-[#e56b3e] transition disabled:opacity-50"
+                        >
+                            {visitLoading ? 'Agendando...' : 'Confirmar Visita'}
+                        </button>
                     </div>
                 </div>
             )}
