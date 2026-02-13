@@ -47,7 +47,14 @@ const AgentDashboard = () => {
         location: '',
         footage: '',
         bedrooms: '',
-        bathrooms: ''
+        bathrooms: '',
+        // Details
+        antiquity: 'estreno',
+        isExclusive: false,
+        isInBuilding: false,
+        floor: '',
+        isDuplex: false,
+        parking: false
     });
 
     // Property List State
@@ -338,7 +345,9 @@ const AgentDashboard = () => {
             floor: property.floor || '',
             elevator: property.elevator || false,
             parking: property.parking || false,
-            isExclusive: property.isExclusive || false
+            isExclusive: property.isExclusive || false,
+            isInBuilding: property.isInBuilding || false,
+            isDuplex: property.isDuplex || false
         });
         setImagePreviews(property.images || []);
         setImages([]); // Clear new files queue
@@ -604,11 +613,21 @@ const AgentDashboard = () => {
                                                     <option value="more_than_20">Más de 20 años</option>
                                                 </select>
                                             </div>
-                                            <div className="flex items-center pt-8">
+                                            <div className="flex flex-col gap-3 pt-8">
                                                 <label className="flex items-center cursor-pointer gap-2">
                                                     <input type="checkbox" className="w-5 h-5 accent-[#fc7f51]" checked={formData.isExclusive} onChange={e => setFormData({ ...formData, isExclusive: e.target.checked })} />
                                                     <span className="font-bold text-[#fc7f51]">¿Es Exclusiva?</span>
                                                 </label>
+                                                <label className="flex items-center cursor-pointer gap-2">
+                                                    <input type="checkbox" className="w-5 h-5 accent-[#fc7f51]" checked={formData.parking} onChange={e => setFormData({ ...formData, parking: e.target.checked })} />
+                                                    <span className="font-medium text-gray-700">Tiene Cochera</span>
+                                                </label>
+                                                {formData.category === 'construido' && (
+                                                    <label className="flex items-center cursor-pointer gap-2">
+                                                        <input type="checkbox" className="w-5 h-5 accent-[#fc7f51]" checked={formData.isInBuilding} onChange={e => setFormData({ ...formData, isInBuilding: e.target.checked })} />
+                                                        <span className="font-medium text-gray-700">Es Edificio / Departamento</span>
+                                                    </label>
+                                                )}
                                             </div>
                                         </div>
 
@@ -633,6 +652,28 @@ const AgentDashboard = () => {
                                                         value={formData.bathrooms}
                                                         onChange={e => setFormData({ ...formData, bathrooms: e.target.value })}
                                                     />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Building Specifics - only if constructed and "Es Edificio" is checked */}
+                                        {formData.category === 'construido' && formData.isInBuilding && (
+                                            <div className="grid grid-cols-2 gap-4 bg-orange-50 p-4 rounded-xl border border-orange-100">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Piso</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Ej. 5"
+                                                        className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none bg-white"
+                                                        value={formData.floor}
+                                                        onChange={e => setFormData({ ...formData, floor: e.target.value })}
+                                                    />
+                                                </div>
+                                                <div className="flex items-center pt-8">
+                                                    <label className="flex items-center cursor-pointer gap-2">
+                                                        <input type="checkbox" className="w-5 h-5 accent-[#fc7f51]" checked={formData.isDuplex} onChange={e => setFormData({ ...formData, isDuplex: e.target.checked })} />
+                                                        <span className="font-medium text-gray-700">¿Es Dúplex?</span>
+                                                    </label>
                                                 </div>
                                             </div>
                                         )}

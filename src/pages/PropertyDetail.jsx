@@ -246,6 +246,57 @@ const PropertyDetail = () => {
                             </div>
                         </div>
 
+                        {/* Features Grid */}
+                        <div className="border-b border-gray-200 pb-8 mb-8">
+                            <h3 className="text-lg font-bold mb-4">Características</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {property.parking && (
+                                    <div className="flex items-center gap-2 text-gray-700">
+                                        <div className="w-2 h-2 bg-[#fc7f51] rounded-full"></div>
+                                        <span>Cochera / Estacionamiento</span>
+                                    </div>
+                                )}
+                                {property.isDuplex && (
+                                    <div className="flex items-center gap-2 text-gray-700">
+                                        <div className="w-2 h-2 bg-[#fc7f51] rounded-full"></div>
+                                        <span>Dúplex</span>
+                                    </div>
+                                )}
+                                {property.floor && (
+                                    <div className="flex items-center gap-2 text-gray-700">
+                                        <div className="w-2 h-2 bg-[#fc7f51] rounded-full"></div>
+                                        <span>Ubicado en Piso {property.floor}</span>
+                                    </div>
+                                )}
+                                {property.isInBuilding && (
+                                    <div className="flex items-center gap-2 text-gray-700">
+                                        <div className="w-2 h-2 bg-[#fc7f51] rounded-full"></div>
+                                        <span>En Edificio / Condominio</span>
+                                    </div>
+                                )}
+                                {property.isExclusive && (
+                                    <div className="flex items-center gap-2 text-gray-700">
+                                        <div className="w-2 h-2 bg-[#fc7f51] rounded-full"></div>
+                                        <span>Exclusivo</span>
+                                    </div>
+                                )}
+                                {property.antiquity && (
+                                    <div className="flex items-center gap-2 text-gray-700">
+                                        <div className="w-2 h-2 bg-[#fc7f51] rounded-full"></div>
+                                        <span>Antigüedad: {property.antiquity === 'estreno' ? 'Estreno' : property.antiquity}</span>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-2 text-gray-700">
+                                    <div className="w-2 h-2 bg-[#fc7f51] rounded-full"></div>
+                                    <span>{property.bedrooms || 0} Habitaciones</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-gray-700">
+                                    <div className="w-2 h-2 bg-[#fc7f51] rounded-full"></div>
+                                    <span>{property.bathrooms || 0} Baños</span>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Description */}
                         <div className="border-b border-gray-200 pb-8 mb-8">
                             <h3 className="text-xl font-bold mb-4">Descripción</h3>
