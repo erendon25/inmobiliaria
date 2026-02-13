@@ -454,7 +454,6 @@ const AgentDashboard = () => {
             isExclusive: property.isExclusive || false,
             isInBuilding: property.isInBuilding || false,
             isDuplex: property.isDuplex || false,
-            elevator: property.elevator || false,
             furnished: property.furnished || false,
             pool: property.pool || false,
             gym: property.gym || false,
