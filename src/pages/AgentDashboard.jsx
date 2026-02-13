@@ -89,6 +89,14 @@ const AgentDashboard = () => {
             };
             fetchInquiries();
         }
+
+        // Initialize profile form with current user data
+        setProfileData({
+            displayName: userData?.displayName || user?.displayName || '',
+            email: userData?.email || user?.email || '',
+            phoneNumber: userData?.phoneNumber || '',
+            newPassword: ''
+        });
     }, [user, userData]);
 
     const handleActivation = async (e) => {
@@ -419,22 +427,28 @@ const AgentDashboard = () => {
         }
     };
 
-    // Dev Helper
+    // Dev Helper - only attempt if user is superadmin to avoid permission errors
     useEffect(() => {
+        if (userData?.role !== 'superadmin') return;
         const ensureCode = async () => {
-            const q = query(collection(db, "activation_codes"), where("code", "==", "AGENT2024"));
-            const snapshot = await getDocs(q);
-            if (snapshot.empty) {
-                await addDoc(collection(db, "activation_codes"), {
-                    code: "AGENT2024",
-                    used: false,
-                    createdAt: new Date(),
-                    type: 'standard'
-                });
+            try {
+                const q = query(collection(db, "activation_codes"), where("code", "==", "AGENT2024"));
+                const snapshot = await getDocs(q);
+                if (snapshot.empty) {
+                    await addDoc(collection(db, "activation_codes"), {
+                        code: "AGENT2024",
+                        used: false,
+                        createdAt: new Date(),
+                        type: 'standard'
+                    });
+                }
+            } catch (error) {
+                // Silently ignore - only superadmins can create codes
+                console.debug("Skipping code creation (not authorized)");
             }
         };
         ensureCode();
-    }, []);
+    }, [userData]);
 
     const isActivated = userData?.isActivated;
 
@@ -712,7 +726,7 @@ const AgentDashboard = () => {
                                                 <div key={property.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4">
                                                     <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
                                                         <img
-                                                            src={property.images?.[0] || 'https://via.placeholder.com/150'}
+                                                            src={property.images?.[0] || 'https://placehold.co/150x150/e2e8f0/94a3b8?text=Sin+Img'}
                                                             alt={property.title}
                                                             className="w-full h-full object-cover"
                                                         />
