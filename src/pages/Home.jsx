@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import PropertyCard from '../components/PropertyCard';
-import { Palmtree, Mountain, Waves, Building, Warehouse, ArrowRight, Search, MapPin, ListFilter, Home as HomeIcon, Key, Briefcase, X } from 'lucide-react';
+import { Palmtree, Mountain, Waves, Building, Warehouse, ArrowRight, Search, MapPin, ListFilter, Home as HomeIcon, Key, Briefcase, X, Lightbulb } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const categories = [
@@ -88,6 +88,35 @@ const Home = () => {
         };
 
         fetchProperties();
+    }, []);
+
+    // Fetch Tips
+    const [tips, setTips] = useState([]);
+    const [loadingTips, setLoadingTips] = useState(true);
+
+    useEffect(() => {
+        const fetchTips = async () => {
+            try {
+                const q = query(collection(db, "tips"), limit(3)); // Get latest 3 tips
+                // Note: orderBy("createdAt", "desc") requires index. 
+                // Since this is a small app for now, we can fetch and sort client-side or just fetch default.
+                // Or better, catch the index error if it happens.
+
+                // Let's try simple fetch first.
+                const querySnapshot = await getDocs(q);
+                const fetchedTips = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                // Client-side sort by date if needed
+                fetchedTips.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+                setTips(fetchedTips);
+            } catch (error) {
+                console.error("Error fetching tips:", error);
+            } finally {
+                setLoadingTips(false);
+            }
+        };
+        fetchTips();
     }, []);
 
     return (
@@ -417,9 +446,39 @@ const Home = () => {
                             <p className="text-gray-500 text-lg">No hay propiedades disponibles en este momento.</p>
                         </div>
                     ) : (
-                        properties.map((property) => (
-                            <PropertyCard key={property.id} property={property} />
-                        ))
+                        properties
+                            .filter(property => {
+                                // Filter by Operation Type (Venta/Alquiler)
+                                if (operation && property.type !== operation) return false;
+
+                                // Filter by Property Type
+                                if (propertyType) {
+                                    if (propertyType === 'terreno') {
+                                        if (property.category !== 'terreno') return false;
+                                    }
+                                    else if (propertyType !== 'otro') {
+                                        if (property.category === 'terreno') return false;
+                                    }
+                                }
+
+                                // Filter by Location
+                                if (location && !property.location?.toLowerCase().includes(location.toLowerCase()) && !property.address?.toLowerCase().includes(location.toLowerCase())) return false;
+
+                                // Filter by Price
+                                const price = parseFloat(property.price);
+                                if (priceMin && price < parseFloat(priceMin)) return false;
+                                if (priceMax && price > parseFloat(priceMax)) return false;
+
+                                // Filter by Currency (Optional: convert or strict match. For now strict match or assume same currency display)
+                                // If user selects USD, show USD properties?
+                                if (currency && property.currency !== currency) return false;
+
+                                return true;
+                            })
+                            .sort((a, b) => (b.isExclusive === true ? 1 : 0) - (a.isExclusive === true ? 1 : 0))
+                            .map((property) => (
+                                <PropertyCard key={property.id} property={property} />
+                            ))
                     )}
                 </div>
 
@@ -429,6 +488,39 @@ const Home = () => {
                     </button>
                 </div>
             </main>
+
+            {/* Tips Section */}
+            <section className="bg-gray-50 py-20 border-t border-gray-200">
+                <div className="container mx-auto px-6">
+                    <div className="text-center mb-12">
+                        <span className="text-[#fc7f51] font-bold text-sm tracking-widest uppercase mb-2 block">Consejos de Expertos</span>
+                        <h2 className="text-3xl font-bold text-[#262626]">Tips Inmobiliarios</h2>
+                    </div>
+
+                    {loadingTips ? (
+                        <div className="flex justify-center">
+                            <div className="inline-block w-8 h-8 border-4 border-[#fc7f51] border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    ) : tips.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {tips.map((tip) => (
+                                <div key={tip.id} className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition border border-gray-100 group">
+                                    <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center mb-6 text-[#fc7f51] group-hover:bg-[#fc7f51] group-hover:text-white transition">
+                                        <Lightbulb className="w-6 h-6" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-[#fc7f51] transition">{tip.title}</h3>
+                                    <p className="text-gray-600 leading-relaxed text-sm mb-4 line-clamp-4">{tip.content}</p>
+                                    <div className="text-xs text-gray-400 font-medium">
+                                        Por {tip.agentName || 'Agente'} • {tip.createdAt?.seconds ? new Date(tip.createdAt.seconds * 1000).toLocaleDateString() : 'Reciente'}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center text-gray-500">Pronto publicaremos consejos útiles para ti.</div>
+                    )}
+                </div>
+            </section>
 
             {/* CTA Section - Note: Removed Footer from here */}
             <section className="py-24 bg-[#16151a] text-white relative overflow-hidden">
