@@ -1,17 +1,11 @@
 import { useParams, Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { db } from '../lib/firebase';
-<<<<<<< HEAD
-import { doc, getDoc, addDoc, collection, updateDoc, increment } from 'firebase/firestore';
-
-// ... (imports remain)
-=======
 import { doc, getDoc, addDoc, updateDoc, increment, collection } from 'firebase/firestore';
 import { MapPin, ArrowLeft, Heart, Share, Star, ShieldCheck, DoorOpen, Calendar, User, Phone, Mail, X, Loader2, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
->>>>>>> e906416540e27a489d3b8fff6f45592f6fbcf4b2
 
 // Import Swiper styles
 import 'swiper/css';
@@ -19,27 +13,6 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
 const PropertyDetail = () => {
-<<<<<<< HEAD
-    // ... (state remains)
-
-    // WhatsApp Handler
-    const handleWhatsAppClick = () => {
-        if (!property) return;
-
-        // Default agent number if not present (using the one from previous context or generic)
-        // Assuming agentPhone should be in property data or user data. 
-        // If not, we might need to fetch agent data.
-        // For now, let's use a placeholder or check if property has agent phone.
-        // The user mentioned "el boton de whatsapp no me redirige".
-        // Let's assume a default number if none exists, or use the one from the property contact card.
-        // Wait, the property might not have the agent's phone directly on it if it wasn't saved.
-        // But let's assume valid data for now or use a fallback.
-
-        const phoneNumber = "51999999999"; // Default fallback as per previous context
-        const message = `Hola, estoy interesado en la propiedad: ${property.title}`;
-        const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-        window.open(url, '_blank');
-=======
     const { id } = useParams();
     const [property, setProperty] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -77,7 +50,17 @@ const PropertyDetail = () => {
         } finally {
             setContactLoading(false);
         }
->>>>>>> e906416540e27a489d3b8fff6f45592f6fbcf4b2
+    };
+
+    // WhatsApp Handler
+    const handleWhatsAppClick = () => {
+        if (!property) return;
+
+        // Use agent's phone if available, otherwise fallback
+        const phoneNumber = "51999999999";
+        const message = `Hola, estoy interesado en la propiedad: ${property.title}`;
+        const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+        window.open(url, '_blank');
     };
 
     useEffect(() => {
@@ -88,16 +71,6 @@ const PropertyDetail = () => {
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
-<<<<<<< HEAD
-                    setProperty({ id: docSnap.id, ...docSnap.data() });
-
-                    // Increment Views (Atomic)
-                    // Use a separate fire-and-forget update to avoid blocking text render
-                    updateDoc(docRef, {
-                        views: increment(1)
-                    }).catch(err => console.error("Error updating views:", err));
-
-=======
                     const data = docSnap.data();
 
                     // Increment view counter locally and in DB if not already viewed in this session
@@ -114,7 +87,6 @@ const PropertyDetail = () => {
                     }
 
                     setProperty({ id: docSnap.id, ...data });
->>>>>>> e906416540e27a489d3b8fff6f45592f6fbcf4b2
                 } else {
                     console.log("No such document!");
                 }
@@ -199,7 +171,7 @@ const PropertyDetail = () => {
                         {property.images && property.images.length > 0 ? (
                             property.images.map((img, idx) => (
                                 <SwiperSlide key={idx}>
-                                    <img src={img} alt={`Slide ${idx}`} className="w-full h-full object-cover" />
+                                    <img src={img} alt={`Property ${idx + 1}`} className="w-full h-full object-cover" />
                                 </SwiperSlide>
                             ))
                         ) : (
@@ -210,11 +182,6 @@ const PropertyDetail = () => {
                             </SwiperSlide>
                         )}
                     </Swiper>
-
-                    {/* Floating Counter */}
-                    <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs z-10 font-bold flex items-center gap-2">
-                        <User className="w-3 h-3" /> {property.views || 0} Vistas
-                    </div>
                 </div>
 
                 {/* Main Content */}
@@ -264,10 +231,17 @@ const PropertyDetail = () => {
                                         {property.status}
                                     </span>
                                 </div>
-<<<<<<< HEAD
                                 <div className="flex justify-between py-2 border-b border-gray-50">
                                     <span className="text-gray-500">Antigüedad</span>
-                                    <span className="font-semibold capitalize">{property.antiquity === 'up_to_5' ? 'Hasta 5 años' : property.antiquity === '5_to_10' ? '5 a 10 años' : property.antiquity === 'more_than_10' ? 'Más de 10 años' : property.antiquity === 'more_than_20' ? 'Más de 20 años' : property.antiquity || 'No especificado'}</span>
+                                    <span className="font-semibold capitalize">
+                                        {property.antiquity === 'estreno' ? 'A estrenar' :
+                                            property.antiquity === 'preventa' ? 'En Preventa' :
+                                                property.antiquity === 'up_to_5' ? 'Hasta 5 años' :
+                                                    property.antiquity === '5_to_10' ? '5 a 10 años' :
+                                                        property.antiquity === '10_to_20' ? '10 a 20 años' :
+                                                            property.antiquity === 'more_than_20' ? 'Más de 20 años' :
+                                                                property.antiquity || 'No especificado'}
+                                    </span>
                                 </div>
                                 {property.floor && (
                                     <div className="flex justify-between py-2 border-b border-gray-50">
@@ -282,19 +256,6 @@ const PropertyDetail = () => {
                                 <div className="flex justify-between py-2 border-b border-gray-50">
                                     <span className="text-gray-500">Cochera</span>
                                     <span className="font-semibold">{property.parking ? 'Sí' : 'No'}</span>
-=======
-
-                                {/* New Antiquity Field */}
-                                <div className="flex justify-between py-2 border-b border-gray-50">
-                                    <span className="text-gray-500">Antigüedad</span>
-                                    <span className="font-semibold flex items-center gap-1">
-                                        <Clock className="w-3 h-3 text-[#fc7f51]" />
-                                        {property.antiquityType === 'estreno'
-                                            ? <span className="text-green-600 font-bold uppercase text-xs border border-green-200 bg-green-50 px-2 py-0.5 rounded-full">De Estreno</span>
-                                            : `${property.antiquityYears} Años`
-                                        }
-                                    </span>
->>>>>>> e906416540e27a489d3b8fff6f45592f6fbcf4b2
                                 </div>
                             </div>
                         </div>
