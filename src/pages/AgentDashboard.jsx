@@ -631,40 +631,42 @@ const AgentDashboard = () => {
                                                         />
                                                     </div>
                                                 </div>
+                                            </div>
+                                        )}
 
-                                                {/* Description */}
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
-                                                    <textarea className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none h-24 resize-none" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })}></textarea>
-                                                </div>
+                                        {/* Description */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+                                            <textarea className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none h-24 resize-none" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })}></textarea>
+                                        </div>
 
-                                                {/* Images */}
-                                                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition cursor-pointer relative">
-                                                    <input type="file" multiple accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                                                    <Upload className="h-6 w-6 text-[#fc7f51] mx-auto mb-2" />
-                                                    <p className="text-gray-500 text-sm">Subir fotos</p>
-                                                </div>
-                                                {imagePreviews.length > 0 && (
-                                                    <div className="grid grid-cols-4 gap-2">
-                                                        {imagePreviews.map((url, idx) => (
-                                                            <div key={idx} className="aspect-square relative rounded-lg overflow-hidden">
-                                                                <img src={url} alt="" className="w-full h-full object-cover" />
-                                                                <button type="button" onClick={() => removeImage(idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5"><X className="w-3 h-3" /></button>
-                                                            </div>
-                                                        ))}
+                                        {/* Images */}
+                                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition cursor-pointer relative">
+                                            <input type="file" multiple accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                            <Upload className="h-6 w-6 text-[#fc7f51] mx-auto mb-2" />
+                                            <p className="text-gray-500 text-sm">Subir fotos</p>
+                                        </div>
+                                        {imagePreviews.length > 0 && (
+                                            <div className="grid grid-cols-4 gap-2">
+                                                {imagePreviews.map((url, idx) => (
+                                                    <div key={idx} className="aspect-square relative rounded-lg overflow-hidden">
+                                                        <img src={url} alt="" className="w-full h-full object-cover" />
+                                                        <button type="button" onClick={() => removeImage(idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5"><X className="w-3 h-3" /></button>
                                                     </div>
-                                                )}
+                                                ))}
+                                            </div>
+                                        )}
 
-                                                {/* Actions */}
-                                                <div className="flex gap-2">
-                                                    {editingId && (
-                                                        <button type="button" onClick={handleCancelEdit} className="flex-1 bg-gray-200 text-gray-800 font-bold py-3 rounded-xl hover:bg-gray-300 transition">Cancelar</button>
-                                                    )}
-                                                    <button type="submit" disabled={loading} className="flex-1 bg-[#fc7f51] hover:bg-[#e56b3e] text-white font-bold py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
-                                                        {loading ? <Loader2 className="animate-spin" /> : (editingId ? 'Actualizar Propiedad' : 'Publicar Propiedad')}
-                                                    </button>
-                                                </div>
-                                            </form>
+                                        {/* Actions */}
+                                        <div className="flex gap-2">
+                                            {editingId && (
+                                                <button type="button" onClick={handleCancelEdit} className="flex-1 bg-gray-200 text-gray-800 font-bold py-3 rounded-xl hover:bg-gray-300 transition">Cancelar</button>
+                                            )}
+                                            <button type="submit" disabled={loading} className="flex-1 bg-[#fc7f51] hover:bg-[#e56b3e] text-white font-bold py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                                                {loading ? <Loader2 className="animate-spin" /> : (editingId ? 'Actualizar Propiedad' : 'Publicar Propiedad')}
+                                            </button>
+                                        </div>
+                                    </form>
 
 
                                 </div>
