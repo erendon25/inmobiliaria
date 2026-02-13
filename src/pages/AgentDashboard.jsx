@@ -54,7 +54,12 @@ const AgentDashboard = () => {
         isInBuilding: false,
         floor: '',
         isDuplex: false,
-        parking: false
+        parking: false,
+        elevator: false,
+        furnished: false,
+        pool: false,
+        gym: false,
+        security: false
     });
 
     // Property List State
@@ -347,7 +352,12 @@ const AgentDashboard = () => {
             parking: property.parking || false,
             isExclusive: property.isExclusive || false,
             isInBuilding: property.isInBuilding || false,
-            isDuplex: property.isDuplex || false
+            isDuplex: property.isDuplex || false,
+            elevator: property.elevator || false,
+            furnished: property.furnished || false,
+            pool: property.pool || false,
+            gym: property.gym || false,
+            security: property.security || false
         });
         setImagePreviews(property.images || []);
         setImages([]); // Clear new files queue
@@ -628,6 +638,33 @@ const AgentDashboard = () => {
                                                         <span className="font-medium text-gray-700">Es Edificio / Departamento</span>
                                                     </label>
                                                 )}
+                                            </div>
+                                        </div>
+
+                                        {/* Additional Features */}
+                                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                            <h3 className="text-sm font-bold text-gray-700 mb-3 uppercase tracking-wider">Características Adicionales</h3>
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                                <label className="flex items-center cursor-pointer gap-2">
+                                                    <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={formData.elevator} onChange={e => setFormData({ ...formData, elevator: e.target.checked })} />
+                                                    <span className="text-sm font-medium text-gray-600">Ascensor</span>
+                                                </label>
+                                                <label className="flex items-center cursor-pointer gap-2">
+                                                    <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={formData.furnished} onChange={e => setFormData({ ...formData, furnished: e.target.checked })} />
+                                                    <span className="text-sm font-medium text-gray-600">Amoblado</span>
+                                                </label>
+                                                <label className="flex items-center cursor-pointer gap-2">
+                                                    <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={formData.pool} onChange={e => setFormData({ ...formData, pool: e.target.checked })} />
+                                                    <span className="text-sm font-medium text-gray-600">Piscina</span>
+                                                </label>
+                                                <label className="flex items-center cursor-pointer gap-2">
+                                                    <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={formData.gym} onChange={e => setFormData({ ...formData, gym: e.target.checked })} />
+                                                    <span className="text-sm font-medium text-gray-600">Gimnasio</span>
+                                                </label>
+                                                <label className="flex items-center cursor-pointer gap-2">
+                                                    <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={formData.security} onChange={e => setFormData({ ...formData, security: e.target.checked })} />
+                                                    <span className="text-sm font-medium text-gray-600">Seguridad 24/7</span>
+                                                </label>
                                             </div>
                                         </div>
 

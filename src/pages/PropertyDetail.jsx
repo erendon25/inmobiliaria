@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { db } from '../lib/firebase';
 import { doc, getDoc, addDoc, updateDoc, increment, collection } from 'firebase/firestore';
-import { MapPin, ArrowLeft, Heart, Share, Star, ShieldCheck, DoorOpen, Calendar, User, Phone, Mail, X, Loader2, Clock } from 'lucide-react';
+import { MapPin, ArrowLeft, Heart, Share, Star, ShieldCheck, DoorOpen, Calendar, User, Phone, Mail, X, Loader2, Clock, Car, Building2, ArrowUpFromLine, Layers, Waves, Dumbbell, Armchair, ArrowUpDown, Maximize, Bath, BedDouble } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
@@ -249,53 +249,88 @@ const PropertyDetail = () => {
                         {/* Features Grid */}
                         <div className="border-b border-gray-200 pb-8 mb-8">
                             <h3 className="text-lg font-bold mb-4">Características</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6">
+                                <div className="flex items-center gap-3 text-gray-700">
+                                    <Maximize className="w-5 h-5 text-[#fc7f51]" />
+                                    <span>{property.footage} m²</span>
+                                </div>
+                                <div className="flex items-center gap-3 text-gray-700">
+                                    <BedDouble className="w-5 h-5 text-[#fc7f51]" />
+                                    <span>{property.bedrooms || 0} Habitaciones</span>
+                                </div>
+                                <div className="flex items-center gap-3 text-gray-700">
+                                    <Bath className="w-5 h-5 text-[#fc7f51]" />
+                                    <span>{property.bathrooms || 0} Baños</span>
+                                </div>
                                 {property.parking && (
-                                    <div className="flex items-center gap-2 text-gray-700">
-                                        <div className="w-2 h-2 bg-[#fc7f51] rounded-full"></div>
-                                        <span>Cochera / Estacionamiento</span>
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <Car className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>Cochera</span>
                                     </div>
                                 )}
                                 {property.isDuplex && (
-                                    <div className="flex items-center gap-2 text-gray-700">
-                                        <div className="w-2 h-2 bg-[#fc7f51] rounded-full"></div>
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <Layers className="w-5 h-5 text-[#fc7f51]" />
                                         <span>Dúplex</span>
                                     </div>
                                 )}
                                 {property.floor && (
-                                    <div className="flex items-center gap-2 text-gray-700">
-                                        <div className="w-2 h-2 bg-[#fc7f51] rounded-full"></div>
-                                        <span>Ubicado en Piso {property.floor}</span>
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <ArrowUpFromLine className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>Piso {property.floor}</span>
                                     </div>
                                 )}
                                 {property.isInBuilding && (
-                                    <div className="flex items-center gap-2 text-gray-700">
-                                        <div className="w-2 h-2 bg-[#fc7f51] rounded-full"></div>
-                                        <span>En Edificio / Condominio</span>
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <Building2 className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>En Edificio</span>
+                                    </div>
+                                )}
+                                {property.elevator && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <ArrowUpDown className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>Ascensor</span>
+                                    </div>
+                                )}
+                                {property.furnished && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <Armchair className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>Amoblado</span>
+                                    </div>
+                                )}
+                                {property.pool && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <Waves className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>Piscina</span>
+                                    </div>
+                                )}
+                                {property.gym && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <Dumbbell className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>Gimnasio</span>
+                                    </div>
+                                )}
+                                {property.security && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <ShieldCheck className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>Seguridad 24/7</span>
                                     </div>
                                 )}
                                 {property.isExclusive && (
-                                    <div className="flex items-center gap-2 text-gray-700">
-                                        <div className="w-2 h-2 bg-[#fc7f51] rounded-full"></div>
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <Star className="w-5 h-5 text-[#fc7f51]" />
                                         <span>Exclusivo</span>
                                     </div>
                                 )}
                                 {property.antiquity && (
-                                    <div className="flex items-center gap-2 text-gray-700">
-                                        <div className="w-2 h-2 bg-[#fc7f51] rounded-full"></div>
-                                        <span>Antigüedad: {property.antiquity === 'estreno' ? 'Estreno' : property.antiquity}</span>
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <Clock className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>{property.antiquity === 'estreno' ? 'Estreno' : property.antiquity}</span>
                                     </div>
                                 )}
-                                <div className="flex items-center gap-2 text-gray-700">
-                                    <div className="w-2 h-2 bg-[#fc7f51] rounded-full"></div>
-                                    <span>{property.bedrooms || 0} Habitaciones</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-gray-700">
-                                    <div className="w-2 h-2 bg-[#fc7f51] rounded-full"></div>
-                                    <span>{property.bathrooms || 0} Baños</span>
-                                </div>
                             </div>
                         </div>
+
 
                         {/* Description */}
                         <div className="border-b border-gray-200 pb-8 mb-8">
@@ -436,66 +471,68 @@ const PropertyDetail = () => {
                             </div>
                         </div>
                     </div>
-                </div>
-            </main>
+                </div >
+            </main >
 
             {/* Contact Modal */}
-            {showContact && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden">
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                            <h3 className="font-bold text-lg text-gray-800">Solicitar Información</h3>
-                            <button
-                                onClick={() => setShowContact(false)}
-                                className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-200 rounded-full transition"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
+            {
+                showContact && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden">
+                            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                                <h3 className="font-bold text-lg text-gray-800">Solicitar Información</h3>
+                                <button
+                                    onClick={() => setShowContact(false)}
+                                    className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-200 rounded-full transition"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <form onSubmit={handleContactSubmit} className="p-6 space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                                    <input
+                                        required
+                                        type="text"
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
+                                        placeholder="Tu nombre completo"
+                                        value={contactForm.name}
+                                        onChange={e => setContactForm({ ...contactForm, name: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono / WhatsApp</label>
+                                    <input
+                                        required
+                                        type="tel"
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
+                                        placeholder="Ej: +51 999 999 999"
+                                        value={contactForm.phone}
+                                        onChange={e => setContactForm({ ...contactForm, phone: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Mensaje</label>
+                                    <textarea
+                                        required
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition h-32 resize-none"
+                                        value={contactForm.message}
+                                        onChange={e => setContactForm({ ...contactForm, message: e.target.value })}
+                                    ></textarea>
+                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={contactLoading}
+                                    className="w-full bg-[#fc7f51] hover:bg-[#e56b3e] text-white font-bold py-3 rounded-lg shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-70"
+                                >
+                                    {contactLoading ? <Loader2 className="animate-spin" /> : "Enviar Solicitud"}
+                                </button>
+                            </form>
                         </div>
-                        <form onSubmit={handleContactSubmit} className="p-6 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                                <input
-                                    required
-                                    type="text"
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
-                                    placeholder="Tu nombre completo"
-                                    value={contactForm.name}
-                                    onChange={e => setContactForm({ ...contactForm, name: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono / WhatsApp</label>
-                                <input
-                                    required
-                                    type="tel"
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
-                                    placeholder="Ej: +51 999 999 999"
-                                    value={contactForm.phone}
-                                    onChange={e => setContactForm({ ...contactForm, phone: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Mensaje</label>
-                                <textarea
-                                    required
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition h-32 resize-none"
-                                    value={contactForm.message}
-                                    onChange={e => setContactForm({ ...contactForm, message: e.target.value })}
-                                ></textarea>
-                            </div>
-                            <button
-                                type="submit"
-                                disabled={contactLoading}
-                                className="w-full bg-[#fc7f51] hover:bg-[#e56b3e] text-white font-bold py-3 rounded-lg shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-70"
-                            >
-                                {contactLoading ? <Loader2 className="animate-spin" /> : "Enviar Solicitud"}
-                            </button>
-                        </form>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 
