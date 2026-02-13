@@ -34,7 +34,7 @@ const Home = () => {
 
     const handleSellSubmit = () => {
         const message = `Hola, quiero vender mi propiedad.\n\n📍 Ubicación: ${sellFormData.location}\n📐 Metraje: ${sellFormData.footage} m²\n💰 Precio Estimado: $${sellFormData.price}\n\nSolicito más información.`;
-        const whatsappUrl = `https://wa.me/51999999999?text=${encodeURIComponent(message)}`;
+        const whatsappUrl = `https://wa.me/51965355700?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
         setShowSellModal(false);
         setSellFormData({ location: '', footage: '', price: '' });

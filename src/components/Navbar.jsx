@@ -1,4 +1,5 @@
-import { Link, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, UserCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.png'; // Import the logo image
@@ -6,7 +7,21 @@ import logo from '../assets/logo.png'; // Import the logo image
 const Navbar = () => {
     const { user, userData, logout } = useAuth();
     const location = useLocation();
+    const navigate = useNavigate();
+    const [searchTerm, setSearchTerm] = useState('');
     const isAboutPage = location.pathname === '/about';
+
+    const handleSearch = () => {
+        if (searchTerm.trim()) {
+            navigate(`/search?location=${encodeURIComponent(searchTerm)}`);
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
+    };
 
     return (
         <nav className="fixed w-full z-50 bg-[#16151a] border-b border-gray-800 shadow-lg">
@@ -36,8 +51,14 @@ const Navbar = () => {
                         type="text"
                         placeholder="Buscar por zona, ciudad o tipo..."
                         className="bg-transparent border-none outline-none text-[#262626] placeholder-gray-400 flex-1 font-medium text-sm"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onKeyDown={handleKeyDown}
                     />
-                    <div className="bg-[#fc7f51] p-2.5 rounded-full text-white hover:bg-[#e56b3e] transition shadow-md">
+                    <div
+                        className="bg-[#fc7f51] p-2.5 rounded-full text-white hover:bg-[#e56b3e] transition shadow-md"
+                        onClick={handleSearch}
+                    >
                         <Search className="w-5 h-5" strokeWidth={2.5} />
                     </div>
                 </div>

@@ -24,6 +24,21 @@ const SearchResults = () => {
     const [parking, setParking] = useState(searchParams.get('parking') === 'true');
     const [isDuplex, setIsDuplex] = useState(searchParams.get('isDuplex') === 'true');
 
+    // Sync state with URL search params when they change (e.g. from Navbar navigation)
+    useEffect(() => {
+        setOperation(searchParams.get('operation') || 'venta');
+        setLocation(searchParams.get('location') || '');
+        setPropertyType(searchParams.get('propertyType') || '');
+        setCurrency(searchParams.get('currency') || 'USD');
+        setPriceMin(searchParams.get('priceMin') || '');
+        setPriceMax(searchParams.get('priceMax') || '');
+        setBedrooms(searchParams.get('bedrooms') || '');
+        setBathrooms(searchParams.get('bathrooms') || '');
+        setFloor(searchParams.get('floor') || '');
+        setParking(searchParams.get('parking') === 'true');
+        setIsDuplex(searchParams.get('isDuplex') === 'true');
+    }, [searchParams]);
+
     const [allProperties, setAllProperties] = useState([]);
     const [filteredProperties, setFilteredProperties] = useState([]);
     const [loading, setLoading] = useState(true);
