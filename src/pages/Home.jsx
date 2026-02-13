@@ -146,7 +146,7 @@ const Home = () => {
                     <div className="lg:col-span-5 bg-white rounded-3xl shadow-2xl overflow-hidden animate-fadeIn">
                         {/* Header Text - Using Dark BG with White Text for visibility */}
                         <div className="p-8 pb-4 bg-[#262626] text-white">
-                            <h1 className="text-3xl font-bold mb-2">Encuentra tu próximo hogar</h1>
+                            <h1 className="text-3xl font-bold mb-2 text-white" style={{ color: '#ffffff' }}>Encuentra tu próximo hogar</h1>
                             <p className="text-gray-300 text-sm">Explora propiedades únicas para vivir o invertir.</p>
                         </div>
 
@@ -430,7 +430,11 @@ const Home = () => {
                 <div className="container mx-auto px-6">
                     <div className="flex gap-4 md:gap-12 overflow-x-auto no-scrollbar items-center justify-start md:justify-center py-2">
                         {categories.map((cat, idx) => (
-                            <div key={idx} className="flex flex-col items-center gap-3 min-w-[100px] cursor-pointer group opacity-60 hover:opacity-100 transition-all duration-300 hover:-translate-y-1">
+                            <div
+                                key={idx}
+                                onClick={() => navigate(`/search?propertyType=${cat.label.toLowerCase()}`)}
+                                className="flex flex-col items-center gap-3 min-w-[100px] cursor-pointer group opacity-60 hover:opacity-100 transition-all duration-300 hover:-translate-y-1"
+                            >
                                 <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm group-hover:shadow-md border border-gray-100 group-hover:border-[#fc7f51]/30 transition">
                                     <cat.icon className="w-7 h-7 text-[#262626] group-hover:text-[#fc7f51] transition" strokeWidth={1.5} />
                                 </div>

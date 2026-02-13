@@ -6,7 +6,10 @@ const Footer = () => {
             <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
                 {/* Brand & Mission */}
                 <div>
-                    <img src={logo} alt="Inmuévete" className="h-12 mb-6" />
+                    <div className="flex items-center gap-3 mb-6">
+                        <img src={logo} alt="Inmuévete" className="h-12" />
+                        <span className="text-2xl font-bold font-[Montserrat] text-white">Inmu<span className="text-[#fc7f51]">évete</span></span>
+                    </div>
                     <p className="text-[#878787] text-sm leading-relaxed mb-6">
                         En Inmuevete trabajamos para conectar a las personas con el espacio ideal para vivir, invertir o crecer.
                         Brindamos soluciones inmobiliarias confiables, transparentes y accesibles.

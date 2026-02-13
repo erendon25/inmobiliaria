@@ -42,5 +42,16 @@ service cloud.firestore {
         allow create: if true;
         allow read, update, delete: if request.auth != null && (resource.data.agentId == request.auth.uid || isSuperAdmin());
     }
+
+    // TIPS:
+    // - Anyone can read tips (displayed on homepage)
+    // - Authenticated agents can create
+    // - Agents can update/delete their own tips
+    // - SuperAdmins can manage all
+    match /tips/{tipId} {
+        allow read: if true;
+        allow create: if request.auth != null;
+        allow update, delete: if request.auth != null && (resource.data.agentId == request.auth.uid || isSuperAdmin());
+    }
   }
 }

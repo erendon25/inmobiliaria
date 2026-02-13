@@ -68,12 +68,15 @@ const SearchResults = () => {
             results = results.filter(p => {
                 const pTitle = p.title?.toLowerCase() || '';
                 const pCat = p.category?.toLowerCase() || '';
-                // Map search types to data
-                if (pt === 'departamento') return pTitle.includes('departamento') || pTitle.includes('depa') || pCat === 'construido';
-                if (pt === 'casa') return pTitle.includes('casa') || pCat === 'construido';
-                if (pt === 'terreno') return pCat === 'terreno' || pTitle.includes('terreno') || pTitle.includes('lote');
-                if (pt === 'oficina') return pTitle.includes('oficina');
-                if (pt === 'local') return pTitle.includes('local');
+                const pLoc = p.location?.toLowerCase() || '';
+                // Map search types to data (handle both singular and plural)
+                if (pt === 'departamento' || pt === 'departamentos') return pTitle.includes('departamento') || pTitle.includes('depa');
+                if (pt === 'casa' || pt === 'casas') return pTitle.includes('casa');
+                if (pt === 'terreno' || pt === 'terrenos') return pCat === 'terreno' || pTitle.includes('terreno') || pTitle.includes('lote');
+                if (pt === 'oficina' || pt === 'oficinas') return pTitle.includes('oficina');
+                if (pt === 'local' || pt === 'locales') return pTitle.includes('local');
+                if (pt === 'campestre' || pt === 'campestres') return pTitle.includes('campestre') || pTitle.includes('campo') || pLoc.includes('campo');
+                if (pt === 'playa') return pTitle.includes('playa') || pLoc.includes('playa');
                 return true;
             });
         }
