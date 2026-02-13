@@ -276,6 +276,16 @@ const PropertyDetail = () => {
                                         allowFullScreen
                                         title="Ubicación Propiedad"
                                     ></iframe>
+                                ) : property.location ? (
+                                    <iframe
+                                        width="100%"
+                                        height="100%"
+                                        frameBorder="0"
+                                        style={{ border: 0 }}
+                                        src={`https://maps.google.com/maps?q=${encodeURIComponent(property.location)}&hl=es&z=15&output=embed`}
+                                        allowFullScreen
+                                        title="Ubicación Propiedad"
+                                    ></iframe>
                                 ) : (
                                     <div className="w-full h-full flex flex-col items-center justify-center bg-gray-200">
                                         <MapPin className="w-12 h-12 text-gray-400 mb-2" />
