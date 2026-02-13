@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import PropertyCard from '../components/PropertyCard';
 import { Palmtree, Mountain, Waves, Building, Warehouse, ArrowRight, Search, MapPin, ListFilter, Home as HomeIcon, Key, Briefcase, X, Lightbulb } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -66,28 +66,36 @@ const Home = () => {
     const [loadingProperties, setLoadingProperties] = useState(true);
 
     useEffect(() => {
-        const fetchProperties = async () => {
-            try {
-                // Basic query: Get all available properties
-                // Note: Complex queries like filtering by multiple fields will need Firestore Indexes.
-                // For now, we fetch 'disponible' properties.
-                const q = query(
-                    collection(db, "properties")
-                    // where("status", "==", "disponible")
-                    // orderBy("createdAt", "desc") // May require index, commenting out for safety 
-                );
+        setLoadingProperties(true);
+        const q = query(
+            collection(db, "properties")
+        );
 
-                const querySnapshot = await getDocs(q);
-                const props = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setProperties(props);
-            } catch (error) {
-                console.error("Error fetching properties:", error);
-            } finally {
-                setLoadingProperties(false);
-            }
-        };
+        // Real-time listener
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const props = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        fetchProperties();
+            // Sort properties: Promoted first, then Newest first
+            props.sort((a, b) => {
+                // 1. Promoted check (Promoted items at top)
+                if (a.isPromoted && !b.isPromoted) return -1;
+                if (!a.isPromoted && b.isPromoted) return 1;
+
+                // 2. Date check (Newest first)
+                const dateA = a.createdAt?.seconds || 0;
+                const dateB = b.createdAt?.seconds || 0;
+                return dateB - dateA;
+            });
+
+            setProperties(props);
+            setLoadingProperties(false);
+        }, (error) => {
+            console.error("Error fetching properties:", error);
+            setLoadingProperties(false);
+        });
+
+        // Cleanup subscription
+        return () => unsubscribe();
     }, []);
 
     // Fetch Tips
@@ -121,10 +129,7 @@ const Home = () => {
 
     return (
         <div className="min-h-screen bg-white font-sans text-[#262626]">
-            {/* Navbar rendering is handled in App.jsx. 
-                However, to ensure text visibility on all backgrounds, 
-                we rely on the solid/transparent updates in Navbar.jsx or App.jsx. 
-            */}
+            {/* Navbar rendering is handled in App.jsx */}
 
             {/* Hero Section */}
             <div className="relative h-[85vh] min-h-[700px] flex items-center pt-20">
@@ -489,6 +494,7 @@ const Home = () => {
                 </div>
             </main>
 
+<<<<<<< HEAD
             {/* Tips Section */}
             <section className="bg-gray-50 py-20 border-t border-gray-200">
                 <div className="container mx-auto px-6">
@@ -523,6 +529,9 @@ const Home = () => {
             </section>
 
             {/* CTA Section - Note: Removed Footer from here */}
+=======
+            {/* CTA Section */}
+>>>>>>> e906416540e27a489d3b8fff6f45592f6fbcf4b2
             <section className="py-24 bg-[#16151a] text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#fc7f51] rounded-full opacity-10 blur-[100px] translate-x-1/3 -translate-y-1/3"></div>
                 <div className="container mx-auto px-6 relative z-10 text-center">

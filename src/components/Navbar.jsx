@@ -1,17 +1,33 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Search, UserCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.png'; // Import the logo image
 
 const Navbar = () => {
     const { user, userData, logout } = useAuth();
+    const location = useLocation();
+    const isAboutPage = location.pathname === '/about';
+
     return (
         <nav className="fixed w-full z-50 bg-[#16151a] border-b border-gray-800 shadow-lg">
             <div className="container mx-auto px-6 h-24 flex justify-between items-center">
                 {/* Brand Logo */}
                 <Link to="/" className="flex items-center gap-3 group">
-                    {/* Recreated Logo based on 'Arrow House' concept from Brand Manual */}
-                    <img src={logo} alt="Inmuévete" className="h-12 w-auto object-contain" />
+                    {/* Full Logo: Show on Desktop OR if on About page */}
+                    <img
+                        src={logo}
+                        alt="Inmuévete"
+                        className={`${isAboutPage ? 'block' : 'hidden md:block'} h-12 w-auto object-contain`}
+                    />
+
+                    {/* Icon Only: Show on Mobile ONLY if NOT on About page */}
+                    {!isAboutPage && (
+                        <img
+                            src="/favicon.png"
+                            alt="Inmuévete"
+                            className="block md:hidden h-10 w-auto object-contain"
+                        />
+                    )}
                 </Link>
 
                 {/* Search Bar */}
