@@ -404,7 +404,18 @@ const AgentDashboard = () => {
             location: '',
             footage: '',
             bedrooms: '',
-            bathrooms: ''
+            bathrooms: '',
+            antiquity: 'estreno',
+            isExclusive: false,
+            isInBuilding: false,
+            floor: '',
+            isDuplex: false,
+            parking: false,
+            elevator: false,
+            furnished: false,
+            pool: false,
+            gym: false,
+            security: false
         });
         setImagePreviews([]);
         setImages([]);
@@ -481,7 +492,18 @@ const AgentDashboard = () => {
                     location: '',
                     footage: '',
                     bedrooms: '',
-                    bathrooms: ''
+                    bathrooms: '',
+                    antiquity: 'estreno',
+                    isExclusive: false,
+                    isInBuilding: false,
+                    floor: '',
+                    isDuplex: false,
+                    parking: false,
+                    elevator: false,
+                    furnished: false,
+                    pool: false,
+                    gym: false,
+                    security: false
                 });
                 setImages([]);
                 setImagePreviews([]);
