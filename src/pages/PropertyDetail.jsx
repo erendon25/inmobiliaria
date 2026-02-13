@@ -238,7 +238,7 @@ const PropertyDetail = () => {
 
     return (
         <div className="min-h-screen bg-white font-sans text-[#262626]">
-            <main className="container mx-auto px-6 pt-32 pb-12">
+            <main className="container mx-auto px-4 md:px-6 pt-28 md:pt-32 pb-12">
                 {/* Header */}
                 <div className="mb-6">
                     <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{property.title}</h1>
@@ -249,10 +249,7 @@ const PropertyDetail = () => {
                                 {property.location}
                             </a>
                         </div>
-                        <div className="flex gap-4">
-                            <button onClick={handleShare} className="flex items-center gap-2 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-semibold text-sm transition">
-                                <Share className="w-4 h-4" /> Compartir
-                            </button>
+                        <div className="flex flex-wrap gap-2">
                             <button onClick={handleShare} className="flex items-center gap-2 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-semibold text-sm transition">
                                 <Share className="w-4 h-4" /> Compartir
                             </button>
@@ -614,8 +611,8 @@ const PropertyDetail = () => {
                                     type="button"
                                     onClick={() => setSelectedSlot(slot)}
                                     className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border-2 transition ${selectedSlot?.id === slot.id
-                                            ? 'border-[#fc7f51] bg-orange-50'
-                                            : 'border-gray-100 hover:border-gray-300 bg-gray-50'
+                                        ? 'border-[#fc7f51] bg-orange-50'
+                                        : 'border-gray-100 hover:border-gray-300 bg-gray-50'
                                         }`}
                                 >
                                     <div className="flex items-center gap-3">
