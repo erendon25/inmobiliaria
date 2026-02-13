@@ -1,3 +1,19 @@
 {
-    "indexes": []
+    "indexes": [
+        {
+            "collectionGroup": "tips",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "agentId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "createdAt",
+                    "order": "DESCENDING"
+                }
+            ]
+        }
+    ],
+    "fieldOverrides": []
 }

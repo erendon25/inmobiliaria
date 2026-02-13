@@ -72,12 +72,29 @@ const AgentDashboard = () => {
         }
     };
 
-    // Load properties and inquiries on mount if user is activated
+    // Fetch my tips function
+    const fetchMyTips = async () => {
+        if (!user) return;
+        setLoadingTips(true);
+        try {
+            // Note: This query requires a composite index on agentId (ASC) + createdAt (DESC)
+            const q = query(collection(db, "tips"), where("agentId", "==", user.uid), orderBy("createdAt", "desc"));
+            const snap = await getDocs(q);
+            setTips(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        } catch (error) {
+            console.error("Error fetching tips:", error);
+            // Don't show toast on initial load error, maybe index is building
+        } finally {
+            setLoadingTips(false);
+        }
+    };
+
+    // Load data on mount/tab change if user is activated
     useEffect(() => {
         if (userData?.isActivated) {
             fetchMyProperties();
 
-            // Fetch Inquiries
+            // Also fetch inquiries
             const fetchInquiries = async () => {
                 try {
                     const q = query(collection(db, "inquiries"), where("agentId", "==", user.uid));
@@ -88,6 +105,9 @@ const AgentDashboard = () => {
                 }
             };
             fetchInquiries();
+
+            // Fetch tips if active tab or first load
+            fetchMyTips();
         }
 
         // Initialize profile form with current user data
@@ -216,13 +236,15 @@ const AgentDashboard = () => {
             setTipForm({ title: '', content: '' });
             setEditingTipId(null);
 
-            // Refresh Tips
-            const q = query(collection(db, "tips"), where("agentId", "==", user.uid), orderBy("createdAt", "desc"));
-            const snap = await getDocs(q);
-            setTips(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            // Refresh Tips using helper function
+            fetchMyTips();
         } catch (error) {
             console.error("Error saving tip:", error);
-            toast.error("Error al guardar el tip.");
+            if (error.code === 'failed-precondition') {
+                toast.error("El índice de base de datos se está creando. Intenta de nuevo en unos minutos.");
+            } else {
+                toast.error("Error al guardar el tip.");
+            }
         } finally {
             setLoadingTips(false);
         }
@@ -240,7 +262,10 @@ const AgentDashboard = () => {
     };
 
     const handleEditTip = (tip) => {
-        setTipForm({ title: tip.title, content: tip.content });
+        setTipForm({
+            title: tip.title || '',
+            content: tip.content || ''
+        });
         setEditingTipId(tip.id);
         setActiveTab('tips'); // Ensure tab is active
     };
@@ -547,6 +572,7 @@ const AgentDashboard = () => {
                                                 <select className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none bg-white" value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })}>
                                                     <option value="venta">Venta</option>
                                                     <option value="alquiler">Alquiler</option>
+                                                    <option value="alquiler">Anticresis</option>
                                                 </select>
                                             </div>
                                         </div>
