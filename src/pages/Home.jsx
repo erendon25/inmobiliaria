@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, onSnapshot, limit } from 'firebase/firestore';
 import PropertyCard from '../components/PropertyCard';
 import { Palmtree, Mountain, Waves, Building, Warehouse, ArrowRight, Search, MapPin, ListFilter, Home as HomeIcon, Key, Briefcase, X, Lightbulb } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const categories = [
     { icon: Building, label: 'Departamentos' },
@@ -14,6 +14,7 @@ const categories = [
 ];
 
 const Home = () => {
+    const navigate = useNavigate();
     // Search State
     const [operation, setOperation] = useState('venta'); // venta, alquiler, anticresis
     const [location, setLocation] = useState('');
@@ -300,7 +301,19 @@ const Home = () => {
                             )}
 
                             {/* Search Button */}
-                            <button className="w-full bg-[#fc7f51] hover:bg-[#e56b3e] text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-orange-500/30 transition flex items-center justify-center gap-2">
+                            <button
+                                onClick={() => {
+                                    const params = new URLSearchParams();
+                                    if (operation) params.set('operation', operation);
+                                    if (location) params.set('location', location);
+                                    if (propertyType) params.set('propertyType', propertyType);
+                                    if (currency) params.set('currency', currency);
+                                    if (priceMin) params.set('priceMin', priceMin);
+                                    if (priceMax) params.set('priceMax', priceMax);
+                                    navigate(`/search?${params.toString()}`);
+                                }}
+                                className="w-full bg-[#fc7f51] hover:bg-[#e56b3e] text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-orange-500/30 transition flex items-center justify-center gap-2"
+                            >
                                 <Search className="w-6 h-6" />
                                 BUSCAR PROPIEDADES
                             </button>

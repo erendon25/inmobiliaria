@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db, storage } from '../lib/firebase';
-import { collection, addDoc, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, updateDoc, doc, deleteDoc, writeBatch, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Upload, MapPin, DollarSign, Home, Maximize, Loader2, Plus, X, Lock } from 'lucide-react';
+import { updateProfile, updateEmail, updatePassword } from 'firebase/auth';
+import { Upload, MapPin, DollarSign, Home, Maximize, Loader2, Plus, X, Lock, User, FileText, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import MapPicker from '../components/MapPicker';
 
@@ -54,7 +55,24 @@ const AgentDashboard = () => {
     const [inquiries, setInquiries] = useState([]);
     const [loadingProps, setLoadingProps] = useState(true);
 
-    // Load properties and inquiries on mount if user is activated using onSnapshot
+    // Fetch my properties function
+    const fetchMyProperties = async () => {
+        if (!user) return;
+        setLoadingProps(true);
+        try {
+            const q = query(collection(db, "properties"), where("agentId", "==", user.uid));
+            const snap = await getDocs(q);
+            const props = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            props.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+            setMyProperties(props);
+        } catch (error) {
+            console.error("Error fetching properties:", error);
+        } finally {
+            setLoadingProps(false);
+        }
+    };
+
+    // Load properties and inquiries on mount if user is activated
     useEffect(() => {
         if (userData?.isActivated) {
             fetchMyProperties();
@@ -349,8 +367,8 @@ const AgentDashboard = () => {
                 // If we want to keep old images, we need to know which ones are old.
                 // In handleEdit we populate logic.
                 // For now, let's assume we just add new ones to the array.
-                if (imageUrls.length > 0) {
-                    updateData.images = [...(imagePreviews.filter(url => url.startsWith('http'))), ...imageUrls];
+                if (newImageUrls.length > 0) {
+                    updateData.images = [...(imagePreviews.filter(url => url.startsWith('http'))), ...newImageUrls];
                     // Note: This logic assumes imagePreviews has all current images.
                 }
 
@@ -364,7 +382,7 @@ const AgentDashboard = () => {
                     // ... rest of fields
 
                     agentName: userData.displayName || 'Agente', // Add agent name for display
-                    images: imageUrls,
+                    images: newImageUrls,
                     createdAt: new Date(),
                     status: 'disponible',
                     views: 0,

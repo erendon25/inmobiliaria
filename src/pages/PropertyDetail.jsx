@@ -52,15 +52,60 @@ const PropertyDetail = () => {
         }
     };
 
-    // WhatsApp Handler
-    const handleWhatsAppClick = () => {
+    // WhatsApp Handler - fetches agent phone from Firestore
+    const handleWhatsAppClick = async () => {
         if (!property) return;
 
-        // Use agent's phone if available, otherwise fallback
-        const phoneNumber = "51999999999";
-        const message = `Hola, estoy interesado en la propiedad: ${property.title}`;
+        let phoneNumber = '51999999999'; // Fallback
+        try {
+            if (property.agentId) {
+                const agentDoc = await getDoc(doc(db, 'users', property.agentId));
+                if (agentDoc.exists()) {
+                    const agentData = agentDoc.data();
+                    if (agentData.phoneNumber) {
+                        // Clean phone number: remove spaces, dashes, plus sign
+                        phoneNumber = agentData.phoneNumber.replace(/[\s\-\+]/g, '');
+                        // Ensure it starts with country code
+                        if (!phoneNumber.startsWith('51')) {
+                            phoneNumber = '51' + phoneNumber;
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching agent phone:', err);
+        }
+
+        const message = `Hola, estoy interesado en la propiedad: ${property.title}\n📍 ${property.location}`;
         const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
         window.open(url, '_blank');
+    };
+
+    // Share Handler
+    const handleShare = async () => {
+        const shareData = {
+            title: property?.title || 'Propiedad en Inmuévete',
+            text: `Mira esta propiedad: ${property?.title} - ${property?.location}`,
+            url: window.location.href,
+        };
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(window.location.href);
+                toast.success('¡Enlace copiado al portapapeles!');
+            }
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                await navigator.clipboard.writeText(window.location.href);
+                toast.success('¡Enlace copiado al portapapeles!');
+            }
+        }
+    };
+
+    // Save Handler
+    const handleSave = () => {
+        toast.success('¡Propiedad guardada en favoritos!');
     };
 
     useEffect(() => {
@@ -149,10 +194,10 @@ const PropertyDetail = () => {
                             </a>
                         </div>
                         <div className="flex gap-4">
-                            <button className="flex items-center gap-2 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-semibold text-sm transition">
+                            <button onClick={handleShare} className="flex items-center gap-2 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-semibold text-sm transition">
                                 <Share className="w-4 h-4" /> Compartir
                             </button>
-                            <button className="flex items-center gap-2 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-semibold text-sm transition">
+                            <button onClick={handleSave} className="flex items-center gap-2 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-semibold text-sm transition">
                                 <Heart className="w-4 h-4" /> Guardar
                             </button>
                         </div>

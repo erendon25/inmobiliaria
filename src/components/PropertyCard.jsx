@@ -46,7 +46,7 @@ const PropertyCard = ({ property }) => {
         return () => clearInterval(interval);
     }, [isHovering, property.images]);
 
-    const displayImage = property.images?.[currentImageIndex] || property.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image';
+    const displayImage = property.images?.[currentImageIndex] || property.images?.[0] || 'https://placehold.co/400x300/e2e8f0/94a3b8?text=Sin+Imagen';
 
     return (
         <Link
