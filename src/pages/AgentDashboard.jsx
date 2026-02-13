@@ -666,20 +666,7 @@ const AgentDashboard = () => {
                                                 </div>
                                             </form>
 
-                                    {/* Map Modal Reuse */}
-                                        {showMap && (
-                                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                                                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[600px] flex flex-col overflow-hidden relative">
-                                                    <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                                                        <h3 className="font-bold text-lg text-gray-800">Seleccionar Ubicación</h3>
-                                                        <button onClick={() => setShowMap(false)} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-200 rounded-full transition"><X className="w-5 h-5" /></button>
-                                                    </div>
-                                                    <div className="flex-grow p-0">
-                                                        <MapPicker onConfirm={(loc) => { setFormData({ ...formData, location: loc.address || `${loc.lat}, ${loc.lng}`, lat: loc.lat, lng: loc.lng }); setShowMap(false); }} />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
+
                                 </div>
 
                                 {/* Right Column: My Properties List */}
@@ -746,73 +733,149 @@ const AgentDashboard = () => {
                             </div>
                                     )}
 
-                                    {/* PROFILE TAB */}
-                                    {activeTab === 'profile' && (
-                                        <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
-                                            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                                                <User className="w-6 h-6 text-[#fc7f51]" /> Editar Perfil
-                                            </h2>
-                                            <form onSubmit={handleProfileUpdate} className="space-y-6">
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Nombre Publico</label>
-                                                    <input type="text" className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none" value={profileData.displayName} onChange={e => setProfileData({ ...profileData, displayName: e.target.value })} required />
-                                                    <p className="text-xs text-gray-500 mt-1">Este nombre aparecerá en todas tus propiedades publicadas.</p>
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Correo Electrónico</label>
-                                                    <input type="email" className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none" value={profileData.email} onChange={e => setProfileData({ ...profileData, email: e.target.value })} required />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
-                                                    <input type="tel" className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none" value={profileData.phoneNumber} onChange={e => setProfileData({ ...profileData, phoneNumber: e.target.value })} />
-                                                </div>
-                                                <div className="pt-4 border-t border-gray-100">
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Nueva Contraseña (Opcional)</label>
-                                                    <input
-                                                        type="password"
-                                                        className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none"
-                                                        placeholder="Dejar vacía para mantener la actual"
-                                                        value={profileData.newPassword || ''}
-                                                        onChange={e => setProfileData({ ...profileData, newPassword: e.target.value })}
-                                                    />
-                                                    <p className="text-xs text-gray-500 mt-1">Mínimo 6 caracteres.</p>
-                                                </div>
-                                                <button type="submit" disabled={updatingProfile} className="w-full bg-[#fc7f51] text-white font-bold py-3 rounded-xl hover:bg-[#e56b3e] transition disabled:opacity-70">
-                                                    {updatingProfile ? 'Guardando...' : 'Guardar Cambios'}
-                                                </button>
-                                            </form>
-                                        </div>
-                                    )}
 
+                                </div> {/* End Right Column */}
+                            </div> {/* End Main Grid */}
+                            )} {/* End Properties Tab */}
 
+                        {/* PROFILE TAB */}
+                        {activeTab === 'profile' && (
+                            <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                                    <User className="w-6 h-6 text-[#fc7f51]" /> Editar Perfil
+                                </h2>
+                                <form onSubmit={handleProfileUpdate} className="space-y-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Nombre Publico</label>
+                                        <input type="text" className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none" value={profileData.displayName} onChange={e => setProfileData({ ...profileData, displayName: e.target.value })} required />
+                                        <p className="text-xs text-gray-500 mt-1">Este nombre aparecerá en todas tus propiedades publicadas.</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Correo Electrónico</label>
+                                        <input type="email" className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none" value={profileData.email} onChange={e => setProfileData({ ...profileData, email: e.target.value })} required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
+                                        <input type="tel" className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none" value={profileData.phoneNumber} onChange={e => setProfileData({ ...profileData, phoneNumber: e.target.value })} />
+                                    </div>
+                                    <div className="pt-4 border-t border-gray-100">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Nueva Contraseña (Opcional)</label>
+                                        <input
+                                            type="password"
+                                            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none"
+                                            placeholder="Dejar vacía para mantener la actual"
+                                            value={profileData.newPassword || ''}
+                                            onChange={e => setProfileData({ ...profileData, newPassword: e.target.value })}
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">Mínimo 6 caracteres.</p>
+                                    </div>
+                                    <button type="submit" disabled={updatingProfile} className="w-full bg-[#fc7f51] text-white font-bold py-3 rounded-xl hover:bg-[#e56b3e] transition disabled:opacity-70">
+                                        {updatingProfile ? 'Guardando...' : 'Guardar Cambios'}
+                                    </button>
+                                </form>
+                            </div>
+                        )}
 
-                                    {/* Inquiries Section */}
-                                    <div className="space-y-6 mt-8 border-t border-gray-200 pt-8">
-                                        <h2 className="text-2xl font-bold text-gray-800">Solicitudes de Clientes</h2>
-                                        {inquiries.length === 0 ? (
-                                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500 text-sm">
-                                    No tienes solicitudes de contacto pendientes.
-                                </div>
-                                <div className="space-y-4">
-                                    <h2 className="text-xl font-bold text-gray-800">Tips Publicados ({tips.length})</h2>
-                                    {tips.length === 0 ? <p className="text-gray-500">No has publicado tips aún.</p> : tips.map(tip => (
-                                        <div key={tip.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative group">
-                                            <h3 className="font-bold text-gray-800 mb-2">{tip.title}</h3>
-                                            <p className="text-sm text-gray-600 line-clamp-3">{tip.content}</p>
-                                            <div className="flex gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
-                                                <button onClick={() => handleEditTip(tip)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"><FileText className="w-4 h-4" /></button>
-                                                <button onClick={() => handleDeleteTip(tip.id)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>
+                        {/* INQUIRIES TAB */}
+                        {activeTab === 'inquiries' && (
+                            <div className="max-w-4xl mx-auto">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-6">Solicitudes de Clientes</h2>
+                                {inquiries.length === 0 ? (
+                                    <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500">
+                                        No tienes solicitudes de contacto pendientes.
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {inquiries.map(inq => (
+                                            <div key={inq.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <div>
+                                                        <h3 className="font-bold text-gray-800">{inq.clientName}</h3>
+                                                        <p className="text-sm text-gray-500">{inq.clientPhone} • {inq.clientEmail || 'Sin email'}</p>
+                                                    </div>
+                                                    <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">
+                                                        {inq.timestamp?.seconds ? new Date(inq.timestamp.seconds * 1000).toLocaleDateString() : 'Reciente'}
+                                                    </span>
+                                                </div>
+                                                <p className="text-gray-700 bg-gray-50 p-3 rounded-lg text-sm italic">"{inq.clientMessage}"</p>
+                                                <div className="mt-2 text-xs text-[#fc7f51] font-bold">
+                                                    Interesado en: {inq.propertyTitle}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* TIPS TAB */}
+                        {activeTab === 'tips' && (
+                            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+                                {/* Tips Form */}
+                                <div className="md:col-span-1">
+                                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 sticky top-24">
+                                        <h3 className="font-bold text-gray-800 mb-4">{editingTipId ? 'Editar Tip' : 'Nuevo Tip'}</h3>
+                                        <form onSubmit={handleTipSubmit} className="space-y-4">
+                                            <input
+                                                type="text"
+                                                placeholder="Título del consejo..."
+                                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none"
+                                                value={tipForm.title}
+                                                onChange={e => setTipForm({ ...tipForm, title: e.target.value })}
+                                                required
+                                            />
+                                            <textarea
+                                                placeholder="Contenido del consejo..."
+                                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none h-32 resize-none"
+                                                value={tipForm.content}
+                                                onChange={e => setTipForm({ ...tipForm, content: e.target.value })}
+                                                required
+                                            ></textarea>
+                                            <button type="submit" disabled={loadingTips} className="w-full bg-[#fc7f51] text-white font-bold py-2 rounded-lg hover:bg-[#e56b3e] transition">
+                                                {editingTipId ? 'Actualizar' : 'Publicar'}
+                                            </button>
+                                            {editingTipId && (
+                                                <button type="button" onClick={() => { setEditingTipId(null); setTipForm({ title: '', content: '' }) }} className="w-full bg-gray-100 text-gray-600 font-bold py-2 rounded-lg hover:bg-gray-200 transition">
+                                                    Cancelar
+                                                </button>
+                                            )}
+                                        </form>
+                                    </div>
+                                </div>
+
+                                {/* Tips List */}
+                                <div className="md:col-span-2 space-y-4">
+                                    <h3 className="font-bold text-gray-800 mb-4">Tips Publicados ({tips.length})</h3>
+                                    {tips.length === 0 ? (
+                                        <p className="text-gray-500 text-center py-10">No has publicado tips aún.</p>
+                                    ) : (
+                                        tips.map(tip => (
+                                            <div key={tip.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative group">
+                                                <h4 className="font-bold text-gray-800 mb-2">{tip.title}</h4>
+                                                <p className="text-sm text-gray-600 mb-4">{tip.content}</p>
+                                                <div className="text-xs text-gray-400">
+                                                    {tip.createdAt?.seconds ? new Date(tip.createdAt.seconds * 1000).toLocaleDateString() : 'Reciente'}
+                                                </div>
+                                                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                                                    <button onClick={() => handleEditTip(tip)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"><FileText className="w-4 h-4" /></button>
+                                                    <button onClick={() => handleDeleteTip(tip.id)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         )}
-                                </div>
+
+                    </div>
                 )}
-                            </div>
+            </div>
         </div>
-                );
+    )
+}
+            </div >
+        </div >
+    );
 };
 
-                export default AgentDashboard;
+export default AgentDashboard;

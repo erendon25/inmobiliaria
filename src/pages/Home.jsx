@@ -494,7 +494,7 @@ const Home = () => {
                 </div>
             </main>
 
-<<<<<<< HEAD
+
             {/* Tips Section */}
             <section className="bg-gray-50 py-20 border-t border-gray-200">
                 <div className="container mx-auto px-6">
@@ -528,10 +528,8 @@ const Home = () => {
                 </div>
             </section>
 
+
             {/* CTA Section - Note: Removed Footer from here */}
-=======
-            {/* CTA Section */}
->>>>>>> e906416540e27a489d3b8fff6f45592f6fbcf4b2
             <section className="py-24 bg-[#16151a] text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#fc7f51] rounded-full opacity-10 blur-[100px] translate-x-1/3 -translate-y-1/3"></div>
                 <div className="container mx-auto px-6 relative z-10 text-center">
@@ -549,7 +547,7 @@ const Home = () => {
                     </div>
                 </div>
             </section>
-        </div>
+        </div >
     );
 };
 
