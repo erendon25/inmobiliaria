@@ -723,7 +723,7 @@ const AgentDashboard = () => {
                                         {/* Basic Info */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">Título</label>
-                                            <input required type="text" className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none uppercase" placeholder="Ej: Departamento en Miraflores" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
+                                            <input required type="text" className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none uppercase" placeholder="Ej: Departamento en Miraflores" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value.toUpperCase() })} />
                                         </div>
 
                                         {/* Global Details: Price, Type, Category */}
