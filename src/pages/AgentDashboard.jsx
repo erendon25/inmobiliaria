@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { db, storage } from '../lib/firebase';
 import { collection, addDoc, query, where, getDocs, updateDoc, doc, deleteDoc, writeBatch, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { updateProfile, updateEmail, updatePassword } from 'firebase/auth';
+import { updateProfile, updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { Upload, MapPin, DollarSign, Home, Maximize, Loader2, Plus, X, Lock, User, FileText, Trash2, Calendar, Phone, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import MapPicker from '../components/MapPicker';
@@ -221,12 +221,28 @@ const AgentDashboard = () => {
         e.preventDefault();
         setUpdatingProfile(true);
         try {
+            // Determine if sensitive operations are needed
+            const isChangingEmail = profileData.email !== user.email;
+            const isChangingPassword = profileData.newPassword && profileData.newPassword.length > 0;
+
+            // Re-authenticate FIRST if any sensitive operation is needed
+            if (isChangingEmail || isChangingPassword) {
+                if (!profileData.currentPassword) {
+                    throw new Error("Debes ingresar tu contraseña actual para cambiar el email o la contraseña.");
+                }
+                if (isChangingPassword && profileData.newPassword.length < 6) {
+                    throw new Error("La nueva contraseña debe tener al menos 6 caracteres.");
+                }
+                const credential = EmailAuthProvider.credential(user.email, profileData.currentPassword);
+                await reauthenticateWithCredential(user, credential);
+            }
+
             // 1. Update Auth Profile (Name)
             if (profileData.displayName !== user.displayName) {
                 await updateProfile(user, { displayName: profileData.displayName });
             }
-            // 2. Update Auth Email (if changed - requires recent login usually, handling basic case)
-            if (profileData.email !== user.email) {
+            // 2. Update Auth Email (if changed - now safe because we re-authenticated above)
+            if (isChangingEmail) {
                 await updateEmail(user, profileData.email);
             }
 
@@ -248,13 +264,10 @@ const AgentDashboard = () => {
                 photoURL: photoURL
             });
 
-            // 3.5 Update Password (if provided)
-            if (profileData.newPassword) {
-                if (profileData.newPassword.length < 6) {
-                    throw new Error("La contraseña debe tener al menos 6 caracteres.");
-                }
+            // 3.5 Update Password (now safe because we re-authenticated above)
+            if (isChangingPassword) {
                 await updatePassword(user, profileData.newPassword);
-                setProfileData(prev => ({ ...prev, newPassword: '' })); // Clear password field for security
+                setProfileData(prev => ({ ...prev, newPassword: '', currentPassword: '' }));
                 toast.success("Contraseña actualizada.");
             }
 
@@ -277,7 +290,13 @@ const AgentDashboard = () => {
             fetchMyProperties();
         } catch (error) {
             console.error("Error updating profile:", error);
-            toast.error("Error al actualizar perfil. Si cambiaste el email, podrías necesitar volver a iniciar sesión.");
+            if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                toast.error("La contraseña actual es incorrecta.");
+            } else if (error.code === 'auth/requires-recent-login') {
+                toast.error("Tu sesión ha expirado. Por favor, cierra sesión e inicia de nuevo.");
+            } else {
+                toast.error(error.message || "Error al actualizar perfil.");
+            }
         } finally {
             setUpdatingProfile(false);
         }
@@ -1145,16 +1164,30 @@ const AgentDashboard = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
                                         <input type="tel" className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none" value={profileData.phoneNumber} onChange={e => setProfileData({ ...profileData, phoneNumber: e.target.value })} />
                                     </div>
-                                    <div className="pt-4 border-t border-gray-100">
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Nueva Contraseña (Opcional)</label>
-                                        <input
-                                            type="password"
-                                            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none"
-                                            placeholder="Dejar vacía para mantener la actual"
-                                            value={profileData.newPassword || ''}
-                                            onChange={e => setProfileData({ ...profileData, newPassword: e.target.value })}
-                                        />
-                                        <p className="text-xs text-gray-500 mt-1">Mínimo 6 caracteres.</p>
+                                    <div className="pt-4 border-t border-gray-100 space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Contraseña Actual</label>
+                                            <input
+                                                type="password"
+                                                autoComplete="current-password"
+                                                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none"
+                                                placeholder="Requerida para cambiar contraseña"
+                                                value={profileData.currentPassword || ''}
+                                                onChange={e => setProfileData({ ...profileData, currentPassword: e.target.value })}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Nueva Contraseña (Opcional)</label>
+                                            <input
+                                                type="password"
+                                                autoComplete="new-password"
+                                                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none"
+                                                placeholder="Dejar vacía para mantener la actual"
+                                                value={profileData.newPassword || ''}
+                                                onChange={e => setProfileData({ ...profileData, newPassword: e.target.value })}
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Mínimo 6 caracteres.</p>
+                                        </div>
                                     </div>
                                     <button type="submit" disabled={updatingProfile} className="w-full bg-[#fc7f51] text-white font-bold py-3 rounded-xl hover:bg-[#e56b3e] transition disabled:opacity-70">
                                         {updatingProfile ? 'Guardando...' : 'Guardar Cambios'}
