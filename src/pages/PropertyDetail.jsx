@@ -128,24 +128,28 @@ const PropertyDetail = () => {
     const handleWhatsAppClick = async () => {
         if (!property) return;
 
-        let phoneNumber = '51999999999'; // Fallback
-        try {
-            if (property.agentId) {
+        let phoneNumber = property.agentPhone || '51999999999'; // Use stored phone or fallback
+
+        // If stored phone is missing but we have ID, try fetching (fallback logic)
+        if (!property.agentPhone && property.agentId) {
+            try {
                 const agentDoc = await getDoc(doc(db, 'users', property.agentId));
                 if (agentDoc.exists()) {
                     const agentData = agentDoc.data();
                     if (agentData.phoneNumber) {
-                        // Clean phone number: remove spaces, dashes, plus sign
-                        phoneNumber = agentData.phoneNumber.replace(/[\s\-\+]/g, '');
-                        // Ensure it starts with country code
-                        if (!phoneNumber.startsWith('51')) {
-                            phoneNumber = '51' + phoneNumber;
-                        }
+                        phoneNumber = agentData.phoneNumber;
                     }
                 }
+            } catch (err) {
+                console.error('Error fetching agent phone:', err);
             }
-        } catch (err) {
-            console.error('Error fetching agent phone:', err);
+        }
+
+        // Clean phone number: remove spaces, dashes, plus sign
+        phoneNumber = phoneNumber.replace(/[\s\-\+]/g, '');
+        // Ensure it starts with country code
+        if (!phoneNumber.startsWith('51') && phoneNumber.length === 9) {
+            phoneNumber = '51' + phoneNumber;
         }
 
         const message = `Hola, estoy interesado en la propiedad: ${property.title}\n📍 ${property.location}`;
