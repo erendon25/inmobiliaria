@@ -282,9 +282,6 @@ const PropertyDetail = () => {
                             <button onClick={handleSave} className="flex items-center gap-2 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-semibold text-sm transition">
                                 <Heart className="w-4 h-4" /> Guardar
                             </button>
-                            <button onClick={handleScheduleVisit} className="flex items-center gap-2 bg-[#fc7f51] text-white hover:bg-[#e56b3e] px-4 py-1.5 rounded-lg font-bold text-sm transition shadow-sm">
-                                <Calendar className="w-4 h-4" /> Agendar Visita
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -548,11 +545,11 @@ const PropertyDetail = () => {
                             </button>
 
                             <button
-                                onClick={() => setShowContact(true)}
-                                className="w-full bg-white border-2 border-gray-200 text-gray-700 font-bold py-3 rounded-lg hover:border-[#fc7f51] hover:text-[#fc7f51] transition mb-6 flex items-center justify-center gap-2"
+                                onClick={handleScheduleVisit}
+                                className="w-full bg-[#fc7f51] text-white font-bold py-3 rounded-lg hover:bg-[#e56b3e] transition mb-6 flex items-center justify-center gap-2 shadow-lg shadow-orange-500/30"
                             >
-                                <Mail className="w-5 h-5" />
-                                Solicitar Información
+                                <Calendar className="w-5 h-5" />
+                                Agendar Visita
                             </button>
 
                             <div className="text-center text-xs text-gray-400">

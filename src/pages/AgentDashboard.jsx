@@ -883,7 +883,62 @@ const AgentDashboard = () => {
                                                         className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition uppercase"
                                                         placeholder="Dirección o Link Maps"
                                                         value={formData.location}
-                                                        onChange={e => setFormData({ ...formData, location: e.target.value })}
+                                                        onChange={async (e) => {
+                                                            const value = e.target.value;
+                                                            // Check if value is a Google Maps link and try to extract coordinates
+                                                            let lat = null, lng = null;
+
+                                                            // Regex for various Google Maps URL formats
+                                                            // 1. @lat,lng
+                                                            const atMatch = value.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+                                                            if (atMatch) {
+                                                                lat = parseFloat(atMatch[1]);
+                                                                lng = parseFloat(atMatch[2]);
+                                                            } else {
+                                                                // 2. q=lat,lng or query=lat,lng
+                                                                const qMatch = value.match(/[?&](?:q|query|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
+                                                                if (qMatch) {
+                                                                    lat = parseFloat(qMatch[1]);
+                                                                    lng = parseFloat(qMatch[2]);
+                                                                } else {
+                                                                    // 3. /place/lat,lng or just lat,lng in path (less common but possible)
+                                                                    // Or simple lat,lng string
+                                                                    const simpleMatch = value.match(/^(-?\d+\.\d+),\s*(-?\d+\.\d+)$/);
+                                                                    if (simpleMatch) {
+                                                                        lat = parseFloat(simpleMatch[1]);
+                                                                        lng = parseFloat(simpleMatch[2]);
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                location: value,
+                                                                ...(lat && lng ? { lat, lng } : {})
+                                                            }));
+
+                                                            if (lat && lng) {
+                                                                try {
+                                                                    // Reverse geocode to get clean address
+                                                                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                                                                    const data = await response.json();
+                                                                    if (data && data.display_name) {
+                                                                        setFormData(prev => ({
+                                                                            ...prev,
+                                                                            location: data.display_name,
+                                                                            lat: lat,
+                                                                            lng: lng
+                                                                        }));
+                                                                        toast.success("Dirección detectada automáticamente.");
+                                                                    } else {
+                                                                        toast.success("¡Coordenadas detectadas del enlace!");
+                                                                    }
+                                                                } catch (error) {
+                                                                    console.error("Geocoding error:", error);
+                                                                    toast.success("¡Coordenadas detectadas del enlace!");
+                                                                }
+                                                            }
+                                                        }}
                                                     />
                                                 </div>
                                                 <button
