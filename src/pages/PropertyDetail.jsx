@@ -328,7 +328,11 @@ const PropertyDetail = () => {
                                 </p>
                             </div>
                             <div className="w-14 h-14 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
-                                <User className="w-8 h-8 text-gray-400" />
+                                {property.agentPhotoURL ? (
+                                    <img src={property.agentPhotoURL} alt={property.agentName} className="w-full h-full object-cover" />
+                                ) : (
+                                    <User className="w-8 h-8 text-gray-400" />
+                                )}
                             </div>
                         </div>
 

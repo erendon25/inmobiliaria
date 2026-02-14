@@ -266,7 +266,8 @@ const AgentDashboard = () => {
             propsSnap.forEach(doc => {
                 batch.update(doc.ref, {
                     agentName: profileData.displayName,
-                    agentPhone: profileData.phoneNumber || ''
+                    agentPhone: profileData.phoneNumber || '',
+                    agentPhotoURL: photoURL
                 });
             });
             await batch.commit();
@@ -548,7 +549,9 @@ const AgentDashboard = () => {
                     footage: parseFloat(formData.footage),
                     bedrooms: formData.category === 'construido' ? parseInt(formData.bedrooms) : 0,
                     bathrooms: formData.category === 'construido' ? parseInt(formData.bathrooms) : 0,
-                    agentPhone: userData.phoneNumber || '' // Update phone if available
+                    bathrooms: formData.category === 'construido' ? parseInt(formData.bathrooms) : 0,
+                    agentPhone: userData.phoneNumber || '', // Update phone if available
+                    agentPhotoURL: userData.photoURL || '' // Update photo if available
                 };
 
                 // Only update images if new ones are added? 
@@ -577,6 +580,7 @@ const AgentDashboard = () => {
 
                     agentName: userData.displayName || 'Agente', // Add agent name for display
                     agentPhone: userData.phoneNumber || '', // Add agent phone for contact
+                    agentPhotoURL: userData.photoURL || '', // Add agent photo for display
                     images: newImageUrls,
                     createdAt: new Date(),
                     status: 'disponible',
