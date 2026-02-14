@@ -522,10 +522,10 @@ const PropertyDetail = () => {
                         <div className="sticky top-32 bg-white rounded-xl shadow-card border border-gray-200 p-6">
                             <div className="mb-6">
                                 <span className="block text-3xl font-bold text-[#fc7f51]">
-                                    {priceUSD.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}
+                                    {mainCurrency === 'USD' ? `$ ${mainPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : `S/. ${mainPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
                                 </span>
                                 <span className="block text-xl font-bold text-gray-400 mt-1">
-                                    {pricePEN.toLocaleString('en-US', { style: 'currency', currency: 'PEN', maximumFractionDigits: 0 })}
+                                    {secondaryCurrency === 'USD' ? `$ ${secondaryPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : `S/. ${secondaryPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
                                 </span>
                                 {property.type === 'alquiler' && <span className="text-gray-500 text-sm block mt-1">Precio por mes</span>}
                             </div>

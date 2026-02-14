@@ -28,13 +28,22 @@ const PropertyCard = ({ property }) => {
         secondaryCurrency = 'USD';
     }
 
-    const formatPrice = (amount, curr) => {
+    // Format Price Custom Function
+    const formatCustomPrice = (amount, currencyCode) => {
         if (!amount && amount !== 0) return '0';
-        return amount.toLocaleString('en-US', {
-            style: 'currency',
-            currency: curr,
+
+        // Ensure 2 decimal places if needed, or 0 if whole number looks better
+        // The user wants maximumFractionDigits: 0 based on previous code usage
+        const formattedAmount = amount.toLocaleString('en-US', {
+            minimumFractionDigits: 0,
             maximumFractionDigits: 0
         });
+
+        if (currencyCode === 'USD') {
+            return `$ ${formattedAmount}`;
+        } else {
+            return `S/. ${formattedAmount}`;
+        }
     };
 
     // Cycle images on hover
@@ -61,7 +70,7 @@ const PropertyCard = ({ property }) => {
         >
             <div className="relative aspect-[20/19] overflow-hidden rounded-xl bg-gray-200 mb-3">
                 <img
-                    src={displayImage}
+                    src={displayImage || 'https://placehold.co/400x300/e2e8f0/94a3b8?text=Sin+Imagen'}
                     alt={property.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
@@ -94,8 +103,8 @@ const PropertyCard = ({ property }) => {
             <p className="text-gray-800 text-sm font-semibold mb-1 line-clamp-1">{property.title}</p>
 
             <div className="flex items-baseline gap-2 mt-1">
-                <span className="font-bold text-[#fc7f51] text-lg">{formatPrice(mainPrice, mainCurrency)}</span>
-                <span className="text-xs text-gray-400 font-medium">{formatPrice(secondaryPrice, secondaryCurrency)}</span>
+                <span className="font-bold text-[#fc7f51] text-lg">{formatCustomPrice(mainPrice, mainCurrency)}</span>
+                <span className="text-xs text-gray-400 font-medium">{formatCustomPrice(secondaryPrice, secondaryCurrency)}</span>
             </div>
         </Link>
     );
