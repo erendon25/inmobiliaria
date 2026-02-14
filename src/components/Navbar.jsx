@@ -4,6 +4,8 @@ import { Search, UserCircle, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.png'; // Import the logo image
 
+import ExchangeRate from './ExchangeRate';
+
 const Navbar = () => {
     const { user, userData, logout } = useAuth();
     const location = useLocation();
@@ -59,6 +61,7 @@ const Navbar = () => {
 
                 {/* Right Actions (Desktop) */}
                 <div className="hidden md:flex items-center gap-4">
+                    <ExchangeRate />
                     <div className="flex items-center gap-8">
                         <Link to="/" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Propiedades</Link>
                         {userData?.role !== 'agente' && (
