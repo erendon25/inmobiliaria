@@ -132,6 +132,24 @@ const AgentDashboard = () => {
 
             // Fetch tips if active tab or first load
             fetchMyTips();
+
+            // Fetch Exchange Rate to pre-fill form
+            const fetchExchangeRate = async () => {
+                try {
+                    const response = await fetch('https://api.apis.net.pe/v1/tipo-cambio-sunat');
+                    if (response.ok) {
+                        const data = await response.json();
+                        // Use sale price (venta) as reference or average? usually sell price is safer reference
+                        if (data.venta) {
+                            setFormData(prev => ({ ...prev, exchangeRate: data.venta }));
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error fetching initial exchange rate:", error);
+                    // Keep default 3.80 if fails
+                }
+            };
+            fetchExchangeRate();
         }
 
         // Initialize profile form with current user data
@@ -717,16 +735,6 @@ const AgentDashboard = () => {
                                                         <option value="PEN">PEN</option>
                                                     </select>
                                                     <input required type="number" className="w-full px-4 py-3 rounded-r-lg border border-gray-200 focus:border-[#fc7f51] outline-none" placeholder="0.00" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} />
-                                                </div>
-                                                <div className="mt-2 text-xs text-gray-500 flex items-center">
-                                                    Tipo de Cambio Ref:
-                                                    <input
-                                                        type="number"
-                                                        step="0.01"
-                                                        className="ml-2 w-20 px-2 py-1 rounded border border-gray-300"
-                                                        value={formData.exchangeRate}
-                                                        onChange={e => setFormData({ ...formData, exchangeRate: parseFloat(e.target.value) })}
-                                                    />
                                                 </div>
                                             </div>
                                             <div>
