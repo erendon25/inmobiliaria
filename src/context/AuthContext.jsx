@@ -23,7 +23,7 @@ export function AuthProvider({ children }) {
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const signup = async (email, password, role = 'cliente', name = '', phone = '') => {
+    const signup = async (email, password, role = 'cliente', name = '', phone = '', dni = '') => {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             // Update Auth Profile with Name
@@ -35,6 +35,7 @@ export function AuthProvider({ children }) {
                 role,
                 displayName: name,
                 phoneNumber: phone,
+                dni: dni,
                 createdAt: new Date()
             });
             return userCredential;

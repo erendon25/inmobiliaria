@@ -78,7 +78,9 @@ const ClientDashboard = () => {
                                 <div className="p-6">
                                     <div className="flex justify-between items-start mb-2">
                                         <h3 className="text-lg font-bold text-gray-800 line-clamp-1">{property.title}</h3>
-                                        <span className="text-[#fc7f51] font-bold text-lg">${property.price?.toLocaleString()}</span>
+                                        <span className="text-[#fc7f51] font-bold text-lg">
+                                            {property.price?.toLocaleString('en-US', { style: 'currency', currency: property.currency || 'USD', maximumFractionDigits: 0 })}
+                                        </span>
                                     </div>
                                     <p className="text-gray-500 text-sm mb-4 line-clamp-2">{property.location}</p>
 

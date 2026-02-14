@@ -9,6 +9,7 @@ const Register = () => {
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
+    const [dni, setDni] = useState("");
     const [role, setRole] = useState("cliente");
     const { signup, loginWithGoogle, loginWithApple } = useAuth();
     const navigate = useNavigate();
@@ -16,7 +17,7 @@ const Register = () => {
     const handleRegister = async (e) => {
         e.preventDefault();
         try {
-            await signup(email, password, role, name, phone);
+            await signup(email, password, role, name, phone, dni);
             toast.success("¡Cuenta creada exitosamente!");
             // Redirect based on selected role
             navigate(role === 'agente' ? "/agent-dashboard" : "/client-dashboard");
@@ -81,6 +82,20 @@ const Register = () => {
                             onChange={(e) => setPhone(e.target.value)}
                             className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
                             placeholder="+51 999 999 999"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            DNI
+                        </label>
+                        <input
+                            type="text"
+                            value={dni}
+                            onChange={(e) => setDni(e.target.value)}
+                            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
+                            placeholder="Tu DNI"
                             required
                         />
                     </div>

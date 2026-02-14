@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react';
 
 const PropertyCard = ({ property }) => {
     // Exchange Rate
-    const EXCHANGE_RATE = 3.75;
-
+    const exchangeRate = property.exchangeRate || 3.80; // Default exchange rate
     // Image cycling state
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isHovering, setIsHovering] = useState(false);
@@ -14,18 +13,23 @@ const PropertyCard = ({ property }) => {
     const currency = property.currency || 'USD';
     const price = typeof property.price === 'number' ? property.price : parseFloat(property.price);
 
-    let priceUSD, pricePEN;
+    let mainPrice, secondaryPrice;
+    let mainCurrency, secondaryCurrency;
 
     if (currency === 'USD') {
-        priceUSD = price;
-        pricePEN = price * EXCHANGE_RATE;
+        mainPrice = price;
+        mainCurrency = 'USD';
+        secondaryPrice = price * exchangeRate;
+        secondaryCurrency = 'PEN';
     } else {
-        pricePEN = price;
-        priceUSD = price / EXCHANGE_RATE;
+        mainPrice = price;
+        mainCurrency = 'PEN';
+        secondaryPrice = price / exchangeRate;
+        secondaryCurrency = 'USD';
     }
 
     const formatPrice = (amount, curr) => {
-        if (!amount) return '0';
+        if (!amount && amount !== 0) return '0';
         return amount.toLocaleString('en-US', {
             style: 'currency',
             currency: curr,
@@ -90,8 +94,8 @@ const PropertyCard = ({ property }) => {
             <p className="text-gray-800 text-sm font-semibold mb-1 line-clamp-1">{property.title}</p>
 
             <div className="flex items-baseline gap-2 mt-1">
-                <span className="font-bold text-[#fc7f51] text-lg">{formatPrice(priceUSD, 'USD')}</span>
-                <span className="text-xs text-gray-400 font-medium">{formatPrice(pricePEN, 'PEN')}</span>
+                <span className="font-bold text-[#fc7f51] text-lg">{formatPrice(mainPrice, mainCurrency)}</span>
+                <span className="text-xs text-gray-400 font-medium">{formatPrice(secondaryPrice, secondaryCurrency)}</span>
             </div>
         </Link>
     );

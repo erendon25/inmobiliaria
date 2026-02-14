@@ -60,7 +60,9 @@ const AgentDashboard = () => {
         furnished: false,
         pool: false,
         gym: false,
-        security: false
+        gym: false,
+        security: false,
+        exchangeRate: 3.80
     });
 
     // Property List State
@@ -457,7 +459,10 @@ const AgentDashboard = () => {
             furnished: property.furnished || false,
             pool: property.pool || false,
             gym: property.gym || false,
-            security: property.security || false
+            pool: property.pool || false,
+            gym: property.gym || false,
+            security: property.security || false,
+            exchangeRate: property.exchangeRate || 3.80
         });
         setImagePreviews(property.images || []);
         setImages([]); // Clear new files queue
@@ -490,7 +495,10 @@ const AgentDashboard = () => {
             furnished: false,
             pool: false,
             gym: false,
-            security: false
+            pool: false,
+            gym: false,
+            security: false,
+            exchangeRate: 3.80
         });
         setImagePreviews([]);
         setImages([]);
@@ -578,7 +586,10 @@ const AgentDashboard = () => {
                     furnished: false,
                     pool: false,
                     gym: false,
-                    security: false
+                    pool: false,
+                    gym: false,
+                    security: false,
+                    exchangeRate: 3.80
                 });
                 setImages([]);
                 setImagePreviews([]);
@@ -706,6 +717,16 @@ const AgentDashboard = () => {
                                                         <option value="PEN">PEN</option>
                                                     </select>
                                                     <input required type="number" className="w-full px-4 py-3 rounded-r-lg border border-gray-200 focus:border-[#fc7f51] outline-none" placeholder="0.00" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} />
+                                                </div>
+                                                <div className="mt-2 text-xs text-gray-500 flex items-center">
+                                                    Tipo de Cambio Ref:
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        className="ml-2 w-20 px-2 py-1 rounded border border-gray-300"
+                                                        value={formData.exchangeRate}
+                                                        onChange={e => setFormData({ ...formData, exchangeRate: parseFloat(e.target.value) })}
+                                                    />
                                                 </div>
                                             </div>
                                             <div>
@@ -1191,88 +1212,91 @@ const AgentDashboard = () => {
                         )}
 
                     </div>
-                )}
-            </div>
+                )
+                }
+            </div >
 
             {/* Visit Slot Manager Modal */}
-            {showSlotModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden relative">
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                            <div>
-                                <h3 className="font-bold text-lg text-gray-800">Gestionar Horarios de Visita</h3>
-                                <p className="text-sm text-gray-500 mt-1 uppercase">{slotPropertyTitle}</p>
-                            </div>
-                            <button onClick={() => setShowSlotModal(false)} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-200 rounded-full transition">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <div className="p-6 space-y-4">
-                            {/* Add New Slot */}
-                            <div className="flex gap-2 items-end">
-                                <div className="flex-1">
-                                    <label className="block text-xs font-medium text-gray-500 mb-1">Fecha</label>
-                                    <input
-                                        type="date"
-                                        min={new Date().toISOString().split('T')[0]}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none text-sm"
-                                        value={newSlotDate}
-                                        onChange={e => setNewSlotDate(e.target.value)}
-                                    />
+            {
+                showSlotModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden relative">
+                            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                                <div>
+                                    <h3 className="font-bold text-lg text-gray-800">Gestionar Horarios de Visita</h3>
+                                    <p className="text-sm text-gray-500 mt-1 uppercase">{slotPropertyTitle}</p>
                                 </div>
-                                <div className="flex-1">
-                                    <label className="block text-xs font-medium text-gray-500 mb-1">Hora</label>
-                                    <input
-                                        type="time"
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none text-sm"
-                                        value={newSlotTime}
-                                        onChange={e => setNewSlotTime(e.target.value)}
-                                    />
-                                </div>
-                                <button
-                                    onClick={addSlot}
-                                    className="bg-[#fc7f51] text-white px-4 py-2 rounded-lg hover:bg-[#e56b3e] transition font-bold text-sm"
-                                >
-                                    <Plus className="w-4 h-4" />
+                                <button onClick={() => setShowSlotModal(false)} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-200 rounded-full transition">
+                                    <X className="w-5 h-5" />
                                 </button>
                             </div>
+                            <div className="p-6 space-y-4">
+                                {/* Add New Slot */}
+                                <div className="flex gap-2 items-end">
+                                    <div className="flex-1">
+                                        <label className="block text-xs font-medium text-gray-500 mb-1">Fecha</label>
+                                        <input
+                                            type="date"
+                                            min={new Date().toISOString().split('T')[0]}
+                                            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none text-sm"
+                                            value={newSlotDate}
+                                            onChange={e => setNewSlotDate(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <label className="block text-xs font-medium text-gray-500 mb-1">Hora</label>
+                                        <input
+                                            type="time"
+                                            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none text-sm"
+                                            value={newSlotTime}
+                                            onChange={e => setNewSlotTime(e.target.value)}
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={addSlot}
+                                        className="bg-[#fc7f51] text-white px-4 py-2 rounded-lg hover:bg-[#e56b3e] transition font-bold text-sm"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                </div>
 
-                            {/* Slots List */}
-                            <div className="max-h-64 overflow-y-auto space-y-2">
-                                {currentSlots.length === 0 ? (
-                                    <p className="text-center text-gray-400 text-sm py-4">No hay horarios disponibles. Agrega fechas y horas.</p>
-                                ) : (
-                                    currentSlots.sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time)).map(slot => (
-                                        <div key={slot.id} className="flex items-center justify-between bg-gray-50 px-4 py-2.5 rounded-lg border border-gray-100">
-                                            <div className="flex items-center gap-3">
-                                                <Calendar className="w-4 h-4 text-[#fc7f51]" />
-                                                <span className="font-medium text-gray-700 text-sm">
-                                                    {new Date(slot.date + 'T00:00:00').toLocaleDateString('es-PE', { weekday: 'short', day: 'numeric', month: 'short' })}
-                                                </span>
-                                                <span className="text-gray-500 text-sm flex items-center gap-1">
-                                                    <Clock className="w-3 h-3" /> {slot.time}
-                                                </span>
+                                {/* Slots List */}
+                                <div className="max-h-64 overflow-y-auto space-y-2">
+                                    {currentSlots.length === 0 ? (
+                                        <p className="text-center text-gray-400 text-sm py-4">No hay horarios disponibles. Agrega fechas y horas.</p>
+                                    ) : (
+                                        currentSlots.sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time)).map(slot => (
+                                            <div key={slot.id} className="flex items-center justify-between bg-gray-50 px-4 py-2.5 rounded-lg border border-gray-100">
+                                                <div className="flex items-center gap-3">
+                                                    <Calendar className="w-4 h-4 text-[#fc7f51]" />
+                                                    <span className="font-medium text-gray-700 text-sm">
+                                                        {new Date(slot.date + 'T00:00:00').toLocaleDateString('es-PE', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                                    </span>
+                                                    <span className="text-gray-500 text-sm flex items-center gap-1">
+                                                        <Clock className="w-3 h-3" /> {slot.time}
+                                                    </span>
+                                                </div>
+                                                <button onClick={() => removeSlot(slot.id)} className="text-red-400 hover:text-red-600 transition">
+                                                    <X className="w-4 h-4" />
+                                                </button>
                                             </div>
-                                            <button onClick={() => removeSlot(slot.id)} className="text-red-400 hover:text-red-600 transition">
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
+                                        ))
+                                    )}
+                                </div>
 
-                            {/* Save Button */}
-                            <button
-                                onClick={saveSlots}
-                                className="w-full bg-[#fc7f51] text-white font-bold py-3 rounded-lg hover:bg-[#e56b3e] transition"
-                            >
-                                Guardar Horarios ({currentSlots.length})
-                            </button>
+                                {/* Save Button */}
+                                <button
+                                    onClick={saveSlots}
+                                    className="w-full bg-[#fc7f51] text-white font-bold py-3 rounded-lg hover:bg-[#e56b3e] transition"
+                                >
+                                    Guardar Horarios ({currentSlots.length})
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

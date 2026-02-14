@@ -234,17 +234,23 @@ const PropertyDetail = () => {
     }
 
     // Exchange Rate Logic
-    const EXCHANGE_RATE = 3.75;
+    const exchangeRate = property.exchangeRate || 3.80;
     const price = typeof property.price === 'number' ? property.price : parseFloat(property.price);
     const currency = property.currency || 'USD';
 
-    let priceUSD, pricePEN;
+    let mainPrice, secondaryPrice;
+    let mainCurrency, secondaryCurrency;
+
     if (currency === 'USD') {
-        priceUSD = price;
-        pricePEN = price * EXCHANGE_RATE;
+        mainPrice = price;
+        mainCurrency = 'USD';
+        secondaryPrice = price * exchangeRate;
+        secondaryCurrency = 'PEN';
     } else {
-        pricePEN = price;
-        priceUSD = price / EXCHANGE_RATE;
+        mainPrice = price;
+        mainCurrency = 'PEN';
+        secondaryPrice = price / exchangeRate;
+        secondaryCurrency = 'USD';
     }
 
     const mapUrl = property.lat && property.lng
