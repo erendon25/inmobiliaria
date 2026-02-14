@@ -60,6 +60,7 @@ const PropertyCard = ({ property }) => {
     }, [isHovering, property.images]);
 
     const displayImage = property.images?.[currentImageIndex] || property.images?.[0] || 'https://placehold.co/400x300/e2e8f0/94a3b8?text=Sin+Imagen';
+    // Ensure displayImage is always defined to prevent ReferenceError during HMR updates
 
     return (
         <Link

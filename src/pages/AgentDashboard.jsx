@@ -998,7 +998,9 @@ const AgentDashboard = () => {
                                                             </span>
                                                         </div>
                                                         <p className="text-gray-500 text-xs mt-1">{property.location}</p>
-                                                        <p className="text-[#fc7f51] font-bold text-sm mt-1">${property.price?.toLocaleString()}</p>
+                                                        <p className="text-[#fc7f51] font-bold text-sm mt-1">
+                                                            {property.currency === 'USD' ? '$' : 'S/.'} {property.price?.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                                                        </p>
 
                                                         <div className="mt-3 flex flex-wrap gap-2">
                                                             <button
