@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
+import logo from '../assets/logo.png'; // Import Logo for Watermark
 
 // Import Swiper styles
 import 'swiper/css';
@@ -295,8 +296,12 @@ const PropertyDetail = () => {
                     >
                         {property.images && property.images.length > 0 ? (
                             property.images.map((img, idx) => (
-                                <SwiperSlide key={idx}>
+                                <SwiperSlide key={idx} className="relative">
                                     <img src={img} alt={`Property ${idx + 1}`} className="w-full h-full object-cover" />
+                                    {/* Watermark Overlay */}
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none select-none">
+                                        <img src={logo} alt="Inmuévete" className="w-1/2 h-auto object-contain filter drop-shadow-lg" />
+                                    </div>
                                 </SwiperSlide>
                             ))
                         ) : (

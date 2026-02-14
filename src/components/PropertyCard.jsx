@@ -76,6 +76,11 @@ const PropertyCard = ({ property }) => {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
 
+                {/* Watermark Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none select-none z-0">
+                    <img src="/logo.png" alt="" className="w-1/2 h-auto object-contain filter drop-shadow-md brightness-0 invert" />
+                </div>
+
                 {/* Promote Badge */}
                 {property.isPromoted && (
                     <div className="absolute top-3 left-3 bg-[#fc7f51] text-white px-2 py-1 rounded-md text-xs font-bold shadow-md z-10">
