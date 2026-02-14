@@ -136,12 +136,13 @@ const AgentDashboard = () => {
             // Fetch Exchange Rate to pre-fill form
             const fetchExchangeRate = async () => {
                 try {
-                    const response = await fetch('https://api.apis.net.pe/v1/tipo-cambio-sunat');
+                    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
                     if (response.ok) {
                         const data = await response.json();
-                        // Use sale price (venta) as reference or average? usually sell price is safer reference
-                        if (data.venta) {
-                            setFormData(prev => ({ ...prev, exchangeRate: data.venta }));
+                        // This API returns a base and rates. We want USD -> PEN
+                        const rate = data.rates.PEN;
+                        if (rate) {
+                            setFormData(prev => ({ ...prev, exchangeRate: rate }));
                         }
                     }
                 } catch (error) {

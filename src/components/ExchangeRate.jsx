@@ -11,10 +11,18 @@ const ExchangeRate = () => {
             try {
                 // Using a public API for PEN/USD exchange rate (SUNAT reference)
                 // Fallback to a different API or handling if this one is down is good practice
-                const response = await fetch('https://api.apis.net.pe/v1/tipo-cambio-sunat');
+                // Using a different public API that allows CORS or a proxy service
+                // Using 'https://api.exchangerate-api.com/v4/latest/USD' free tier which allows CORS
+                const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
                 if (!response.ok) throw new Error('Failed to fetch');
                 const data = await response.json();
-                setExchangeData(data);
+                // This API returns a base and rates. We want USD -> PEN
+                const rate = data.rates.PEN;
+                setExchangeData({
+                    compra: rate, // The API gives a mid-market rate usually
+                    venta: rate, // So we'll use same for both or simulate a spread
+                    fecha: new Date(data.date).toISOString().split('T')[0]
+                });
             } catch (err) {
                 console.error("Error fetching exchange rate:", err);
                 setError(true);
@@ -46,13 +54,11 @@ const ExchangeRate = () => {
                 <span>Tipo de Cambio</span>
             </div>
             <div className="flex items-center gap-3 text-xs text-gray-300 font-mono">
-                <div title="Precio de Compra">
-                    <span className="text-gray-500 mr-1">C:</span>
-                    <span className="text-white font-bold">{exchangeData?.compra?.toFixed(3)}</span>
-                </div>
-                <div title="Precio de Venta">
-                    <span className="text-gray-500 mr-1">V:</span>
-                    <span className="text-white font-bold">{exchangeData?.venta?.toFixed(3)}</span>
+                <div className="flex items-center gap-3 text-xs text-gray-300 font-mono">
+                    <div title="Tipo de Cambio Referencial">
+                        <span className="text-gray-500 mr-1">T.C:</span>
+                        <span className="text-white font-bold">{exchangeData?.venta?.toFixed(2)}</span>
+                    </div>
                 </div>
             </div>
         </div>
