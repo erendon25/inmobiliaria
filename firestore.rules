@@ -19,10 +19,14 @@ service cloud.firestore {
     // - Authenticated users (Agents) can create
     // - Agents can only update/delete their own properties
     // - SuperAdmins can update/delete all
+    // - Anyone can increment the views counter (for public view tracking)
     match /properties/{propertyId} {
       allow read: if true;
       allow create: if request.auth != null;
-      allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views'])) 
+      allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views'])
+                       && request.resource.data.views is int
+                       && ((!('views' in resource.data) && request.resource.data.views == 1)
+                           || ('views' in resource.data && request.resource.data.views == resource.data.views + 1)))
                     || (request.auth != null && (resource.data.agentId == request.auth.uid || isSuperAdmin()));
       allow delete: if request.auth != null && (resource.data.agentId == request.auth.uid || isSuperAdmin());
     }

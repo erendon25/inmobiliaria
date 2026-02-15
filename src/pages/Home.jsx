@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, onSnapshot, limit } from 'firebase/firestore';
 import PropertyCard from '../components/PropertyCard';
-import { Palmtree, Mountain, Waves, Building, Warehouse, ArrowRight, Search, MapPin, ListFilter, Home as HomeIcon, Key, Briefcase, X, Lightbulb } from 'lucide-react';
+import { Palmtree, Mountain, Waves, Building, Warehouse, ArrowRight, Search, MapPin, ListFilter, Home as HomeIcon, Key, Briefcase, X, Lightbulb, Star } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const categories = [
@@ -74,7 +74,8 @@ const Home = () => {
 
         // Real-time listener
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const props = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const props = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(p => p.status === 'disponible'); // Only show published/available properties
 
             // Sort properties: Promoted first, then Newest first
             props.sort((a, b) => {
@@ -450,6 +451,59 @@ const Home = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Exclusive Properties Section */}
+            {!loadingProperties && properties.filter(p => p.isExclusive === true).length > 0 && (
+                <section className="relative py-20 overflow-hidden" style={{ background: 'linear-gradient(135deg, #1a1814 0%, #2d2418 50%, #1a1814 100%)' }}>
+                    {/* Decorative elements */}
+                    <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-amber-500 rounded-full opacity-[0.04] blur-[120px] translate-x-1/3 -translate-y-1/3"></div>
+                    <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-yellow-500 rounded-full opacity-[0.04] blur-[100px] -translate-x-1/3 translate-y-1/3"></div>
+
+                    <div className="container mx-auto px-6 relative z-10">
+                        {/* Section Header */}
+                        <div className="flex justify-between items-end mb-10">
+                            <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="h-px w-8 bg-gradient-to-r from-amber-500 to-yellow-500"></div>
+                                    <span className="text-amber-400 font-bold text-sm tracking-[0.2em] uppercase">Selección Premium</span>
+                                    <div className="h-px w-8 bg-gradient-to-r from-yellow-500 to-amber-500"></div>
+                                </div>
+                                <h2 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
+                                    <Star className="w-8 h-8 text-amber-400 fill-amber-400" />
+                                    Propiedades Exclusivas
+                                </h2>
+                                <p className="text-gray-400 mt-2 text-sm md:text-base">Oportunidades únicas seleccionadas por nuestro equipo.</p>
+                            </div>
+                            <Link to="/search?exclusive=true" className="hidden md:flex items-center gap-2 text-amber-400 font-semibold hover:text-amber-300 transition group">
+                                Ver todas <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            </Link>
+                        </div>
+
+                        {/* Exclusive Properties Scroll */}
+                        <div className="flex gap-6 overflow-x-auto no-scrollbar pb-4 -mx-2 px-2">
+                            {properties
+                                .filter(p => p.isExclusive === true)
+                                .map((property) => (
+                                    <div key={property.id} className="min-w-[300px] max-w-[320px] flex-shrink-0">
+                                        <div className="relative rounded-2xl overflow-hidden border border-amber-500/20 bg-gradient-to-b from-amber-500/5 to-transparent p-1">
+                                            <div className="rounded-xl overflow-hidden bg-[#1a1814]">
+                                                <PropertyCard property={property} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            }
+                        </div>
+
+                        {/* Mobile CTA */}
+                        <div className="mt-8 text-center md:hidden">
+                            <Link to="/search?exclusive=true" className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-white px-6 py-3 rounded-full font-bold text-sm shadow-lg hover:shadow-amber-500/30 transition">
+                                <Star className="w-4 h-4 fill-white" /> Ver todas las exclusivas
+                            </Link>
+                        </div>
+                    </div>
+                </section>
+            )}
 
             {/* Properties Grid */}
             <main id="properties" className="container mx-auto px-6 py-20">

@@ -74,6 +74,8 @@ const PropertyCard = ({ property }) => {
                 <img
                     src={displayImage || 'https://placehold.co/400x300/e2e8f0/94a3b8?text=Sin+Imagen'}
                     alt={property.title}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
 
@@ -86,6 +88,13 @@ const PropertyCard = ({ property }) => {
                 {property.isPromoted && (
                     <div className="absolute top-3 left-3 bg-[#fc7f51] text-white px-2 py-1 rounded-md text-xs font-bold shadow-md z-10">
                         DESTACADO
+                    </div>
+                )}
+
+                {/* Exclusive Badge */}
+                {property.isExclusive && (
+                    <div className={`absolute ${property.isPromoted ? 'top-10' : 'top-3'} left-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-white px-2 py-1 rounded-md text-xs font-bold shadow-md z-10 flex items-center gap-1`}>
+                        <Star className="w-3 h-3 fill-white" /> EXCLUSIVO
                     </div>
                 )}
 

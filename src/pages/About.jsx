@@ -42,8 +42,8 @@ const About = () => {
                         </p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <img src="/images/house_ext.png" className="rounded-tl-[40px] rounded-br-[40px] w-full h-64 object-cover shadow-card" alt="Concept 1" />
-                        <img src="/images/house_int.png" className="rounded-tr-[40px] rounded-bl-[40px] w-full h-64 object-cover shadow-card mt-8" alt="Concept 2" />
+                        <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop" className="rounded-tl-[40px] rounded-br-[40px] w-full h-64 object-cover shadow-card" alt="Exterior de casa moderna" />
+                        <img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=800&auto=format&fit=crop" className="rounded-tr-[40px] rounded-bl-[40px] w-full h-64 object-cover shadow-card mt-8" alt="Interior de casa moderna" />
                     </div>
                 </div>
 

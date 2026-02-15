@@ -194,8 +194,15 @@ const PropertyDetail = () => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
 
-                    // Increment view counter locally and in DB if not already viewed in this session
-                    if (!hasViewedRef.current) {
+                    // Block access to draft properties for non-owners
+                    if (data.status === 'borrador' && (!user || data.agentId !== user.uid)) {
+                        setProperty(null);
+                        setLoading(false);
+                        return;
+                    }
+
+                    // Increment view counter only for published properties
+                    if (!hasViewedRef.current && data.status !== 'borrador') {
                         hasViewedRef.current = true;
 
                         // Fire and forget DB update
@@ -298,7 +305,7 @@ const PropertyDetail = () => {
                         {property.images && property.images.length > 0 ? (
                             property.images.map((img, idx) => (
                                 <SwiperSlide key={idx} className="relative">
-                                    <img src={img} alt={`Property ${idx + 1}`} className="w-full h-full object-cover" />
+                                    <img src={img} alt={`Property ${idx + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                                     {/* Watermark Overlay */}
                                     <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none select-none">
                                         <img src={logo} alt="Inmuévete" className="w-1/2 h-auto object-contain filter drop-shadow-lg" />

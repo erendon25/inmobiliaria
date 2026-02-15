@@ -165,11 +165,15 @@ const AgentDashboard = () => {
 
     const handleDelete = async (id) => {
         if (!window.confirm("¿Estás seguro de que deseas eliminar esta propiedad?")) return;
+        // Optimistic: remove immediately from UI
+        const backup = myProperties;
+        setMyProperties(prev => prev.filter(p => p.id !== id));
+        toast.success("Propiedad eliminada correctamente.");
         try {
             await deleteDoc(doc(db, "properties", id));
-            toast.success("Propiedad eliminada correctamente.");
-            fetchMyProperties();
         } catch (error) {
+            // Revert on error
+            setMyProperties(backup);
             console.error("Error deleting property:", error);
             toast.error("Error al eliminar la propiedad.");
         }
@@ -366,12 +370,15 @@ const AgentDashboard = () => {
 
     const handleDeleteTip = async (id) => {
         if (!window.confirm("¿Seguro que quieres eliminar este tip?")) return;
+        const backup = tips;
+        setTips(prev => prev.filter(t => t.id !== id));
+        toast.success("Tip eliminado.");
         try {
             await deleteDoc(doc(db, "tips", id));
-            setTips(prev => prev.filter(t => t.id !== id));
-            toast.success("Tip eliminado.");
         } catch (error) {
+            setTips(backup);
             console.error("Error deleting tip:", error);
+            toast.error("Error al eliminar el tip.");
         }
     };
 
@@ -398,6 +405,21 @@ const AgentDashboard = () => {
             setMyProperties(prev => prev.map(p => p.id === propertyId ? { ...p, status: currentStatus } : p));
             console.error("Error updating status:", error);
             toast.error("No se pudo actualizar el estado.");
+        }
+    };
+
+    const handlePublish = async (propertyId) => {
+        setMyProperties(prev => prev.map(p => p.id === propertyId ? { ...p, status: 'disponible' } : p));
+        toast.success('¡Propiedad publicada con éxito!');
+        try {
+            await updateDoc(doc(db, "properties", propertyId), {
+                status: 'disponible',
+                publishedAt: new Date()
+            });
+        } catch (error) {
+            setMyProperties(prev => prev.map(p => p.id === propertyId ? { ...p, status: 'borrador' } : p));
+            console.error("Error publishing property:", error);
+            toast.error("No se pudo publicar la propiedad.");
         }
     };
 
@@ -454,11 +476,60 @@ const AgentDashboard = () => {
         }
     };
 
-    const handleImageChange = (e) => {
+    // Compress image using canvas before upload
+    const compressImage = (file, maxWidth = 1200, quality = 0.8) => {
+        return new Promise((resolve) => {
+            // If file is already small (<200KB), skip compression
+            if (file.size < 200 * 1024) {
+                resolve(file);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    // Scale down if wider than maxWidth
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob(
+                        (blob) => {
+                            const compressedFile = new File([blob], file.name, {
+                                type: 'image/jpeg',
+                                lastModified: Date.now(),
+                            });
+                            resolve(compressedFile);
+                        },
+                        'image/jpeg',
+                        quality
+                    );
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const handleImageChange = async (e) => {
         const files = Array.from(e.target.files);
         const newPreviews = files.map(file => URL.createObjectURL(file));
         setImagePreviews(prev => [...prev, ...newPreviews]);
-        setImages(prev => [...prev, ...files]);
+
+        // Compress all images in parallel
+        const compressedFiles = await Promise.all(files.map(f => compressImage(f)));
+        setImages(prev => [...prev, ...compressedFiles]);
     };
 
     const removeImage = (index) => {
@@ -546,7 +617,7 @@ const AgentDashboard = () => {
         setImages([]);
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e, saveAsDraft = false) => {
         e.preventDefault();
         setLoading(true);
 
@@ -568,50 +639,54 @@ const AgentDashboard = () => {
                     footage: parseFloat(formData.footage),
                     bedrooms: formData.category === 'construido' ? parseInt(formData.bedrooms) : 0,
                     bathrooms: formData.category === 'construido' ? parseInt(formData.bathrooms) : 0,
-                    bathrooms: formData.category === 'construido' ? parseInt(formData.bathrooms) : 0,
-                    agentPhone: userData.phoneNumber || '', // Update phone if available
-                    agentPhotoURL: userData.photoURL || '' // Update photo if available
+                    agentPhone: userData.phoneNumber || '',
+                    agentPhotoURL: userData.photoURL || ''
                 };
 
-                // Only update images if new ones are added? 
-                // Current logic appends new images to existing ones in state?
-                // The state `images` contains new files. `imagePreviews` contains URLs of both old and new?
-                // Actually `images` state only holds *new files* to upload.
-                // We need to handle preserving old images if we are editing.
-
-                // Simplified: If new images uploaded, append them. 
-                // If we want to keep old images, we need to know which ones are old.
-                // In handleEdit we populate logic.
-                // For now, let's assume we just add new ones to the array.
                 if (newImageUrls.length > 0) {
                     updateData.images = [...(imagePreviews.filter(url => url.startsWith('http'))), ...newImageUrls];
-                    // Note: This logic assumes imagePreviews has all current images.
                 }
 
-                await updateDoc(doc(db, "properties", editingId), updateData);
+                // Optimistic: update local list immediately
+                setMyProperties(prev => prev.map(p => p.id === editingId ? { ...p, ...updateData } : p));
                 toast.success("¡Propiedad actualizada con éxito!");
+                setEditingId(null);
+                setLoading(false);
+
+                // Sync to Firestore in background
+                updateDoc(doc(db, "properties", editingId), updateData).catch(error => {
+                    console.error("Error updating property:", error);
+                    toast.error("Error al sincronizar los cambios.");
+                    fetchMyProperties(); // Reload on error to get correct state
+                });
+                return;
             } else {
                 // Create new property
-                await addDoc(collection(db, "properties"), {
+                const propertyStatus = saveAsDraft ? 'borrador' : 'disponible';
+                const now = new Date();
+                const newPropertyData = {
                     ...formData,
                     agentId: user.uid,
-                    // ... rest of fields
-
-                    agentName: userData.displayName || 'Agente', // Add agent name for display
-                    agentPhone: userData.phoneNumber || '', // Add agent phone for contact
-                    agentPhotoURL: userData.photoURL || '', // Add agent photo for display
+                    agentName: userData.displayName || 'Agente',
+                    agentPhone: userData.phoneNumber || '',
+                    agentPhotoURL: userData.photoURL || '',
                     images: newImageUrls,
-                    createdAt: new Date(),
-                    status: 'disponible',
+                    createdAt: now,
+                    status: propertyStatus,
                     views: 0,
                     isPromoted: false,
                     price: parseFloat(formData.price),
                     footage: parseFloat(formData.footage),
                     bedrooms: formData.category === 'construido' ? parseInt(formData.bedrooms) : 0,
                     bathrooms: formData.category === 'construido' ? parseInt(formData.bathrooms) : 0,
-                });
+                };
 
-                toast.success("¡Propiedad publicada con éxito!");
+                // Optimistic: add to local list immediately with temp ID
+                const tempId = `temp_${Date.now()}`;
+                setMyProperties(prev => [{ id: tempId, ...newPropertyData, createdAt: { seconds: Math.floor(now.getTime() / 1000) } }, ...prev]);
+                toast.success(saveAsDraft ? "Propiedad guardada como borrador." : "¡Propiedad publicada con éxito!");
+
+                // Reset form immediately
                 setFormData({
                     title: '',
                     description: '',
@@ -633,19 +708,27 @@ const AgentDashboard = () => {
                     furnished: false,
                     pool: false,
                     gym: false,
-                    pool: false,
-                    gym: false,
                     security: false,
                     exchangeRate: 3.80
                 });
                 setImages([]);
                 setImagePreviews([]);
-                setEditingId(null); // Reset edit state
-                fetchMyProperties(); // Update list
+                setEditingId(null);
+                setLoading(false);
+
+                // Sync to Firestore in background, then replace temp ID with real ID
+                addDoc(collection(db, "properties"), newPropertyData).then(docRef => {
+                    setMyProperties(prev => prev.map(p => p.id === tempId ? { ...p, id: docRef.id } : p));
+                }).catch(error => {
+                    console.error("Error creating property:", error);
+                    setMyProperties(prev => prev.filter(p => p.id !== tempId));
+                    toast.error("Error al guardar la propiedad en el servidor.");
+                });
+                return;
             }
         } catch (error) {
             console.error("Error adding property: ", error);
-            toast.error("Hubo un error al publicar la propiedad.");
+            toast.error("Hubo un error al guardar la propiedad.");
         } finally {
             setLoading(false);
         }
@@ -747,7 +830,7 @@ const AgentDashboard = () => {
                                     <div className="bg-[#16151a] p-6 text-white">
                                         <h2 className="text-xl font-bold">{editingId ? "Editar Propiedad" : "Nueva Propiedad"}</h2>
                                     </div>
-                                    <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                                    <form onSubmit={(e) => handleSubmit(e, false)} className="p-8 space-y-6">
                                         {/* Basic Info */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">Título</label>
@@ -1033,8 +1116,18 @@ const AgentDashboard = () => {
                                             {editingId && (
                                                 <button type="button" onClick={handleCancelEdit} className="flex-1 bg-gray-200 text-gray-800 font-bold py-3 rounded-xl hover:bg-gray-300 transition">Cancelar</button>
                                             )}
+                                            {!editingId && (
+                                                <button
+                                                    type="button"
+                                                    disabled={loading}
+                                                    onClick={(e) => handleSubmit(e, true)}
+                                                    className="flex-1 bg-amber-100 text-amber-700 font-bold py-3 rounded-xl hover:bg-amber-200 transition flex items-center justify-center gap-2 border border-amber-300"
+                                                >
+                                                    {loading ? <Loader2 className="animate-spin" /> : '✏️ Borrador'}
+                                                </button>
+                                            )}
                                             <button type="submit" disabled={loading} className="flex-1 bg-[#fc7f51] hover:bg-[#e56b3e] text-white font-bold py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
-                                                {loading ? <Loader2 className="animate-spin" /> : (editingId ? 'Actualizar Propiedad' : 'Publicar Propiedad')}
+                                                {loading ? <Loader2 className="animate-spin" /> : (editingId ? 'Actualizar Propiedad' : '🚀 Publicar')}
                                             </button>
                                         </div>
                                     </form>
@@ -1066,6 +1159,7 @@ const AgentDashboard = () => {
                                                     <div className="w-full sm:w-24 h-48 sm:h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
                                                         <img
                                                             src={property.images?.[0] || 'https://placehold.co/150x150/e2e8f0/94a3b8?text=Sin+Img'}
+                                                            loading="lazy"
                                                             alt={property.title}
                                                             className="w-full h-full object-cover"
                                                         />
@@ -1073,11 +1167,11 @@ const AgentDashboard = () => {
                                                     <div className="flex-grow">
                                                         <div className="flex justify-between items-start">
                                                             <h3 className="font-bold text-gray-800 text-sm line-clamp-1">{property.title}</h3>
-                                                            <span className={`text-xs px-2 py-1 rounded-full font-bold uppercase ${property.status === 'disponible'
-                                                                ? 'bg-green-100 text-green-700'
-                                                                : 'bg-gray-100 text-gray-500'
+                                                            <span className={`text-xs px-2 py-1 rounded-full font-bold uppercase ${property.status === 'disponible' ? 'bg-green-100 text-green-700'
+                                                                : property.status === 'borrador' ? 'bg-amber-100 text-amber-700'
+                                                                    : 'bg-gray-100 text-gray-500'
                                                                 }`}>
-                                                                {property.status}
+                                                                {property.status === 'borrador' ? '✏️ Borrador' : property.status}
                                                             </span>
                                                         </div>
                                                         <p className="text-gray-500 text-xs mt-1">{property.location}</p>
@@ -1086,15 +1180,24 @@ const AgentDashboard = () => {
                                                         </p>
 
                                                         <div className="mt-3 flex flex-wrap gap-2">
-                                                            <button
-                                                                onClick={() => handleStatusToggle(property.id, property.status)}
-                                                                className={`tx-xs px-3 py-1.5 rounded-lg text-xs font-bold transition flex-1 sm:flex-none text-center ${property.status === 'disponible'
-                                                                    ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                                                                    : 'bg-green-50 text-green-600 hover:bg-green-100'
-                                                                    }`}
-                                                            >
-                                                                {property.status === 'disponible' ? 'Marcar Vendido/Alquilado' : 'Marcar Disponible'}
-                                                            </button>
+                                                            {property.status === 'borrador' ? (
+                                                                <button
+                                                                    onClick={() => handlePublish(property.id)}
+                                                                    className="px-3 py-1.5 rounded-lg text-xs font-bold transition flex-1 sm:flex-none text-center bg-[#fc7f51] text-white hover:bg-[#e56b3e] shadow-sm"
+                                                                >
+                                                                    🚀 Publicar
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => handleStatusToggle(property.id, property.status)}
+                                                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex-1 sm:flex-none text-center ${property.status === 'disponible'
+                                                                        ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                                                                        : 'bg-green-50 text-green-600 hover:bg-green-100'
+                                                                        }`}
+                                                                >
+                                                                    {property.status === 'disponible' ? 'Marcar Vendido/Alquilado' : 'Marcar Disponible'}
+                                                                </button>
+                                                            )}
                                                             <button
                                                                 onClick={() => handleEdit(property)}
                                                                 className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-100 transition flex-1 sm:flex-none"
