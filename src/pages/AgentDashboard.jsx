@@ -7,6 +7,7 @@ import { updateProfile, updateEmail, updatePassword } from 'firebase/auth';
 import { Upload, MapPin, DollarSign, Home, Maximize, Loader2, Plus, X, Lock, User, FileText, Trash2, Calendar, Phone, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import MapPicker from '../components/MapPicker';
+import logo from '../assets/logo.png';
 
 const AgentDashboard = () => {
     const { user, userData } = useAuth();
@@ -60,7 +61,13 @@ const AgentDashboard = () => {
         furnished: false,
         pool: false,
         gym: false,
-        security: false
+        security: false,
+        // Accessibility & Financial
+        disabilityAccess: false,
+        ramp: false,
+        mortgageEligible: false,
+        // Publish Status
+        status: 'draft' // draft or disponible
     });
 
     // Property List State
@@ -410,11 +417,49 @@ const AgentDashboard = () => {
         }
     };
 
-    const handleImageChange = (e) => {
+    const handleImageChange = async (e) => {
         const files = Array.from(e.target.files);
-        const newPreviews = files.map(file => URL.createObjectURL(file));
+
+        // Helper to add watermark
+        const processFile = async (file) => {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+
+                    ctx.drawImage(img, 0, 0);
+
+                    const watermark = new Image();
+                    watermark.src = logo;
+
+                    watermark.onload = () => {
+                        const wmWidth = canvas.width * 0.3; // 30% of width
+                        const wmHeight = (watermark.height / watermark.width) * wmWidth;
+                        const x = canvas.width - wmWidth - (canvas.width * 0.05);
+                        const y = canvas.height - wmHeight - (canvas.height * 0.05);
+
+                        ctx.globalAlpha = 0.7;
+                        ctx.drawImage(watermark, x, y, wmWidth, wmHeight);
+
+                        canvas.toBlob((blob) => {
+                            resolve(new File([blob], file.name, { type: file.type }));
+                        }, file.type);
+                    };
+
+                    watermark.onerror = () => resolve(file); // Fallback
+                };
+                img.src = URL.createObjectURL(file);
+            });
+        };
+
+        const processedFiles = await Promise.all(files.map(processFile));
+        const newPreviews = processedFiles.map(file => URL.createObjectURL(file));
+
         setImagePreviews(prev => [...prev, ...newPreviews]);
-        setImages(prev => [...prev, ...files]);
+        setImages(prev => [...prev, ...processedFiles]);
     };
 
     const removeImage = (index) => {
@@ -457,7 +502,11 @@ const AgentDashboard = () => {
             furnished: property.furnished || false,
             pool: property.pool || false,
             gym: property.gym || false,
-            security: property.security || false
+            security: property.security || false,
+            disabilityAccess: property.disabilityAccess || false,
+            ramp: property.ramp || false,
+            mortgageEligible: property.mortgageEligible || false,
+            status: property.status || 'draft'
         });
         setImagePreviews(property.images || []);
         setImages([]); // Clear new files queue
@@ -490,14 +539,17 @@ const AgentDashboard = () => {
             furnished: false,
             pool: false,
             gym: false,
-            security: false
+            security: false,
+            disabilityAccess: false,
+            ramp: false,
+            mortgageEligible: false,
+            status: 'draft'
         });
         setImagePreviews([]);
         setImages([]);
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const saveProperty = async (statusOverride = null) => {
         setLoading(true);
 
         try {
@@ -509,45 +561,34 @@ const AgentDashboard = () => {
             });
 
             const newImageUrls = await Promise.all(uploadPromises);
+            const statusToUse = statusOverride || formData.status || 'draft';
 
             if (editingId) {
                 // Update existing property
                 const updateData = {
                     ...formData,
+                    status: statusToUse,
                     price: parseFloat(formData.price),
                     footage: parseFloat(formData.footage),
                     bedrooms: formData.category === 'construido' ? parseInt(formData.bedrooms) : 0,
                     bathrooms: formData.category === 'construido' ? parseInt(formData.bathrooms) : 0,
                 };
 
-                // Only update images if new ones are added? 
-                // Current logic appends new images to existing ones in state?
-                // The state `images` contains new files. `imagePreviews` contains URLs of both old and new?
-                // Actually `images` state only holds *new files* to upload.
-                // We need to handle preserving old images if we are editing.
-
-                // Simplified: If new images uploaded, append them. 
-                // If we want to keep old images, we need to know which ones are old.
-                // In handleEdit we populate logic.
-                // For now, let's assume we just add new ones to the array.
                 if (newImageUrls.length > 0) {
                     updateData.images = [...(imagePreviews.filter(url => url.startsWith('http'))), ...newImageUrls];
-                    // Note: This logic assumes imagePreviews has all current images.
                 }
 
                 await updateDoc(doc(db, "properties", editingId), updateData);
-                toast.success("¡Propiedad actualizada con éxito!");
+                toast.success(statusToUse === 'draft' ? "Borrador guardado" : "¡Propiedad actualizada!");
             } else {
                 // Create new property
                 await addDoc(collection(db, "properties"), {
                     ...formData,
+                    status: statusToUse, // Use override or form data
                     agentId: user.uid,
-                    // ... rest of fields
-
-                    agentName: userData.displayName || 'Agente', // Add agent name for display
+                    agentName: userData.displayName || 'Agente',
                     images: newImageUrls,
                     createdAt: new Date(),
-                    status: 'disponible',
                     views: 0,
                     isPromoted: false,
                     price: parseFloat(formData.price),
@@ -556,41 +597,24 @@ const AgentDashboard = () => {
                     bathrooms: formData.category === 'construido' ? parseInt(formData.bathrooms) : 0,
                 });
 
-                toast.success("¡Propiedad publicada con éxito!");
-                setFormData({
-                    title: '',
-                    description: '',
-                    type: 'venta',
-                    currency: 'USD',
-                    price: '',
-                    category: 'construido',
-                    location: '',
-                    footage: '',
-                    bedrooms: '',
-                    bathrooms: '',
-                    antiquity: 'estreno',
-                    isExclusive: false,
-                    isInBuilding: false,
-                    floor: '',
-                    isDuplex: false,
-                    parking: false,
-                    elevator: false,
-                    furnished: false,
-                    pool: false,
-                    gym: false,
-                    security: false
-                });
-                setImages([]);
-                setImagePreviews([]);
-                setEditingId(null); // Reset edit state
-                fetchMyProperties(); // Update list
+                toast.success(statusToUse === 'draft' ? "Borrador guardado" : "¡Propiedad publicada!");
+
+                // Reset form ONLY if not just saving a draft? 
+                // Alternatively, reset always on success.
+                handleCancelEdit(); // This resets everything.
+                fetchMyProperties();
             }
         } catch (error) {
             console.error("Error adding property: ", error);
-            toast.error("Hubo un error al publicar la propiedad.");
+            toast.error("Hubo un error al guardar.");
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        saveProperty();
     };
 
     // Dev Helper - only attempt if user is superadmin to avoid permission errors
@@ -633,9 +657,14 @@ const AgentDashboard = () => {
                         </button>
                         <button
                             onClick={() => setActiveTab('inquiries')}
-                            className={`pb-3 px-4 text-sm font-bold transition border-b-2 ${activeTab === 'inquiries' ? 'border-[#fc7f51] text-[#fc7f51]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                            className={`pb-3 px-4 text-sm font-bold transition border-b-2 relative ${activeTab === 'inquiries' ? 'border-[#fc7f51] text-[#fc7f51]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                         >
                             Visitas Agendadas
+                            {visits.filter(v => v.status === 'pending').length > 0 && (
+                                <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm animate-pulse">
+                                    {visits.filter(v => v.status === 'pending').length}
+                                </span>
+                            )}
                         </button>
                         <button
                             onClick={() => setActiveTab('tips')}
@@ -787,6 +816,18 @@ const AgentDashboard = () => {
                                                     <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={formData.security} onChange={e => setFormData({ ...formData, security: e.target.checked })} />
                                                     <span className="text-sm font-medium text-gray-600">Seguridad 24/7</span>
                                                 </label>
+                                                <label className="flex items-center cursor-pointer gap-2">
+                                                    <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={formData.disabilityAccess} onChange={e => setFormData({ ...formData, disabilityAccess: e.target.checked })} />
+                                                    <span className="text-sm font-medium text-gray-600">Acceso Discapacitados</span>
+                                                </label>
+                                                <label className="flex items-center cursor-pointer gap-2">
+                                                    <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={formData.ramp} onChange={e => setFormData({ ...formData, ramp: e.target.checked })} />
+                                                    <span className="text-sm font-medium text-gray-600">Rampa</span>
+                                                </label>
+                                                <label className="flex items-center cursor-pointer gap-2">
+                                                    <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={formData.mortgageEligible} onChange={e => setFormData({ ...formData, mortgageEligible: e.target.checked })} />
+                                                    <span className="text-sm font-medium text-gray-600 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Crédito Hipotecario</span>
+                                                </label>
                                             </div>
                                         </div>
 
@@ -895,7 +936,12 @@ const AgentDashboard = () => {
                                         {/* Description */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
-                                            <textarea className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none h-24 resize-none" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })}></textarea>
+                                            <textarea
+                                                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] outline-none h-64 resize-y text-sm md:text-base leading-relaxed"
+                                                value={formData.description}
+                                                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                                placeholder="Describe detalladamente la propiedad..."
+                                            ></textarea>
                                         </div>
 
                                         {/* Images */}
@@ -916,19 +962,40 @@ const AgentDashboard = () => {
                                         )}
 
                                         {/* Actions */}
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-col gap-3">
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => saveProperty('draft')}
+                                                    disabled={loading}
+                                                    className="w-full bg-white border-2 border-dashed border-gray-300 text-gray-500 font-bold py-3 rounded-xl hover:bg-gray-50 hover:border-gray-400 hover:text-gray-700 transition flex items-center justify-center gap-2"
+                                                >
+                                                    <FileText className="w-5 h-5" />
+                                                    {loading ? 'Guardando...' : 'Guardar Borrador'}
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    disabled={loading}
+                                                    onClick={() => saveProperty('disponible')} // For now, direct publish until preview is ready
+                                                    className="w-full bg-[#fc7f51] text-white font-bold py-3 rounded-xl hover:bg-[#e56b3e] shadow-lg shadow-orange-500/20 transition flex items-center justify-center gap-2"
+                                                >
+                                                    {loading ? <Loader2 className="animate-spin" /> : 'Publicar Ahora'}
+                                                </button>
+                                            </div>
+
                                             {editingId && (
-                                                <button type="button" onClick={handleCancelEdit} className="flex-1 bg-gray-200 text-gray-800 font-bold py-3 rounded-xl hover:bg-gray-300 transition">Cancelar</button>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCancelEdit}
+                                                    className="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-100 transition"
+                                                >
+                                                    Cancelar Edición
+                                                </button>
                                             )}
-                                            <button type="submit" disabled={loading} className="flex-1 bg-[#fc7f51] hover:bg-[#e56b3e] text-white font-bold py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
-                                                {loading ? <Loader2 className="animate-spin" /> : (editingId ? 'Actualizar Propiedad' : 'Publicar Propiedad')}
-                                            </button>
                                         </div>
                                     </form>
-
-
                                 </div>
-
                                 {/* Right Column: My Properties List */}
                                 <div className="space-y-6">
                                     <div className="flex items-center justify-between">

@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { db } from '../lib/firebase';
 import { doc, getDoc, addDoc, updateDoc, increment, collection } from 'firebase/firestore';
-import { MapPin, ArrowLeft, Heart, Share, Star, ShieldCheck, DoorOpen, Calendar, User, Phone, Mail, X, Loader2, Clock, Car, Building2, ArrowUpFromLine, Layers, Waves, Dumbbell, Armchair, ArrowUpDown, Maximize, Bath, BedDouble, CheckCircle } from 'lucide-react';
+import { MapPin, ArrowLeft, Heart, Share, Star, ShieldCheck, DoorOpen, Calendar, User, Phone, Mail, X, Loader2, Clock, Car, Building2, ArrowUpFromLine, Layers, Waves, Dumbbell, Armchair, ArrowUpDown, Maximize, Bath, BedDouble, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -12,6 +12,9 @@ import { Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
+import { addWatermark, downloadImage } from '../lib/watermark';
+import logo from '../assets/logo.png';
+import { Download } from 'lucide-react';
 
 const PropertyDetail = () => {
     const { id } = useParams();
@@ -28,6 +31,10 @@ const PropertyDetail = () => {
     const [showVisitModal, setShowVisitModal] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [visitLoading, setVisitLoading] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [confirmedVisit, setConfirmedVisit] = useState(null);
+    const [activeImage, setActiveImage] = useState(0);
+    const [showLightbox, setShowLightbox] = useState(false);
 
     // Contact Form
     const [contactForm, setContactForm] = useState({
@@ -76,15 +83,14 @@ const PropertyDetail = () => {
         setShowVisitModal(true);
     };
 
-    const submitVisit = async (e) => {
-        e.preventDefault();
+    const submitVisit = async () => {
         if (!selectedSlot) {
             toast.error("Selecciona un horario.");
             return;
         }
         setVisitLoading(true);
         try {
-            await addDoc(collection(db, "visits"), {
+            const visitData = {
                 propertyId: property.id,
                 propertyTitle: property.title,
                 agentId: property.agentId,
@@ -96,7 +102,9 @@ const PropertyDetail = () => {
                 visitTime: selectedSlot.time,
                 status: 'pending',
                 timestamp: new Date()
-            });
+            };
+
+            await addDoc(collection(db, "visits"), visitData);
 
             // Remove the booked slot from the property's available slots
             const propertyRef = doc(db, "properties", property.id);
@@ -112,8 +120,9 @@ const PropertyDetail = () => {
                 availableVisitSlots: newSlots
             }));
 
-            toast.success("¡Visita agendada con éxito! El agente confirmará la fecha.");
+            setConfirmedVisit(visitData);
             setShowVisitModal(false);
+            setShowSuccessModal(true);
             setSelectedSlot(null);
         } catch (error) {
             console.error("Error scheduling visit:", error);
@@ -121,6 +130,67 @@ const PropertyDetail = () => {
         } finally {
             setVisitLoading(false);
         }
+    };
+
+    // Calendar Utilities
+    const addToGoogleCalendar = () => {
+        if (!confirmedVisit) return;
+        const startTime = new Date(`${confirmedVisit.visitDate}T${confirmedVisit.visitTime}`).toISOString().replace(/-|:|\.\d\d\d/g, "");
+        const endTime = new Date(new Date(`${confirmedVisit.visitDate}T${confirmedVisit.visitTime}`).getTime() + 60 * 60 * 1000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+
+        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Visita: ${confirmedVisit.propertyTitle}`)}&dates=${startTime}/${endTime}&details=${encodeURIComponent(`Visita agendada con Inmuévete.\nPropiedad: ${confirmedVisit.propertyTitle}\nCliente: ${confirmedVisit.clientName}`)}&location=${encodeURIComponent(property.location || '')}`;
+        window.open(url, '_blank');
+    };
+
+    const addToOutlookCalendar = () => {
+        if (!confirmedVisit) return;
+        const startTime = new Date(`${confirmedVisit.visitDate}T${confirmedVisit.visitTime}`).toISOString();
+        const endTime = new Date(new Date(`${confirmedVisit.visitDate}T${confirmedVisit.visitTime}`).getTime() + 60 * 60 * 1000).toISOString();
+
+        const url = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(`Visita: ${confirmedVisit.propertyTitle}`)}&startdt=${startTime}&enddt=${endTime}&body=${encodeURIComponent(`Visita agendada con Inmuévete.\nPropiedad: ${confirmedVisit.propertyTitle}`)}&location=${encodeURIComponent(property.location || '')}`;
+        window.open(url, '_blank');
+    };
+
+    const downloadICS = () => {
+        if (!confirmedVisit) return;
+        const startTime = new Date(`${confirmedVisit.visitDate}T${confirmedVisit.visitTime}`).toISOString().replace(/-|:|\.\d\d\d/g, "");
+        const endTime = new Date(new Date(`${confirmedVisit.visitDate}T${confirmedVisit.visitTime}`).getTime() + 60 * 60 * 1000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+
+        const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+URL:${window.location.href}
+DTSTART:${startTime}
+DTEND:${endTime}
+SUMMARY:Visita: ${confirmedVisit.propertyTitle}
+DESCRIPTION:Visita agendada con Inmuévete para ver la propiedad ${confirmedVisit.propertyTitle}.
+LOCATION:${property.location || ''}
+END:VEVENT
+END:VCALENDAR`;
+
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.setAttribute('download', 'visita.ics');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const notifyAgentWhatsApp = () => {
+        // We'll use the same logic as handleWhatsAppClick to try to get agent phone, or fallback
+        // Since we are inside the component we can reuse handleWhatsAppClick logic or simplify:
+        // For simplicity, let's just trigger a generic message to the main line or agent if available
+        // But better reuse the property agent info.
+
+        // Re-using the logic from handleWhatsAppClick slightly modified for this context
+        let phoneNumber = '51965355700'; // Default Main Number
+        // Ideally we would fetch the agent phone again or store it in property state. 
+        // Assuming property.agentPhone might exist or we just use main support for now to ensure delivery.
+
+        const message = `Hola, acabo de agendar una visita para la propiedad: ${confirmedVisit.propertyTitle}\nFecha: ${confirmedVisit.visitDate}\nHora: ${confirmedVisit.visitTime}\nSoy: ${confirmedVisit.clientName}`;
+        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
     };
 
     // WhatsApp Handler - fetches agent phone from Firestore
@@ -177,6 +247,27 @@ const PropertyDetail = () => {
     // Save Handler
     const handleSave = () => {
         toast.success('¡Propiedad guardada en favoritos!');
+    };
+
+    const handleDownloadImage = async (e) => {
+        e.stopPropagation();
+        const imageUrl = property.images[activeImage];
+        const toastId = toast.loading("Preparando descarga...");
+
+        try {
+            // Create a temporary image to get dimensions if needed, or let addWatermark handle it
+            // We pass the logo URL and fallback text
+            const watermarkedDataUrl = await addWatermark(imageUrl, logo, "Inmuévete");
+
+            // Create a filename
+            const filename = `propiedad-${property.title.substring(0, 20).replace(/[^a-z0-9]/gi, '_').toLowerCase()}-${activeImage + 1}.jpg`;
+
+            downloadImage(watermarkedDataUrl, filename);
+            toast.success("Imagen descargada con marca de agua", { id: toastId });
+        } catch (error) {
+            console.error("Error downloading image:", error);
+            toast.error("No se pudo descargar la imagen. Intente nuevamente.", { id: toastId });
+        }
     };
 
     useEffect(() => {
@@ -254,6 +345,12 @@ const PropertyDetail = () => {
     return (
         <div className="min-h-screen bg-white font-sans text-[#262626]">
             <main className="container mx-auto px-4 md:px-6 pt-28 md:pt-32 pb-12">
+                {property.status === 'draft' && (
+                    <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
+                        <p className="font-bold">Modo Vista Previa (Borrador)</p>
+                        <p>Esta propiedad aún no es visible para el público.</p>
+                    </div>
+                )}
                 {/* Header */}
                 <div className="mb-6">
                     <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{property.title}</h1>
@@ -271,36 +368,62 @@ const PropertyDetail = () => {
                             <button onClick={handleSave} className="flex items-center gap-2 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-semibold text-sm transition">
                                 <Heart className="w-4 h-4" /> Guardar
                             </button>
-                            <button onClick={handleScheduleVisit} className="flex items-center gap-2 bg-[#fc7f51] text-white hover:bg-[#e56b3e] px-4 py-1.5 rounded-lg font-bold text-sm transition shadow-sm">
-                                <Calendar className="w-4 h-4" /> Agendar Visita
-                            </button>
                         </div>
                     </div>
                 </div>
 
                 {/* Image Carousel (Swiper) */}
-                <div className="rounded-2xl overflow-hidden mb-12 shadow-2xl relative h-[400px] md:h-[600px] bg-gray-100 group">
-                    <Swiper
-                        modules={[Navigation, Pagination]}
-                        navigation
-                        pagination={{ clickable: true }}
-                        className="h-full w-full"
-                        loop={true}
-                    >
+                {/* Image Gallery */}
+                <div className="flex flex-col gap-4 mb-12">
+                    {/* Main Image */}
+                    <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-gray-900 shadow-xl group">
                         {property.images && property.images.length > 0 ? (
-                            property.images.map((img, idx) => (
-                                <SwiperSlide key={idx}>
-                                    <img src={img} alt={`Property ${idx + 1}`} className="w-full h-full object-cover" />
-                                </SwiperSlide>
-                            ))
-                        ) : (
-                            <SwiperSlide>
-                                <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400">
-                                    No hay imágenes disponibles
+                            <>
+                                <img
+                                    src={property.images[activeImage]}
+                                    className="w-full h-full object-contain cursor-pointer transition-transform duration-500 hover:scale-105"
+                                    onClick={() => setShowLightbox(true)}
+                                    onContextMenu={(e) => e.preventDefault()}
+                                />
+
+                                <button
+                                    onClick={() => setShowLightbox(true)}
+                                    className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition hover:bg-black/70 z-10"
+                                >
+                                    <Maximize className="w-5 h-5" />
+                                </button>
+
+                                {/* Navigation Arrows */}
+                                <button onClick={(e) => { e.stopPropagation(); setActiveImage(prev => prev === 0 ? property.images.length - 1 : prev - 1); }} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 p-2 rounded-full hover:bg-white/30 backdrop-blur-sm text-white shadow-lg opacity-0 group-hover:opacity-100 transition z-10">
+                                    <ChevronLeft className="w-6 h-6" />
+                                </button>
+                                <button onClick={(e) => { e.stopPropagation(); setActiveImage(prev => prev === property.images.length - 1 ? 0 : prev + 1); }} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 p-2 rounded-full hover:bg-white/30 backdrop-blur-sm text-white shadow-lg opacity-0 group-hover:opacity-100 transition z-10">
+                                    <ChevronRight className="w-6 h-6" />
+                                </button>
+
+                                <div className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm">
+                                    {activeImage + 1} / {property.images.length}
                                 </div>
-                            </SwiperSlide>
+                            </>
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-gray-400">Sin imágenes</div>
                         )}
-                    </Swiper>
+                    </div>
+
+                    {/* Thumbnails */}
+                    {property.images && property.images.length > 1 && (
+                        <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                            {property.images.map((img, idx) => (
+                                <div
+                                    key={idx}
+                                    onClick={() => setActiveImage(idx)}
+                                    className={`aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition relative ${activeImage === idx ? 'border-[#fc7f51] ring-2 ring-orange-100' : 'border-transparent opacity-70 hover:opacity-100 hover:border-gray-300'}`}
+                                >
+                                    <img src={img} className="w-full h-full object-cover" onContextMenu={(e) => e.preventDefault()} />
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Main Content */}
@@ -364,6 +487,24 @@ const PropertyDetail = () => {
                                     <div className="flex items-center gap-3 text-gray-700">
                                         <ArrowUpDown className="w-5 h-5 text-[#fc7f51]" />
                                         <span>Ascensor</span>
+                                    </div>
+                                )}
+                                {property.disabilityAccess && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <ArrowUpDown className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>Acceso Discapacitados (Ascensor)</span>
+                                    </div>
+                                )}
+                                {property.ramp && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <ArrowUpFromLine className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>Rampa Sillas de Ruedas</span>
+                                    </div>
+                                )}
+                                {property.mortgageEligible && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <CheckCircle className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>Apto Crédito Hipotecario</span>
                                     </div>
                                 )}
                                 {property.furnished && (
@@ -540,6 +681,14 @@ const PropertyDetail = () => {
                                 Solicitar Información
                             </button>
 
+                            <button
+                                onClick={handleScheduleVisit}
+                                className="w-full bg-[#fc7f51] text-white font-bold py-3 rounded-lg hover:bg-[#e56b3e] transition mb-6 flex items-center justify-center gap-2 shadow-lg"
+                            >
+                                <Calendar className="w-5 h-5" />
+                                Agendar Visita
+                            </button>
+
                             <div className="text-center text-xs text-gray-400">
                                 * Al contactar aceptas nuestros términos y condiciones.
                             </div>
@@ -606,6 +755,46 @@ const PropertyDetail = () => {
                     </div>
                 )
             }
+            {/* Success Modal */}
+            {showSuccessModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative p-8 text-center">
+                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">
+                            <CheckCircle className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-800 mb-2">¡Visita Agendada!</h3>
+                        <p className="text-gray-600 mb-6">
+                            Tu visita para <strong>{confirmedVisit?.propertyTitle}</strong> ha sido registrada.
+                        </p>
+
+                        <div className="space-y-3 mb-8">
+                            <button onClick={addToGoogleCalendar} className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-50 transition">
+                                <Calendar className="w-5 h-5 text-blue-500" /> Agregar a Google Calendar
+                            </button>
+                            <button onClick={addToOutlookCalendar} className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-50 transition">
+                                <Mail className="w-5 h-5 text-blue-700" /> Agregar a Outlook
+                            </button>
+                            <button onClick={downloadICS} className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-50 transition">
+                                <ArrowUpFromLine className="w-5 h-5 text-gray-500" /> Descargar .ics
+                            </button>
+                        </div>
+
+                        <div className="p-4 bg-orange-50 rounded-xl mb-6">
+                            <p className="text-sm text-[#fc7f51] font-bold mb-2">¿Quieres avisar al agente ahora mismo?</p>
+                            <button onClick={notifyAgentWhatsApp} className="w-full bg-[#25D366] text-white font-bold py-2 rounded-lg hover:bg-[#20bd5a] transition flex items-center justify-center gap-2 shadow-sm">
+                                <Phone className="w-4 h-4" /> Notificar por WhatsApp
+                            </button>
+                        </div>
+
+                        <button
+                            onClick={() => setShowSuccessModal(false)}
+                            className="text-gray-400 hover:text-gray-600 font-medium text-sm underline"
+                        >
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            )}
             {/* Visit Modal - Slot Picker */}
             {showVisitModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -652,6 +841,50 @@ const PropertyDetail = () => {
                         >
                             {visitLoading ? 'Agendando...' : 'Confirmar Visita'}
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Lightbox Modal */}
+            {showLightbox && (
+                <div className="fixed inset-0 z-[60] bg-black flex items-center justify-center" onClick={() => setShowLightbox(false)}>
+                    <button
+                        onClick={() => setShowLightbox(false)}
+                        className="absolute top-4 right-4 text-white hover:text-gray-300 transition z-50 bg-black/50 p-2 rounded-full"
+                    >
+                        <X className="w-8 h-8" />
+                    </button>
+
+                    <button
+                        onClick={handleDownloadImage}
+                        className="absolute top-4 right-20 text-white hover:text-gray-300 transition z-50 bg-black/50 p-2 rounded-full flex items-center gap-2 px-4"
+                        title="Descargar con marca de agua"
+                    >
+                        <Download className="w-6 h-6" />
+                        <span className="hidden md:inline font-medium">Descargar</span>
+                    </button>
+
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setActiveImage(prev => prev === 0 ? property.images.length - 1 : prev - 1); }}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition p-4 bg-black/20 hover:bg-black/50 rounded-full"
+                    >
+                        <ChevronLeft className="w-10 h-10" />
+                    </button>
+
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setActiveImage(prev => prev === property.images.length - 1 ? 0 : prev + 1); }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition p-4 bg-black/20 hover:bg-black/50 rounded-full"
+                    >
+                        <ChevronRight className="w-10 h-10" />
+                    </button>
+
+                    <div className="w-full h-full p-4 md:p-10 flex items-center justify-center">
+                        <img
+                            src={property.images[activeImage]}
+                            className="max-w-full max-h-full object-contain select-none"
+                            onClick={(e) => e.stopPropagation()} // Prevent close on image click
+                            onContextMenu={(e) => e.preventDefault()}
+                        />
                     </div>
                 </div>
             )}
