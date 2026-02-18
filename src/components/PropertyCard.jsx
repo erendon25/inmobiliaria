@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
 import { Heart, Star, Eye } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import logo from '../assets/logo.png';
 
 const PropertyCard = ({ property }) => {
     // Exchange Rate
-    const EXCHANGE_RATE = 3.75;
-
+    const exchangeRate = property.exchangeRate || 3.80; // Default exchange rate
     // Image cycling state
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isHovering, setIsHovering] = useState(false);
@@ -14,23 +14,37 @@ const PropertyCard = ({ property }) => {
     const currency = property.currency || 'USD';
     const price = typeof property.price === 'number' ? property.price : parseFloat(property.price);
 
-    let priceUSD, pricePEN;
+    let mainPrice, secondaryPrice;
+    let mainCurrency, secondaryCurrency;
 
     if (currency === 'USD') {
-        priceUSD = price;
-        pricePEN = price * EXCHANGE_RATE;
+        mainPrice = price;
+        mainCurrency = 'USD';
+        secondaryPrice = price * exchangeRate;
+        secondaryCurrency = 'PEN';
     } else {
-        pricePEN = price;
-        priceUSD = price / EXCHANGE_RATE;
+        mainPrice = price;
+        mainCurrency = 'PEN';
+        secondaryPrice = price / exchangeRate;
+        secondaryCurrency = 'USD';
     }
 
-    const formatPrice = (amount, curr) => {
-        if (!amount) return '0';
-        return amount.toLocaleString('en-US', {
-            style: 'currency',
-            currency: curr,
+    // Format Price Custom Function
+    const formatCustomPrice = (amount, currencyCode) => {
+        if (!amount && amount !== 0) return '0';
+
+        // Ensure 2 decimal places if needed, or 0 if whole number looks better
+        // The user wants maximumFractionDigits: 0 based on previous code usage
+        const formattedAmount = amount.toLocaleString('en-US', {
+            minimumFractionDigits: 0,
             maximumFractionDigits: 0
         });
+
+        if (currencyCode === 'USD') {
+            return `$ ${formattedAmount}`;
+        } else {
+            return `S/. ${formattedAmount}`;
+        }
     };
 
     // Cycle images on hover
@@ -47,6 +61,7 @@ const PropertyCard = ({ property }) => {
     }, [isHovering, property.images]);
 
     const displayImage = property.images?.[currentImageIndex] || property.images?.[0] || 'https://placehold.co/400x300/e2e8f0/94a3b8?text=Sin+Imagen';
+    // Ensure displayImage is always defined to prevent ReferenceError during HMR updates
 
     return (
         <Link
@@ -57,15 +72,29 @@ const PropertyCard = ({ property }) => {
         >
             <div className="relative aspect-[20/19] overflow-hidden rounded-xl bg-gray-200 mb-3">
                 <img
-                    src={displayImage}
+                    src={displayImage || 'https://placehold.co/400x300/e2e8f0/94a3b8?text=Sin+Imagen'}
                     alt={property.title}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
+
+                {/* Watermark Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none select-none z-0">
+                    <img src={logo} alt="" className="w-1/2 h-auto object-contain filter drop-shadow-md brightness-0 invert" />
+                </div>
 
                 {/* Promote Badge */}
                 {property.isPromoted && (
                     <div className="absolute top-3 left-3 bg-[#fc7f51] text-white px-2 py-1 rounded-md text-xs font-bold shadow-md z-10">
                         DESTACADO
+                    </div>
+                )}
+
+                {/* Exclusive Badge */}
+                {property.isExclusive && (
+                    <div className={`absolute ${property.isPromoted ? 'top-10' : 'top-3'} left-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-white px-2 py-1 rounded-md text-xs font-bold shadow-md z-10 flex items-center gap-1`}>
+                        <Star className="w-3 h-3 fill-white" /> EXCLUSIVO
                     </div>
                 )}
 
@@ -90,8 +119,8 @@ const PropertyCard = ({ property }) => {
             <p className="text-gray-800 text-sm font-semibold mb-1 line-clamp-1">{property.title}</p>
 
             <div className="flex items-baseline gap-2 mt-1">
-                <span className="font-bold text-[#fc7f51] text-lg">{formatPrice(priceUSD, 'USD')}</span>
-                <span className="text-xs text-gray-400 font-medium">{formatPrice(pricePEN, 'PEN')}</span>
+                <span className="font-bold text-[#fc7f51] text-lg">{formatCustomPrice(mainPrice, mainCurrency)}</span>
+                <span className="text-xs text-gray-400 font-medium">{formatCustomPrice(secondaryPrice, secondaryCurrency)}</span>
             </div>
         </Link>
     );

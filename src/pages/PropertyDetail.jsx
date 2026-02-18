@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 
+
 // Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -197,24 +198,28 @@ END:VCALENDAR`;
     const handleWhatsAppClick = async () => {
         if (!property) return;
 
-        let phoneNumber = '51999999999'; // Fallback
-        try {
-            if (property.agentId) {
+        let phoneNumber = property.agentPhone || '51999999999'; // Use stored phone or fallback
+
+        // If stored phone is missing but we have ID, try fetching (fallback logic)
+        if (!property.agentPhone && property.agentId) {
+            try {
                 const agentDoc = await getDoc(doc(db, 'users', property.agentId));
                 if (agentDoc.exists()) {
                     const agentData = agentDoc.data();
                     if (agentData.phoneNumber) {
-                        // Clean phone number: remove spaces, dashes, plus sign
-                        phoneNumber = agentData.phoneNumber.replace(/[\s\-\+]/g, '');
-                        // Ensure it starts with country code
-                        if (!phoneNumber.startsWith('51')) {
-                            phoneNumber = '51' + phoneNumber;
-                        }
+                        phoneNumber = agentData.phoneNumber;
                     }
                 }
+            } catch (err) {
+                console.error('Error fetching agent phone:', err);
             }
-        } catch (err) {
-            console.error('Error fetching agent phone:', err);
+        }
+
+        // Clean phone number: remove spaces, dashes, plus sign
+        phoneNumber = phoneNumber.replace(/[\s\-\+]/g, '');
+        // Ensure it starts with country code
+        if (!phoneNumber.startsWith('51') && phoneNumber.length === 9) {
+            phoneNumber = '51' + phoneNumber;
         }
 
         const message = `Hola, estoy interesado en la propiedad: ${property.title}\n📍 ${property.location}`;
@@ -280,8 +285,15 @@ END:VCALENDAR`;
                 if (docSnap.exists()) {
                     const data = docSnap.data();
 
-                    // Increment view counter locally and in DB if not already viewed in this session
-                    if (!hasViewedRef.current) {
+                    // Block access to draft properties for non-owners
+                    if (data.status === 'borrador' && (!user || data.agentId !== user.uid)) {
+                        setProperty(null);
+                        setLoading(false);
+                        return;
+                    }
+
+                    // Increment view counter only for published properties
+                    if (!hasViewedRef.current && data.status !== 'borrador') {
                         hasViewedRef.current = true;
 
                         // Fire and forget DB update
@@ -325,17 +337,23 @@ END:VCALENDAR`;
     }
 
     // Exchange Rate Logic
-    const EXCHANGE_RATE = 3.75;
+    const exchangeRate = property.exchangeRate || 3.80;
     const price = typeof property.price === 'number' ? property.price : parseFloat(property.price);
     const currency = property.currency || 'USD';
 
-    let priceUSD, pricePEN;
+    let mainPrice, secondaryPrice;
+    let mainCurrency, secondaryCurrency;
+
     if (currency === 'USD') {
-        priceUSD = price;
-        pricePEN = price * EXCHANGE_RATE;
+        mainPrice = price;
+        mainCurrency = 'USD';
+        secondaryPrice = price * exchangeRate;
+        secondaryCurrency = 'PEN';
     } else {
-        pricePEN = price;
-        priceUSD = price / EXCHANGE_RATE;
+        mainPrice = price;
+        mainCurrency = 'PEN';
+        secondaryPrice = price / exchangeRate;
+        secondaryCurrency = 'USD';
     }
 
     const mapUrl = property.lat && property.lng
@@ -439,7 +457,11 @@ END:VCALENDAR`;
                                 </p>
                             </div>
                             <div className="w-14 h-14 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
-                                <User className="w-8 h-8 text-gray-400" />
+                                {property.agentPhotoURL ? (
+                                    <img src={property.agentPhotoURL} alt={property.agentName} className="w-full h-full object-cover" />
+                                ) : (
+                                    <User className="w-8 h-8 text-gray-400" />
+                                )}
                             </div>
                         </div>
 
@@ -657,10 +679,10 @@ END:VCALENDAR`;
                         <div className="sticky top-32 bg-white rounded-xl shadow-card border border-gray-200 p-6">
                             <div className="mb-6">
                                 <span className="block text-3xl font-bold text-[#fc7f51]">
-                                    {priceUSD.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}
+                                    {mainCurrency === 'USD' ? `$ ${mainPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : `S/. ${mainPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
                                 </span>
                                 <span className="block text-xl font-bold text-gray-400 mt-1">
-                                    {pricePEN.toLocaleString('en-US', { style: 'currency', currency: 'PEN', maximumFractionDigits: 0 })}
+                                    {secondaryCurrency === 'USD' ? `$ ${secondaryPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : `S/. ${secondaryPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
                                 </span>
                                 {property.type === 'alquiler' && <span className="text-gray-500 text-sm block mt-1">Precio por mes</span>}
                             </div>
@@ -674,11 +696,11 @@ END:VCALENDAR`;
                             </button>
 
                             <button
-                                onClick={() => setShowContact(true)}
-                                className="w-full bg-white border-2 border-gray-200 text-gray-700 font-bold py-3 rounded-lg hover:border-[#fc7f51] hover:text-[#fc7f51] transition mb-6 flex items-center justify-center gap-2"
+                                onClick={handleScheduleVisit}
+                                className="w-full bg-[#fc7f51] text-white font-bold py-3 rounded-lg hover:bg-[#e56b3e] transition mb-6 flex items-center justify-center gap-2 shadow-lg shadow-orange-500/30"
                             >
-                                <Mail className="w-5 h-5" />
-                                Solicitar Información
+                                <Calendar className="w-5 h-5" />
+                                Agendar Visita
                             </button>
 
                             <button
