@@ -80,8 +80,11 @@ const PropertyCard = ({ property }) => {
                 />
 
                 {/* Watermark Overlay */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none select-none z-0">
-                    <img src={logo} alt="" className="w-1/2 h-auto object-contain filter drop-shadow-md brightness-0 invert" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-30 pointer-events-none select-none z-0 gap-1">
+                    <img src={logo} alt="" className="w-1/3 h-auto object-contain filter drop-shadow-md brightness-0 invert" />
+                    <span className="text-white text-[10px] sm:text-xs font-bold tracking-widest uppercase drop-shadow-md text-center" style={{ textShadow: '0 0 4px rgba(0,0,0,0.8)' }}>
+                        Inmuevete Inmobiliaria
+                    </span>
                 </div>
 
                 {/* Promote Badge */}
@@ -102,9 +105,18 @@ const PropertyCard = ({ property }) => {
                     <Heart className="w-6 h-6 fill-black/50 text-white stroke-[2px]" />
                 </button>
 
-                <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg text-white text-xs font-bold uppercase">
+                <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg text-white text-xs font-bold uppercase z-10">
                     {property.type}
                 </div>
+
+                {/* Tomada Overlay */}
+                {property.status === 'tomada' && (
+                    <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-20 flex items-center justify-center pointer-events-none">
+                        <div className="bg-red-600/95 text-white font-black text-xl px-6 py-2 rounded-xl transform -rotate-12 border-4 border-white shadow-2xl tracking-widest uppercase">
+                            {property.type?.toLowerCase() === 'alquiler' ? 'Alquilado' : (property.type?.toLowerCase() === 'anticresis' ? 'Tomada' : 'Vendido')}
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="flex justify-between items-center mb-1">

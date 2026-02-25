@@ -2,15 +2,19 @@ import { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, onSnapshot, limit } from 'firebase/firestore';
 import PropertyCard from '../components/PropertyCard';
-import { Palmtree, Mountain, Waves, Building, Warehouse, ArrowRight, Search, MapPin, ListFilter, Home as HomeIcon, Key, Briefcase, X, Lightbulb, Star } from 'lucide-react';
+import { Palmtree, Mountain, Waves, Building, Building2, Warehouse, ArrowRight, Search, MapPin, ListFilter, Home as HomeIcon, Key, Briefcase, X, Lightbulb, Star, Store, Factory, BedDouble, Sparkles, Map } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const categories = [
-    { icon: Building, label: 'Departamentos' },
-    { icon: Warehouse, label: 'Casas' },
-    { icon: Palmtree, label: 'Terrenos' },
-    { icon: Mountain, label: 'Campestres' },
-    { icon: Waves, label: 'Playa' },
+    { icon: Building2, label: 'Departamento', value: 'Departamento' },
+    { icon: HomeIcon, label: 'Casa', value: 'Casa' },
+    { icon: MapPin, label: 'Terreno Urbano', value: 'Terreno Urbano' },
+    { icon: Map, label: 'Terreno Rústico', value: 'Terreno Rustico' },
+    { icon: Sparkles, label: 'Pre venta', value: 'Pre venta' },
+    { icon: Waves, label: 'Casa de playa', value: 'Casa de playa' },
+    { icon: Briefcase, label: 'Terreno Comercial', value: 'Terreno Comercial' },
+    { icon: Store, label: 'Local Comercial', value: 'Local Comercial' },
+    { icon: Palmtree, label: 'Terreno de playa', value: 'Terreno de playa' },
 ];
 
 const Home = () => {
@@ -75,7 +79,7 @@ const Home = () => {
         // Real-time listener
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const props = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-                .filter(p => p.status === 'disponible'); // Only show published/available properties
+                .filter(p => p.status === 'disponible' || p.status === 'tomada'); // Show available or taken (sold) properties
 
             // Sort properties: Promoted first, then Newest first
             props.sort((a, b) => {
@@ -184,11 +188,15 @@ const Home = () => {
                                             onChange={(e) => setPropertyType(e.target.value)}
                                             className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none appearance-none font-medium cursor-pointer"
                                         >
-                                            <option value="departamento">Departamento</option>
-                                            <option value="casa">Casa</option>
-                                            <option value="terreno">Terreno</option>
-                                            <option value="oficina">Oficina</option>
-                                            <option value="local">Local Comercial</option>
+                                            <option value="Casa">Casa</option>
+                                            <option value="Departamento">Departamento</option>
+                                            <option value="Terreno Urbano">Terreno Urbano</option>
+                                            <option value="Terreno Rustico">Terreno Rústico</option>
+                                            <option value="Pre venta">Pre venta</option>
+                                            <option value="Casa de playa">Casa de playa</option>
+                                            <option value="Terreno Comercial">Terreno Comercial</option>
+                                            <option value="Local Comercial">Local Comercial</option>
+                                            <option value="Terreno de playa">Terreno de playa</option>
                                             <option value="otro">Otro</option>
                                         </select>
                                     </div>
@@ -439,7 +447,7 @@ const Home = () => {
                         {categories.map((cat, idx) => (
                             <div
                                 key={idx}
-                                onClick={() => navigate(`/search?propertyType=${cat.label.toLowerCase()}`)}
+                                onClick={() => navigate(`/search?propertyType=${cat.value}`)}
                                 className="flex flex-col items-center gap-3 min-w-[100px] cursor-pointer group opacity-60 hover:opacity-100 transition-all duration-300 hover:-translate-y-1"
                             >
                                 <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm group-hover:shadow-md border border-gray-100 group-hover:border-[#fc7f51]/30 transition">

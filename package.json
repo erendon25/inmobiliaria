@@ -13,13 +13,17 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "docxtemplater": "^3.68.2",
+    "file-saver": "^2.0.5",
     "firebase": "^12.9.0",
     "firebase-admin": "^13.6.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.563.0",
+    "pizzip": "^3.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hot-toast": "^2.6.0",
+    "react-image-crop": "^11.0.10",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.13.0",
     "swiper": "^12.1.0"

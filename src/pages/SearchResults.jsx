@@ -82,21 +82,11 @@ const SearchResults = () => {
         }
 
         // Filter by property type
-        if (propertyType) {
+        if (propertyType && propertyType !== 'otro') {
             const pt = propertyType.toLowerCase();
             results = results.filter(p => {
-                const pTitle = p.title?.toLowerCase() || '';
                 const pCat = p.category?.toLowerCase() || '';
-                const pLoc = p.location?.toLowerCase() || '';
-                // Map search types to data (handle both singular and plural)
-                if (pt === 'departamento' || pt === 'departamentos') return pTitle.includes('departamento') || pTitle.includes('depa');
-                if (pt === 'casa' || pt === 'casas') return pTitle.includes('casa');
-                if (pt === 'terreno' || pt === 'terrenos') return pCat === 'terreno' || pTitle.includes('terreno') || pTitle.includes('lote');
-                if (pt === 'oficina' || pt === 'oficinas') return pTitle.includes('oficina');
-                if (pt === 'local' || pt === 'locales') return pTitle.includes('local');
-                if (pt === 'campestre' || pt === 'campestres') return pTitle.includes('campestre') || pTitle.includes('campo') || pLoc.includes('campo');
-                if (pt === 'playa') return pTitle.includes('playa') || pLoc.includes('playa');
-                return true;
+                return pCat === pt || pCat.includes(pt) || pt.includes(pCat); // basic match
             });
         }
 
@@ -149,8 +139,8 @@ const SearchResults = () => {
             results = results.filter(p => p.floor?.toString().toLowerCase() === floor.toLowerCase());
         }
 
-        // Only show available properties
-        results = results.filter(p => p.status === 'disponible');
+        // Only show available and taking properties
+        results = results.filter(p => p.status === 'disponible' || p.status === 'tomada');
 
         // Sort
         if (sortBy === 'newest') {
@@ -283,11 +273,16 @@ const SearchResults = () => {
                                         className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg focus:border-[#fc7f51] outline-none text-sm font-medium"
                                     >
                                         <option value="">Todos</option>
-                                        <option value="departamento">Departamento</option>
-                                        <option value="casa">Casa</option>
-                                        <option value="terreno">Terreno</option>
-                                        <option value="oficina">Oficina</option>
-                                        <option value="local">Local Comercial</option>
+                                        <option value="Casa">Casa</option>
+                                        <option value="Departamento">Departamento</option>
+                                        <option value="Terreno Urbano">Terreno Urbano</option>
+                                        <option value="Terreno Rustico">Terreno Rústico</option>
+                                        <option value="Pre venta">Pre venta</option>
+                                        <option value="Casa de playa">Casa de playa</option>
+                                        <option value="Terreno Comercial">Terreno Comercial</option>
+                                        <option value="Local Comercial">Local Comercial</option>
+                                        <option value="Terreno de playa">Terreno de playa</option>
+                                        <option value="otro">Otro</option>
                                     </select>
                                 </div>
 

@@ -1,8 +1,8 @@
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { db } from '../lib/firebase';
 import { doc, getDoc, addDoc, updateDoc, increment, collection } from 'firebase/firestore';
-import { MapPin, ArrowLeft, Heart, Share, Star, ShieldCheck, DoorOpen, Calendar, User, Phone, Mail, X, Loader2, Clock, Car, Building2, ArrowUpFromLine, Layers, Waves, Dumbbell, Armchair, ArrowUpDown, Maximize, Bath, BedDouble, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, ArrowLeft, Heart, Share, Star, ShieldCheck, DoorOpen, Calendar, User, Phone, Mail, X, Loader2, Clock, Car, Building2, ArrowUpFromLine, Layers, Waves, Dumbbell, Armchair, ArrowUpDown, Maximize, Bath, BedDouble, CheckCircle, ChevronLeft, ChevronRight, Home, Trees, Zap, Droplets } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -43,6 +43,23 @@ const PropertyDetail = () => {
         phone: '',
         message: 'Hola, estoy interesado en esta propiedad y me gustaría recibir más información.'
     });
+
+    const mediaItems = useMemo(() => {
+        if (!property) return [];
+        const items = [];
+        if (property.youtubeVideoUrl) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+            const match = property.youtubeVideoUrl.match(regExp);
+            const videoId = (match && match[2].length === 11) ? match[2] : null;
+            if (videoId) {
+                items.push({ type: 'youtube', id: videoId, url: property.youtubeVideoUrl, thumb: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` });
+            }
+        }
+        if (property.images) {
+            property.images.forEach(img => items.push({ type: 'image', url: img }));
+        }
+        return items;
+    }, [property]);
 
     const handleContactSubmit = async (e) => {
         e.preventDefault();
@@ -178,18 +195,31 @@ END:VCALENDAR`;
         document.body.removeChild(link);
     };
 
-    const notifyAgentWhatsApp = () => {
-        // We'll use the same logic as handleWhatsAppClick to try to get agent phone, or fallback
-        // Since we are inside the component we can reuse handleWhatsAppClick logic or simplify:
-        // For simplicity, let's just trigger a generic message to the main line or agent if available
-        // But better reuse the property agent info.
+    const notifyAgentWhatsApp = async () => {
+        if (!confirmedVisit || !property) return;
 
-        // Re-using the logic from handleWhatsAppClick slightly modified for this context
-        let phoneNumber = '51965355700'; // Default Main Number
-        // Ideally we would fetch the agent phone again or store it in property state. 
-        // Assuming property.agentPhone might exist or we just use main support for now to ensure delivery.
+        let phoneNumber = property.agentPhone || '51999999999';
 
-        const message = `Hola, acabo de agendar una visita para la propiedad: ${confirmedVisit.propertyTitle}\nFecha: ${confirmedVisit.visitDate}\nHora: ${confirmedVisit.visitTime}\nSoy: ${confirmedVisit.clientName}`;
+        if (!property.agentPhone && property.agentId) {
+            try {
+                const agentDoc = await getDoc(doc(db, 'users', property.agentId));
+                if (agentDoc.exists()) {
+                    const agentData = agentDoc.data();
+                    if (agentData.phoneNumber) {
+                        phoneNumber = agentData.phoneNumber;
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching agent phone:', err);
+            }
+        }
+
+        phoneNumber = phoneNumber.replace(/[\s\-\+]/g, '');
+        if (!phoneNumber.startsWith('51') && phoneNumber.length === 9) {
+            phoneNumber = '51' + phoneNumber;
+        }
+
+        const message = `Hola, acabo de agendar una visita para la propiedad: ${confirmedVisit.propertyTitle}\n📍 Ubicación: ${property.location || ''}\n🗓️ Fecha: ${confirmedVisit.visitDate}\n🕒 Hora: ${confirmedVisit.visitTime}\n👤 Soy: ${confirmedVisit.clientName}`;
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
     };
@@ -255,23 +285,24 @@ END:VCALENDAR`;
     };
 
     const handleDownloadImage = async (e) => {
-        e.stopPropagation();
-        const imageUrl = property.images[activeImage];
-        const toastId = toast.loading("Preparando descarga...");
+        if (e) e.stopPropagation();
+        if (!mediaItems?.length || mediaItems[activeImage].type === 'youtube') return;
+
+        const imageUrl = mediaItems[activeImage].url;
+        const toastId = toast.loading('Preparando imagen con marca de agua...');
 
         try {
-            // Create a temporary image to get dimensions if needed, or let addWatermark handle it
-            // We pass the logo URL and fallback text
-            const watermarkedDataUrl = await addWatermark(imageUrl, logo, "Inmuévete");
-
-            // Create a filename
-            const filename = `propiedad-${property.title.substring(0, 20).replace(/[^a-z0-9]/gi, '_').toLowerCase()}-${activeImage + 1}.jpg`;
-
+            const watermarkedDataUrl = await addWatermark(imageUrl, logo, 'Inmuévete');
+            const safeName = property.title
+                .substring(0, 30)
+                .replace(/[^a-z0-9]/gi, '_')
+                .toLowerCase();
+            const filename = `inmueveteperu-${safeName}-${activeImage + 1}.jpg`;
             downloadImage(watermarkedDataUrl, filename);
-            toast.success("Imagen descargada con marca de agua", { id: toastId });
+            toast.success('✅ Imagen descargada con marca de agua', { id: toastId });
         } catch (error) {
-            console.error("Error downloading image:", error);
-            toast.error("No se pudo descargar la imagen. Intente nuevamente.", { id: toastId });
+            console.error('Error al descargar imagen:', error);
+            toast.error('No se pudo descargar la imagen. Verifica tu conexión.', { id: toastId });
         }
     };
 
@@ -356,6 +387,23 @@ END:VCALENDAR`;
         secondaryCurrency = 'USD';
     }
 
+    // Alcabala calculation
+    // UIT values by year (dynamic)
+    const UIT_HISTORY = {
+        2022: 4600,
+        2023: 4950,
+        2024: 5150,
+        2025: 5400, // example 2025
+        2026: 5600, // approximated 2026/future based on historical average
+    };
+    const currentYear = new Date().getFullYear();
+    // Use the exact UIT for the year or fallback to the latest available (or a safe proxy)
+    const UIT_VALUE = UIT_HISTORY[currentYear] || 5600;
+
+    const propertyValueSoles = currency === 'PEN' ? price : price * exchangeRate;
+    const baseAlcabala = propertyValueSoles - (10 * UIT_VALUE);
+    const estimatedAlcabala = baseAlcabala > 0 ? baseAlcabala * 0.03 : 0;
+
     const mapUrl = property.lat && property.lng
         ? `https://www.google.com/maps/search/?api=1&query=${property.lat},${property.lng}`
         : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.location)}`;
@@ -391,53 +439,109 @@ END:VCALENDAR`;
                 </div>
 
                 {/* Image Carousel (Swiper) */}
-                {/* Image Gallery */}
+                {/* Image & Video Gallery */}
                 <div className="flex flex-col gap-4 mb-12">
-                    {/* Main Image */}
+                    {/* Main Media */}
                     <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-gray-900 shadow-xl group">
-                        {property.images && property.images.length > 0 ? (
+                        {mediaItems.length > 0 ? (
                             <>
-                                <img
-                                    src={property.images[activeImage]}
-                                    className="w-full h-full object-contain cursor-pointer transition-transform duration-500 hover:scale-105"
-                                    onClick={() => setShowLightbox(true)}
-                                    onContextMenu={(e) => e.preventDefault()}
-                                />
+                                {mediaItems[activeImage].type === 'image' ? (
+                                    <>
+                                        <img
+                                            src={mediaItems[activeImage].url}
+                                            className="w-full h-full object-contain cursor-pointer transition-transform duration-500 hover:scale-105"
+                                            onClick={() => setShowLightbox(true)}
+                                            onContextMenu={(e) => e.preventDefault()}
+                                        />
+                                        {/* Watermark Overlay - visible on main image */}
+                                        <div className="absolute inset-0 pointer-events-none select-none z-10 flex flex-col items-center justify-center p-4 gap-2 opacity-35">
+                                            <img
+                                                src={logo}
+                                                alt=""
+                                                className="w-32 md:w-48 h-auto object-contain filter drop-shadow-lg"
+                                            />
+                                            <span className="text-white text-lg md:text-2xl font-bold tracking-widest uppercase drop-shadow-lg" style={{ textShadow: '0 0 8px rgba(0,0,0,0.8)' }}>
+                                                Inmuevete Inmobiliaria
+                                            </span>
+                                        </div>
+                                        {/* Tomada Overlay */}
+                                        {property.status === 'tomada' && (
+                                            <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-20 flex items-center justify-center pointer-events-none">
+                                                <div className="bg-red-600/95 text-white font-black text-3xl md:text-5xl px-8 py-3 rounded-2xl transform -rotate-12 border-4 border-white shadow-2xl tracking-widest uppercase">
+                                                    {property.type?.toLowerCase() === 'alquiler' ? 'Alquilado' : (property.type?.toLowerCase() === 'anticresis' ? 'Tomada' : 'Vendido')}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <iframe
+                                        className="w-full h-full"
+                                        src={`https://www.youtube.com/embed/${mediaItems[activeImage].id}?autoplay=1`}
+                                        title="YouTube video player"
+                                        frameBorder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    ></iframe>
+                                )}
 
-                                <button
-                                    onClick={() => setShowLightbox(true)}
-                                    className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition hover:bg-black/70 z-10"
-                                >
-                                    <Maximize className="w-5 h-5" />
-                                </button>
+                                {/* Top controls (only for images) */}
+                                {mediaItems[activeImage].type === 'image' && (
+                                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition z-20">
+                                        <button
+                                            onClick={handleDownloadImage}
+                                            className="bg-black/60 text-white p-2 rounded-full hover:bg-[#fc7f51] transition flex items-center gap-1.5 px-3"
+                                            title="Descargar con marca de agua"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                            <span className="text-xs font-semibold hidden sm:inline">Descargar</span>
+                                        </button>
+                                        <button
+                                            onClick={() => setShowLightbox(true)}
+                                            className="bg-black/60 text-white p-2 rounded-full hover:bg-black/80 transition"
+                                            title="Ver a pantalla completa"
+                                        >
+                                            <Maximize className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                )}
 
                                 {/* Navigation Arrows */}
-                                <button onClick={(e) => { e.stopPropagation(); setActiveImage(prev => prev === 0 ? property.images.length - 1 : prev - 1); }} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 p-2 rounded-full hover:bg-white/30 backdrop-blur-sm text-white shadow-lg opacity-0 group-hover:opacity-100 transition z-10">
+                                <button onClick={(e) => { e.stopPropagation(); setActiveImage(prev => prev === 0 ? mediaItems.length - 1 : prev - 1); }} className={`absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 p-2 rounded-full hover:bg-white/30 backdrop-blur-sm text-white shadow-lg transition z-10 ${mediaItems[activeImage].type === 'youtube' ? 'opacity-100 bg-black/50' : 'opacity-0 group-hover:opacity-100'}`}>
                                     <ChevronLeft className="w-6 h-6" />
                                 </button>
-                                <button onClick={(e) => { e.stopPropagation(); setActiveImage(prev => prev === property.images.length - 1 ? 0 : prev + 1); }} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 p-2 rounded-full hover:bg-white/30 backdrop-blur-sm text-white shadow-lg opacity-0 group-hover:opacity-100 transition z-10">
+                                <button onClick={(e) => { e.stopPropagation(); setActiveImage(prev => prev === mediaItems.length - 1 ? 0 : prev + 1); }} className={`absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 p-2 rounded-full hover:bg-white/30 backdrop-blur-sm text-white shadow-lg transition z-10 ${mediaItems[activeImage].type === 'youtube' ? 'opacity-100 bg-black/50' : 'opacity-0 group-hover:opacity-100'}`}>
                                     <ChevronRight className="w-6 h-6" />
                                 </button>
 
-                                <div className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm">
-                                    {activeImage + 1} / {property.images.length}
+                                <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm z-10 pointer-events-none">
+                                    {activeImage + 1} / {mediaItems.length}
                                 </div>
                             </>
                         ) : (
-                            <div className="flex items-center justify-center h-full text-gray-400">Sin imágenes</div>
+                            <div className="flex items-center justify-center h-full text-gray-400">Sin imágenes o videos</div>
                         )}
                     </div>
 
                     {/* Thumbnails */}
-                    {property.images && property.images.length > 1 && (
+                    {mediaItems.length > 1 && (
                         <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
-                            {property.images.map((img, idx) => (
+                            {mediaItems.map((item, idx) => (
                                 <div
                                     key={idx}
                                     onClick={() => setActiveImage(idx)}
                                     className={`aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition relative ${activeImage === idx ? 'border-[#fc7f51] ring-2 ring-orange-100' : 'border-transparent opacity-70 hover:opacity-100 hover:border-gray-300'}`}
                                 >
-                                    <img src={img} className="w-full h-full object-cover" onContextMenu={(e) => e.preventDefault()} />
+                                    <img src={item.type === 'image' ? item.url : item.thumb} className="w-full h-full object-cover" onContextMenu={(e) => e.preventDefault()} />
+                                    {item.type === 'youtube' && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
+                                            <div className="bg-red-600 text-white rounded-full p-2 opacity-90"><svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path d="M8 5v14l11-7z" /></svg></div>
+                                        </div>
+                                    )}
+                                    {item.type === 'image' && (
+                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-35">
+                                            <img src={logo} alt="" className="w-8 h-auto object-contain filter drop-shadow-sm" />
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -453,7 +557,7 @@ END:VCALENDAR`;
                             <div>
                                 <h2 className="text-2xl font-bold mb-1">Publicado por {property.agentName || 'Agente Inmuévete'}</h2>
                                 <p className="text-gray-600 mb-0">
-                                    {property.bedrooms || 0} Habitaciones · {property.bathrooms || 0} Baños · {property.footage} m²
+                                    {property.bedrooms ? `${property.bedrooms} Habitaciones · ` : ''}{property.bathrooms ? `${property.bathrooms} Baños · ` : ''}{property.footage || property.areaTerreno} m²
                                 </p>
                             </div>
                             <div className="w-14 h-14 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
@@ -471,16 +575,20 @@ END:VCALENDAR`;
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6">
                                 <div className="flex items-center gap-3 text-gray-700">
                                     <Maximize className="w-5 h-5 text-[#fc7f51]" />
-                                    <span>{property.footage} m²</span>
+                                    <span>{property.footage || property.areaTerreno} m²</span>
                                 </div>
-                                <div className="flex items-center gap-3 text-gray-700">
-                                    <BedDouble className="w-5 h-5 text-[#fc7f51]" />
-                                    <span>{property.bedrooms || 0} Habitaciones</span>
-                                </div>
-                                <div className="flex items-center gap-3 text-gray-700">
-                                    <Bath className="w-5 h-5 text-[#fc7f51]" />
-                                    <span>{property.bathrooms || 0} Baños</span>
-                                </div>
+                                {property.bedrooms > 0 && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <BedDouble className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>{property.bedrooms} Habitaciones</span>
+                                    </div>
+                                )}
+                                {property.bathrooms > 0 && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <Bath className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>{property.bathrooms} Baños</span>
+                                    </div>
+                                )}
                                 {property.parking && (
                                     <div className="flex items-center gap-3 text-gray-700">
                                         <Car className="w-5 h-5 text-[#fc7f51]" />
@@ -562,7 +670,37 @@ END:VCALENDAR`;
                                 {property.antiquity && (
                                     <div className="flex items-center gap-3 text-gray-700">
                                         <Clock className="w-5 h-5 text-[#fc7f51]" />
-                                        <span>{property.antiquity === 'estreno' ? 'Estreno' : property.antiquity}</span>
+                                        <span>{property.antiquity === 'estreno' ? 'Estreno' : property.antiquity === 'preventa' ? 'Pre-Venta' : property.antiquity === 'up_to_5' ? 'Hasta 5 años' : property.antiquity === '5_to_10' ? '5 a 10 años' : property.antiquity === 'more_than_10' ? 'Más de 10 años' : property.antiquity === 'more_than_20' ? 'Más de 20 años' : property.antiquity}</span>
+                                    </div>
+                                )}
+                                {property.condominium && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <Home className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>Dentro de condominio</span>
+                                    </div>
+                                )}
+                                {property.commonAreas && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <Trees className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>Áreas comunes</span>
+                                    </div>
+                                )}
+                                {property.independentLight && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <Zap className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>Luz</span>
+                                    </div>
+                                )}
+                                {property.potableWater && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <Droplets className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>Agua</span>
+                                    </div>
+                                )}
+                                {property.drainage && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <Droplets className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>Desagüe</span>
                                     </div>
                                 )}
                             </div>
@@ -591,7 +729,7 @@ END:VCALENDAR`;
                                 </div>
                                 <div className="flex justify-between py-2 border-b border-gray-50">
                                     <span className="text-gray-500">Área</span>
-                                    <span className="font-semibold">{property.footage} m²</span>
+                                    <span className="font-semibold">{property.footage || property.areaTerreno} m²</span>
                                 </div>
                                 <div className="flex justify-between py-2 border-b border-gray-50">
                                     <span className="text-gray-500">Estado</span>
@@ -687,6 +825,21 @@ END:VCALENDAR`;
                                 {property.type === 'alquiler' && <span className="text-gray-500 text-sm block mt-1">Precio por mes</span>}
                             </div>
 
+                            {property.alcabala && estimatedAlcabala > 0 && property.type === 'venta' && (
+                                <div className="mb-6 p-4 bg-orange-50 rounded-lg border border-orange-100 shadow-sm">
+                                    <span className="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+                                        🧾 Pago de Alcabala (Aprox.)
+                                    </span>
+                                    <span className="block text-xl font-bold text-[#fc7f51]">
+                                        S/. {estimatedAlcabala.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                                    </span>
+                                    <span className="text-xs text-gray-500 mt-1.5 block leading-tight">
+                                        <b className="font-semibold text-gray-600">¿Cómo se calcula?</b><br />
+                                        Es el 3% del valor de la propiedad en soles, descontando las primeras 10 UIT.
+                                    </span>
+                                </div>
+                            )}
+
                             <button
                                 onClick={handleWhatsAppClick}
                                 className="w-full bg-[#25D366] text-white font-bold text-lg py-3 rounded-lg hover:bg-[#20bd5a] transition mb-4 shadow-lg shadow-green-500/30 flex items-center justify-center gap-2"
@@ -698,14 +851,6 @@ END:VCALENDAR`;
                             <button
                                 onClick={handleScheduleVisit}
                                 className="w-full bg-[#fc7f51] text-white font-bold py-3 rounded-lg hover:bg-[#e56b3e] transition mb-6 flex items-center justify-center gap-2 shadow-lg shadow-orange-500/30"
-                            >
-                                <Calendar className="w-5 h-5" />
-                                Agendar Visita
-                            </button>
-
-                            <button
-                                onClick={handleScheduleVisit}
-                                className="w-full bg-[#fc7f51] text-white font-bold py-3 rounded-lg hover:bg-[#e56b3e] transition mb-6 flex items-center justify-center gap-2 shadow-lg"
                             >
                                 <Calendar className="w-5 h-5" />
                                 Agendar Visita
@@ -869,44 +1014,75 @@ END:VCALENDAR`;
 
             {/* Lightbox Modal */}
             {showLightbox && (
-                <div className="fixed inset-0 z-[60] bg-black flex items-center justify-center" onClick={() => setShowLightbox(false)}>
-                    <button
-                        onClick={() => setShowLightbox(false)}
-                        className="absolute top-4 right-4 text-white hover:text-gray-300 transition z-50 bg-black/50 p-2 rounded-full"
-                    >
-                        <X className="w-8 h-8" />
-                    </button>
+                <div className="fixed inset-0 z-[60] bg-black/95 flex items-center justify-center" onClick={() => setShowLightbox(false)}>
+                    {/* Controls top bar */}
+                    <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 to-transparent z-50 pointer-events-none">
+                        <span className="text-white/70 text-sm font-medium">
+                            {activeImage + 1} / {mediaItems.length} — {property.title}
+                        </span>
+                        <div className="flex items-center gap-2 pointer-events-auto">
+                            {mediaItems[activeImage].type === 'image' && (
+                                <button
+                                    onClick={handleDownloadImage}
+                                    className="text-white bg-white/10 hover:bg-[#fc7f51] transition p-2 rounded-full flex items-center gap-2 px-4"
+                                    title="Descargar con marca de agua"
+                                >
+                                    <Download className="w-5 h-5" />
+                                    <span className="hidden md:inline font-medium text-sm">Descargar</span>
+                                </button>
+                            )}
+                            <button
+                                onClick={() => setShowLightbox(false)}
+                                className="text-white bg-white/10 hover:bg-white/30 transition p-2 rounded-full"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+                    </div>
 
                     <button
-                        onClick={handleDownloadImage}
-                        className="absolute top-4 right-20 text-white hover:text-gray-300 transition z-50 bg-black/50 p-2 rounded-full flex items-center gap-2 px-4"
-                        title="Descargar con marca de agua"
-                    >
-                        <Download className="w-6 h-6" />
-                        <span className="hidden md:inline font-medium">Descargar</span>
-                    </button>
-
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setActiveImage(prev => prev === 0 ? property.images.length - 1 : prev - 1); }}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition p-4 bg-black/20 hover:bg-black/50 rounded-full"
+                        onClick={(e) => { e.stopPropagation(); setActiveImage(prev => prev === 0 ? mediaItems.length - 1 : prev - 1); }}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition p-4 bg-black/20 hover:bg-black/50 rounded-full z-50"
                     >
                         <ChevronLeft className="w-10 h-10" />
                     </button>
 
                     <button
-                        onClick={(e) => { e.stopPropagation(); setActiveImage(prev => prev === property.images.length - 1 ? 0 : prev + 1); }}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition p-4 bg-black/20 hover:bg-black/50 rounded-full"
+                        onClick={(e) => { e.stopPropagation(); setActiveImage(prev => prev === mediaItems.length - 1 ? 0 : prev + 1); }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition p-4 bg-black/20 hover:bg-black/50 rounded-full z-50"
                     >
                         <ChevronRight className="w-10 h-10" />
                     </button>
 
-                    <div className="w-full h-full p-4 md:p-10 flex items-center justify-center">
-                        <img
-                            src={property.images[activeImage]}
-                            className="max-w-full max-h-full object-contain select-none"
-                            onClick={(e) => e.stopPropagation()} // Prevent close on image click
-                            onContextMenu={(e) => e.preventDefault()}
-                        />
+                    {/* Media with watermark overlay */}
+                    <div className="relative w-full h-full p-4 md:p-14 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                        {mediaItems[activeImage].type === 'image' ? (
+                            <>
+                                <img
+                                    src={mediaItems[activeImage].url}
+                                    className="max-w-full max-h-full object-contain select-none"
+                                    onContextMenu={(e) => e.preventDefault()}
+                                />
+                                {/* Watermark overlay in lightbox */}
+                                <div className="absolute bottom-16 right-8 pointer-events-none select-none flex flex-col items-end gap-1 opacity-40">
+                                    <img src={logo} alt="" className="w-48 h-auto object-contain filter drop-shadow-md" />
+                                    <span className="text-white text-xl font-bold tracking-widest uppercase drop-shadow-md">
+                                        Inmuevete Inmobiliaria
+                                    </span>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="w-full h-full max-w-5xl max-h-[80vh]">
+                                <iframe
+                                    className="w-full h-full rounded-2xl"
+                                    src={`https://www.youtube.com/embed/${mediaItems[activeImage].id}?autoplay=1`}
+                                    title="YouTube video player"
+                                    frameBorder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                ></iframe>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
