@@ -14,6 +14,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import { addWatermark, downloadImage } from '../lib/watermark';
+import { fetchSunatExchangeRate } from '../lib/exchangeRate';
 import logo from '../assets/logo.png';
 import { Download } from 'lucide-react';
 
@@ -43,6 +44,16 @@ const PropertyDetail = () => {
         phone: '',
         message: 'Hola, estoy interesado en esta propiedad y me gustaría recibir más información.'
     });
+
+    const [liveRate, setLiveRate] = useState(3.36);
+
+    useEffect(() => {
+        let isMounted = true;
+        fetchSunatExchangeRate().then(rate => {
+            if (rate && isMounted) setLiveRate(rate);
+        });
+        return () => { isMounted = false; };
+    }, []);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -372,7 +383,7 @@ END:VCALENDAR`;
     }
 
     // Exchange Rate Logic
-    const exchangeRate = property.exchangeRate || 3.80;
+    const exchangeRate = liveRate;
     const price = typeof property.price === 'number' ? property.price : parseFloat(property.price);
     const currency = property.currency || 'USD';
 
@@ -445,111 +456,81 @@ END:VCALENDAR`;
                 {/* Image Carousel (Swiper) */}
                 {/* Image & Video Gallery */}
                 <div className="flex flex-col gap-4 mb-12">
-                    {/* Main Media */}
+                    {/* Main Media Swiper */}
                     <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-gray-900 shadow-xl group">
                         {mediaItems.length > 0 ? (
-                            <>
-                                {mediaItems[activeImage].type === 'image' ? (
-                                    <>
-                                        <img
-                                            src={mediaItems[activeImage].url}
-                                            className="w-full h-full object-contain cursor-pointer transition-transform duration-500 hover:scale-105"
-                                            onClick={() => setShowLightbox(true)}
-                                            onContextMenu={(e) => e.preventDefault()}
-                                        />
-                                        {/* Watermark Overlay - visible on main image */}
-                                        <div className="absolute inset-0 pointer-events-none select-none z-10 flex flex-col items-center justify-center p-4 gap-2 opacity-35">
-                                            <img
-                                                src={logo}
-                                                alt=""
-                                                className="w-32 md:w-48 h-auto object-contain filter drop-shadow-lg"
-                                            />
-                                            <span className="text-white text-lg md:text-2xl font-bold tracking-widest uppercase drop-shadow-lg" style={{ textShadow: '0 0 8px rgba(0,0,0,0.8)' }}>
-                                                Inmuevete Inmobiliaria
-                                            </span>
-                                        </div>
-                                        {/* Tomada Overlay */}
-                                        {property.status === 'tomada' && (
-                                            <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-20 flex items-center justify-center pointer-events-none">
-                                                <div className="bg-red-600/95 text-white font-black text-3xl md:text-5xl px-8 py-3 rounded-2xl transform -rotate-12 border-4 border-white shadow-2xl tracking-widest uppercase">
-                                                    {property.type?.toLowerCase() === 'alquiler' ? 'Alquilado' : (property.type?.toLowerCase() === 'anticresis' ? 'Tomada' : 'Vendido')}
+                            <Swiper
+                                modules={[Navigation, Pagination]}
+                                navigation
+                                pagination={{ clickable: true }}
+                                className="w-full h-full"
+                                onSlideChange={(swiper) => setActiveImage(swiper.activeIndex)}
+                            >
+                                {mediaItems.map((item, idx) => (
+                                    <SwiperSlide key={idx} className="w-full h-full relative">
+                                        {item.type === 'image' ? (
+                                            <>
+                                                <img
+                                                    src={item.url}
+                                                    className="w-full h-full object-contain cursor-pointer transition-transform duration-500 hover:scale-105"
+                                                    onClick={() => { setActiveImage(idx); setShowLightbox(true); }}
+                                                    onContextMenu={(e) => e.preventDefault()}
+                                                />
+                                                {/* Watermark Overlay */}
+                                                <div className="absolute inset-0 pointer-events-none select-none z-10 flex flex-col items-center justify-center p-4 gap-2 opacity-35">
+                                                    <img src={logo} alt="" className="w-32 md:w-48 h-auto object-contain filter drop-shadow-lg" />
+                                                    <span className="text-white text-lg md:text-2xl font-bold tracking-widest uppercase drop-shadow-lg" style={{ textShadow: '0 0 8px rgba(0,0,0,0.8)' }}>
+                                                        Inmuevete Inmobiliaria
+                                                    </span>
                                                 </div>
-                                            </div>
+                                            </>
+                                        ) : (
+                                            <iframe
+                                                className="w-full h-full"
+                                                src={`https://www.youtube.com/embed/${item.id}?autoplay=0`}
+                                                title="YouTube video"
+                                                frameBorder="0"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                allowFullScreen
+                                            ></iframe>
                                         )}
-                                    </>
-                                ) : (
-                                    <iframe
-                                        className="w-full h-full"
-                                        src={`https://www.youtube.com/embed/${mediaItems[activeImage].id}?autoplay=1`}
-                                        title="YouTube video player"
-                                        frameBorder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowFullScreen
-                                    ></iframe>
-                                )}
-
-                                {/* Top controls (only for images) */}
-                                {mediaItems[activeImage].type === 'image' && (
-                                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition z-20">
-                                        <button
-                                            onClick={handleDownloadImage}
-                                            className="bg-black/60 text-white p-2 rounded-full hover:bg-[#fc7f51] transition flex items-center gap-1.5 px-3"
-                                            title="Descargar con marca de agua"
-                                        >
-                                            <Download className="w-4 h-4" />
-                                            <span className="text-xs font-semibold hidden sm:inline">Descargar</span>
-                                        </button>
-                                        <button
-                                            onClick={() => setShowLightbox(true)}
-                                            className="bg-black/60 text-white p-2 rounded-full hover:bg-black/80 transition"
-                                            title="Ver a pantalla completa"
-                                        >
-                                            <Maximize className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                )}
-
-                                {/* Navigation Arrows */}
-                                <button onClick={(e) => { e.stopPropagation(); setActiveImage(prev => prev === 0 ? mediaItems.length - 1 : prev - 1); }} className={`absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 p-2 rounded-full hover:bg-white/30 backdrop-blur-sm text-white shadow-lg transition z-10 ${mediaItems[activeImage].type === 'youtube' ? 'opacity-100 bg-black/50' : 'opacity-0 group-hover:opacity-100'}`}>
-                                    <ChevronLeft className="w-6 h-6" />
-                                </button>
-                                <button onClick={(e) => { e.stopPropagation(); setActiveImage(prev => prev === mediaItems.length - 1 ? 0 : prev + 1); }} className={`absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 p-2 rounded-full hover:bg-white/30 backdrop-blur-sm text-white shadow-lg transition z-10 ${mediaItems[activeImage].type === 'youtube' ? 'opacity-100 bg-black/50' : 'opacity-0 group-hover:opacity-100'}`}>
-                                    <ChevronRight className="w-6 h-6" />
-                                </button>
-
-                                <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm z-10 pointer-events-none">
-                                    {activeImage + 1} / {mediaItems.length}
-                                </div>
-                            </>
+                                    </SwiperSlide>
+                                ))}
+                            </Swiper>
                         ) : (
                             <div className="flex items-center justify-center h-full text-gray-400">Sin imágenes o videos</div>
                         )}
-                    </div>
 
-                    {/* Thumbnails */}
-                    {mediaItems.length > 1 && (
-                        <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
-                            {mediaItems.map((item, idx) => (
-                                <div
-                                    key={idx}
-                                    onClick={() => setActiveImage(idx)}
-                                    className={`aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition relative ${activeImage === idx ? 'border-[#fc7f51] ring-2 ring-orange-100' : 'border-transparent opacity-70 hover:opacity-100 hover:border-gray-300'}`}
+                        {/* Top controls (only for active image) */}
+                        {mediaItems.length > 0 && mediaItems[activeImage]?.type === 'image' && (
+                            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition z-20">
+                                <button
+                                    onClick={handleDownloadImage}
+                                    className="bg-black/60 text-white p-2 rounded-full hover:bg-[#fc7f51] transition flex items-center gap-1.5 px-3"
+                                    title="Descargar con marca de agua"
                                 >
-                                    <img src={item.type === 'image' ? item.url : item.thumb} className="w-full h-full object-cover" onContextMenu={(e) => e.preventDefault()} />
-                                    {item.type === 'youtube' && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
-                                            <div className="bg-red-600 text-white rounded-full p-2 opacity-90"><svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path d="M8 5v14l11-7z" /></svg></div>
-                                        </div>
-                                    )}
-                                    {item.type === 'image' && (
-                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-35">
-                                            <img src={logo} alt="" className="w-8 h-auto object-contain filter drop-shadow-sm" />
-                                        </div>
-                                    )}
+                                    <Download className="w-4 h-4" />
+                                    <span className="text-xs font-semibold hidden sm:inline">Descargar</span>
+                                </button>
+                                <button
+                                    onClick={() => setShowLightbox(true)}
+                                    className="bg-black/60 text-white p-2 rounded-full hover:bg-black/80 transition"
+                                    title="Ver a pantalla completa"
+                                >
+                                    <Maximize className="w-5 h-5" />
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Tomada Overlay */}
+                        {property.status === 'tomada' && (
+                            <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-30 flex items-center justify-center pointer-events-none">
+                                <div className="bg-red-600/95 text-white font-black text-3xl md:text-5xl px-8 py-3 rounded-2xl transform -rotate-12 border-4 border-white shadow-2xl tracking-widest uppercase">
+                                    {property.type?.toLowerCase() === 'alquiler' ? 'Alquilado' : (property.type?.toLowerCase() === 'anticresis' ? 'Tomada' : 'Vendido')}
                                 </div>
-                            ))}
-                        </div>
-                    )}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Main Content */}

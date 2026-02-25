@@ -13,6 +13,7 @@ import PropertyFormFields from '../components/PropertyFormFields';
 import ContractTemplates from '../components/ContractTemplates';
 import GenerateContractModal from '../components/GenerateContractModal';
 import logo from '../assets/logo.png';
+import { fetchSunatExchangeRate } from '../lib/exchangeRate';
 
 const AgentDashboard = () => {
     const { user, userData } = useAuth();
@@ -125,23 +126,11 @@ const AgentDashboard = () => {
             fetchMyTips();
 
             // Fetch Exchange Rate to pre-fill form
-            const fetchExchangeRate = async () => {
-                try {
-                    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-                    if (response.ok) {
-                        const data = await response.json();
-                        // This API returns a base and rates. We want USD -> PEN
-                        const rate = data.rates.PEN;
-                        if (rate) {
-                            setFormData(prev => ({ ...prev, exchangeRate: rate }));
-                        }
-                    }
-                } catch (error) {
-                    console.error("Error fetching initial exchange rate:", error);
-                    // Keep default 3.80 if fails
+            fetchSunatExchangeRate().then(rate => {
+                if (rate) {
+                    setFormData(prev => ({ ...prev, exchangeRate: rate }));
                 }
-            };
-            fetchExchangeRate();
+            });
         }
 
         // Initialize profile form with current user data

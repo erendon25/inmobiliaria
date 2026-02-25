@@ -2,13 +2,25 @@ import { Link } from 'react-router-dom';
 import { Heart, Star, Eye } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import logo from '../assets/logo.png';
+import { fetchSunatExchangeRate } from '../lib/exchangeRate';
 
 const PropertyCard = ({ property }) => {
-    // Exchange Rate
-    const exchangeRate = property.exchangeRate || 3.80; // Default exchange rate
     // Image cycling state
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isHovering, setIsHovering] = useState(false);
+
+    // Exchange Rate
+    const [liveRate, setLiveRate] = useState(property.exchangeRate || 3.36); // Default exchange rate
+
+    useEffect(() => {
+        let isMounted = true;
+        fetchSunatExchangeRate().then(rate => {
+            if (rate && isMounted) setLiveRate(rate);
+        });
+        return () => { isMounted = false; };
+    }, []);
+
+    const exchangeRate = liveRate;
 
     // Determine currencies
     const currency = property.currency || 'USD';

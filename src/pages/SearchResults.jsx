@@ -3,7 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { db } from '../lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import PropertyCard from '../components/PropertyCard';
-import { Search, MapPin, Home as HomeIcon, ListFilter, ArrowLeft, SlidersHorizontal, X, Loader2 } from 'lucide-react';
+import { Search, MapPin, Home as HomeIcon, ListFilter, ArrowLeft, SlidersHorizontal, X, Loader2, ChevronUp } from 'lucide-react';
 
 const EXCHANGE_RATE = 3.75;
 
@@ -263,7 +263,16 @@ const SearchResults = () => {
 
                     {/* Expanded Filters */}
                     {showFilters && (
-                        <div className="mt-4 p-6 bg-gray-50 rounded-2xl border border-gray-200 animate-fadeIn">
+                        <div className="mt-4 p-6 bg-gray-50 rounded-2xl border border-gray-200 animate-fadeIn relative">
+                            {/* Close Arrow Button */}
+                            <button
+                                onClick={() => setShowFilters(false)}
+                                className="absolute top-4 right-4 text-gray-500 hover:text-[#fc7f51] transition p-1.5 bg-white rounded-full border border-gray-200 shadow-sm hover:shadow-md z-10"
+                                title="Cerrar filtros"
+                            >
+                                <ChevronUp className="w-5 h-5" />
+                            </button>
+
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo Inmueble</label>
