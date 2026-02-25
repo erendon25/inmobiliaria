@@ -68,7 +68,7 @@ const Footer = () => {
                 <div>
                     <h4 className="font-bold mb-6 text-white text-lg">Contacto</h4>
                     <p className="text-[#878787] text-sm mb-3">Arequipa, Perú </p>
-                    <p className="text-[#878787] text-sm mb-3">contacto@inmuevete.com</p>
+                    <p className="text-[#878787] text-sm mb-3">vanessam.rendon@inmueveteinmobiliaria.com</p>
                     <p className="text-[#878787] text-sm">+51 965355700</p>
                 </div>
             </div>

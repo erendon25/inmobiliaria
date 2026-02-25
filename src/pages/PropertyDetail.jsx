@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { db } from '../lib/firebase';
 import { doc, getDoc, addDoc, updateDoc, increment, collection } from 'firebase/firestore';
-import { MapPin, ArrowLeft, Heart, Share, Star, ShieldCheck, DoorOpen, Calendar, User, Phone, Mail, X, Loader2, Clock, Car, Building2, ArrowUpFromLine, Layers, Waves, Dumbbell, Armchair, ArrowUpDown, Maximize, Bath, BedDouble, CheckCircle, ChevronLeft, ChevronRight, Home, Trees, Zap, Droplets } from 'lucide-react';
+import { MapPin, ArrowLeft, Heart, Share, Star, ShieldCheck, DoorOpen, Calendar, User, Phone, Mail, X, Loader2, Clock, Car, Building2, ArrowUpFromLine, Layers, Waves, Dumbbell, Armchair, ArrowUpDown, Maximize, Bath, BedDouble, CheckCircle, ChevronLeft, ChevronRight, Home, Trees, Zap, Droplets, Sun, Flame } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -43,6 +43,10 @@ const PropertyDetail = () => {
         phone: '',
         message: 'Hola, estoy interesado en esta propiedad y me gustaría recibir más información.'
     });
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     const mediaItems = useMemo(() => {
         if (!property) return [];
@@ -655,6 +659,18 @@ END:VCALENDAR`;
                                         <span>Gimnasio</span>
                                     </div>
                                 )}
+                                {property.solarHeater && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <Sun className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>Terma Solar</span>
+                                    </div>
+                                )}
+                                {property.gasHeater && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <Flame className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>Terma a Gas</span>
+                                    </div>
+                                )}
                                 {property.security && (
                                     <div className="flex items-center gap-3 text-gray-700">
                                         <ShieldCheck className="w-5 h-5 text-[#fc7f51]" />
@@ -1064,9 +1080,9 @@ END:VCALENDAR`;
                                     onContextMenu={(e) => e.preventDefault()}
                                 />
                                 {/* Watermark overlay in lightbox */}
-                                <div className="absolute bottom-16 right-8 pointer-events-none select-none flex flex-col items-end gap-1 opacity-40">
-                                    <img src={logo} alt="" className="w-48 h-auto object-contain filter drop-shadow-md" />
-                                    <span className="text-white text-xl font-bold tracking-widest uppercase drop-shadow-md">
+                                <div className="absolute inset-0 pointer-events-none select-none flex flex-col items-center justify-center p-4 gap-2 opacity-35 z-10">
+                                    <img src={logo} alt="" className="w-32 md:w-64 h-auto object-contain filter drop-shadow-md" />
+                                    <span className="text-white text-sm md:text-2xl font-bold tracking-widest uppercase drop-shadow-md text-center">
                                         Inmuevete Inmobiliaria
                                     </span>
                                 </div>

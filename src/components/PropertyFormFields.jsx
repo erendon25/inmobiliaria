@@ -148,7 +148,8 @@ const PropertyFormFields = ({ formData, setFormData }) => {
                             {type === 'venta' && <Checkbox label="Crédito Hipotecario" field="mortgageEligible" icon={<DollarSign className="w-3 h-3" />} />}
                             <Checkbox label="Áreas comunes" field="commonAreas" />
                             <Checkbox label="Patio" field="patio" />
-                            <Checkbox label="Terma solar o gas" field="solarHeater" />
+                            <Checkbox label="Terma solar" field="solarHeater" />
+                            <Checkbox label="Terma a gas" field="gasHeater" />
                             {type === 'alquiler' && (
                                 <>
                                     <Checkbox label="Agua independiente" field="independentWater" />

@@ -111,14 +111,14 @@ const Home = () => {
             {/* Navbar rendering is handled in App.jsx */}
 
             {/* Hero Section */}
-            <div className="relative h-[85vh] min-h-[700px] flex items-center pt-20">
+            <div className="relative min-h-[100svh] lg:h-[85vh] lg:min-h-[700px] flex items-start lg:items-center pt-32 pb-16 lg:pt-20 lg:pb-0">
                 {/* Background Image */}
                 <div className="absolute inset-0 z-0">
                     <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop" alt="Hero" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/20"></div>
                 </div>
 
-                <div className="relative z-10 container mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                <div className="relative z-10 container mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-12">
 
                     {/* Left Side: Search Card (Airbnb/Remax Style) */}
                     <div className="lg:col-span-5 bg-white rounded-3xl shadow-2xl overflow-hidden animate-fadeIn">
@@ -573,9 +573,9 @@ const Home = () => {
                 </div>
 
                 <div className="mt-12 text-center md:hidden">
-                    <button className="bg-white border border-gray-300 text-[#262626] px-8 py-3 rounded-full font-bold shadow-sm hover:bg-gray-50 transition">
+                    <Link to="/properties" className="inline-block bg-white border border-gray-300 text-[#262626] px-8 py-3 rounded-full font-bold shadow-sm hover:bg-gray-50 transition">
                         Ver todas las propiedades
-                    </button>
+                    </Link>
                 </div>
             </main>
 

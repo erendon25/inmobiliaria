@@ -107,8 +107,8 @@ const Contact = () => {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-lg mb-1">Email</h4>
-                                        <p className="text-gray-400 text-sm mb-1">contacto@inmuevete.com</p>
-                                        <p className="text-gray-400 text-sm">ventas@inmuevete.com</p>
+                                        <p className="text-gray-400 text-sm mb-1">info@inmueveteinmobiliaria.com</p>
+                                        <p className="text-gray-400 text-sm">administracion@inmueveteinmobiliaria.com</p>
                                     </div>
                                 </div>
 
