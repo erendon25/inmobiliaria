@@ -1,10 +1,13 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Heart, Star, Eye } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import logo from '../assets/logo.png';
 import { fetchSunatExchangeRate } from '../lib/exchangeRate';
+import { useAuth } from '../context/AuthContext';
 
 const PropertyCard = ({ property }) => {
+    const { user, userData, toggleFavorite } = useAuth();
+    const navigate = useNavigate();
     // Image cycling state
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isHovering, setIsHovering] = useState(false);
@@ -92,7 +95,7 @@ const PropertyCard = ({ property }) => {
                 />
 
                 {/* Watermark Overlay */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-30 pointer-events-none select-none z-0 gap-1">
+                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-15 pointer-events-none select-none z-0 gap-1">
                     <img src={logo} alt="" className="w-1/3 h-auto object-contain filter drop-shadow-md brightness-0 invert" />
                     <span className="text-white text-[10px] sm:text-xs font-bold tracking-widest uppercase drop-shadow-md text-center" style={{ textShadow: '0 0 4px rgba(0,0,0,0.8)' }}>
                         Inmuevete Inmobiliaria
@@ -113,8 +116,19 @@ const PropertyCard = ({ property }) => {
                     </div>
                 )}
 
-                <button className="absolute top-3 right-3 text-white/70 hover:scale-110 transition z-10">
-                    <Heart className="w-6 h-6 fill-black/50 text-white stroke-[2px]" />
+                <button
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!user) {
+                            navigate('/login');
+                            return;
+                        }
+                        toggleFavorite(property.id);
+                    }}
+                    className={`absolute top-3 right-3 transition z-10 p-2 hover:scale-110 active:scale-95`}
+                >
+                    <Heart className={`w-6 h-6 stroke-[2px] transition ${userData?.favorites?.includes(property.id) ? 'fill-red-500 text-red-500 stroke-red-500' : 'fill-black/50 text-white'}`} />
                 </button>
 
                 <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg text-white text-xs font-bold uppercase z-10">

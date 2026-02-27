@@ -22,7 +22,7 @@ const PropertyDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
-    const { user, userData } = useAuth();
+    const { user, userData, toggleFavorite, addRecentlyViewed } = useAuth();
     const [property, setProperty] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showContact, setShowContact] = useState(false);
@@ -296,7 +296,11 @@ END:VCALENDAR`;
 
     // Save Handler
     const handleSave = () => {
-        toast.success('¡Propiedad guardada en favoritos!');
+        if (!user) {
+            navigate('/login');
+            return;
+        }
+        toggleFavorite(property.id);
     };
 
     const handleDownloadImage = async (e) => {
@@ -363,7 +367,16 @@ END:VCALENDAR`;
         };
 
         fetchProperty();
+        // We do not add user to dependency array intentionally to prevent multiple hits
+        // on auth state changes unless necessary.
     }, [id]);
+
+    // Add to recently viewed if user is logged in
+    useEffect(() => {
+        if (user && property && property.status !== 'borrador') {
+            addRecentlyViewed(property.id);
+        }
+    }, [user, property?.id]);
 
     if (loading) {
         return (
@@ -447,7 +460,10 @@ END:VCALENDAR`;
                                 <Share className="w-4 h-4" /> Compartir
                             </button>
                             <button onClick={handleSave} className="flex items-center gap-2 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-semibold text-sm transition">
-                                <Heart className="w-4 h-4" /> Guardar
+                                <Heart className={`w-4 h-4 transition ${userData?.favorites?.includes(property?.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                                <span className={userData?.favorites?.includes(property?.id) ? 'text-red-500' : ''}>
+                                    {userData?.favorites?.includes(property?.id) ? 'Guardado' : 'Guardar'}
+                                </span>
                             </button>
                         </div>
                     </div>
@@ -477,8 +493,8 @@ END:VCALENDAR`;
                                                     onContextMenu={(e) => e.preventDefault()}
                                                 />
                                                 {/* Watermark Overlay */}
-                                                <div className="absolute inset-0 pointer-events-none select-none z-10 flex flex-col items-center justify-center p-4 gap-2 opacity-35">
-                                                    <img src={logo} alt="" className="w-32 md:w-48 h-auto object-contain filter drop-shadow-lg" />
+                                                <div className="absolute inset-0 pointer-events-none select-none z-10 flex flex-col items-center justify-center p-4 gap-2 opacity-15">
+                                                    <img src={logo} alt="" className="w-32 md:w-48 h-auto object-contain filter drop-shadow-lg brightness-0 invert" />
                                                     <span className="text-white text-lg md:text-2xl font-bold tracking-widest uppercase drop-shadow-lg" style={{ textShadow: '0 0 8px rgba(0,0,0,0.8)' }}>
                                                         Inmuevete Inmobiliaria
                                                     </span>

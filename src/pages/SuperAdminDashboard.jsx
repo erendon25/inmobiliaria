@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { db, auth } from '../lib/firebase';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc, orderBy, getCountFromServer, getDoc } from 'firebase/firestore';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { Users, Home, Key, Copy, Check, RefreshCw, Eye, Trash2, X, Loader2, MailWarning, AlertTriangle } from 'lucide-react';
+import { Users, Home, Key, Copy, Check, RefreshCw, Eye, Trash2, X, Loader2, MailWarning, AlertTriangle, MonitorPlay } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
 
 const SuperAdminDashboard = () => {
+    const { setRoleOverride } = useAuth();
+    const navigate = useNavigate();
+
     const [stats, setStats] = useState({
         totalAgents: 0,
         totalProperties: 0,
@@ -16,8 +21,9 @@ const SuperAdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
 
-    // Orphans State
+    // Orphans and All Properties State
     const [orphanedProperties, setOrphanedProperties] = useState([]);
+    const [allProperties, setAllProperties] = useState([]);
 
     // Modal State
     const [selectedUser, setSelectedUser] = useState(null);
@@ -69,6 +75,7 @@ const SuperAdminDashboard = () => {
             // An orphan is a property whose agentId doesn't exist in our active users list
             const currentOrphans = allPropsList.filter(p => !validAgents.find(a => a.id === p.agentId));
             setOrphanedProperties(currentOrphans);
+            setAllProperties(allPropsList);
 
             setStats({
                 totalAgents: agentsSnapshot.data().count,
@@ -169,6 +176,21 @@ const SuperAdminDashboard = () => {
 
             await Promise.all(deletePromises);
 
+            // Free the activation code if the user was an agent or used a code
+            if (selectedUser.role === 'agente') {
+                const codesQuery = query(collection(db, "activation_codes"), where("usedBy", "==", selectedUser.id));
+                const codesSnapshot = await getDocs(codesQuery);
+                const codeUpdatePromises = [];
+                codesSnapshot.forEach(codeDoc => {
+                    codeUpdatePromises.push(updateDoc(doc(db, "activation_codes", codeDoc.id), {
+                        used: false,
+                        usedBy: null,
+                        usedAt: null
+                    }));
+                });
+                await Promise.all(codeUpdatePromises);
+            }
+
             // Delete user document
             await deleteDoc(doc(db, "users", selectedUser.id));
 
@@ -200,7 +222,9 @@ const SuperAdminDashboard = () => {
                 const propRef = doc(db, "properties", prop.id);
                 return updateDoc(propRef, {
                     agentId: targetAgentId,
-                    agentName: targetAgent?.displayName || 'Agente Inmuévete'
+                    agentName: targetAgent?.displayName || 'Agente Inmuévete',
+                    agentPhone: targetAgent?.phoneNumber || '',
+                    agentPhotoURL: targetAgent?.photoURL || ''
                 });
             });
 
@@ -214,7 +238,8 @@ const SuperAdminDashboard = () => {
                         if (data.agentId && !agents.find(a => a.id === data.agentId)) {
                             batchPromises.push(updateDoc(doc(db, "tips", tipDoc.id), {
                                 agentId: targetAgentId,
-                                agentName: targetAgent?.displayName || 'Agente Inmuévete'
+                                agentName: targetAgent?.displayName || 'Agente Inmuévete',
+                                agentPhotoURL: targetAgent?.photoURL || ''
                             }));
                         }
                     });
@@ -225,7 +250,8 @@ const SuperAdminDashboard = () => {
                     tipsSnapshot.forEach(tipDoc => {
                         batchPromises.push(updateDoc(doc(db, "tips", tipDoc.id), {
                             agentId: targetAgentId,
-                            agentName: targetAgent?.displayName || 'Agente Inmuévete'
+                            agentName: targetAgent?.displayName || 'Agente Inmuévete',
+                            agentPhotoURL: targetAgent?.photoURL || ''
                         }));
                     });
                 }
@@ -234,10 +260,11 @@ const SuperAdminDashboard = () => {
             await Promise.all(batchPromises);
             toast.success("Propiedad(es) mudada(s) con éxito al nuevo agente.");
             setTargetAgentId('');
-            if (selectedUser.id === 'orphans') {
-                const updatedOrphans = userProperties.filter(p => !propsToMigrate.find(m => m.id === p.id));
-                setUserProperties(updatedOrphans);
-                setOrphanedProperties(updatedOrphans);
+            if (selectedUser.id === 'orphans' || selectedUser.id === 'all_properties') {
+                const updatedList = userProperties.filter(p => !propsToMigrate.find(m => m.id === p.id));
+                setUserProperties(updatedList);
+                if (selectedUser.id === 'orphans') setOrphanedProperties(updatedList);
+                fetchStats(); // Update global to keep states fresh
             } else {
                 handleViewDetails(selectedUser.id);
             }
@@ -278,17 +305,41 @@ const SuperAdminDashboard = () => {
     return (
         <div className="min-h-screen bg-gray-50 pt-24 pb-12 px-6">
             <div className="container mx-auto max-w-6xl">
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-800 font-[Montserrat]">Panel Super Admin</h1>
                         <p className="text-gray-500 mt-2">Gestión general de la plataforma</p>
                     </div>
-                    <button
-                        onClick={fetchStats}
-                        className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition shadow-sm"
-                    >
-                        <RefreshCw className="w-5 h-5 text-gray-500" />
-                    </button>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="bg-white border rounded-xl p-1 flex items-center shadow-sm">
+                            <button
+                                onClick={() => {
+                                    setRoleOverride('agente');
+                                    navigate('/agent-dashboard');
+                                }}
+                                className="px-4 py-2 text-sm font-bold text-gray-600 hover:text-[#fc7f51] hover:bg-orange-50 rounded-lg transition flex items-center gap-2"
+                            >
+                                <MonitorPlay className="w-4 h-4" /> Vista Agente
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setRoleOverride('cliente');
+                                    navigate('/client-dashboard');
+                                }}
+                                className="px-4 py-2 text-sm font-bold text-gray-600 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex items-center gap-2"
+                            >
+                                <MonitorPlay className="w-4 h-4" /> Vista Cliente
+                            </button>
+                        </div>
+                        <button
+                            onClick={fetchStats}
+                            className="p-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition shadow-sm"
+                            title="Recargar Datos"
+                        >
+                            <RefreshCw className="w-5 h-5 text-gray-500" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Stats Grid */}
@@ -303,14 +354,26 @@ const SuperAdminDashboard = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-                        <div className="bg-blue-50 p-4 rounded-xl">
-                            <Home className="w-8 h-8 text-blue-500" />
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="bg-blue-50 p-4 rounded-xl">
+                                <Home className="w-8 h-8 text-blue-500" />
+                            </div>
+                            <div>
+                                <p className="text-gray-500 text-sm font-medium">Inmuebles Publicados</p>
+                                <h3 className="text-3xl font-bold text-gray-800">{stats.totalProperties}</h3>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-gray-500 text-sm font-medium">Inmuebles Publicados</p>
-                            <h3 className="text-3xl font-bold text-gray-800">{stats.totalProperties}</h3>
-                        </div>
+                        <button
+                            onClick={() => {
+                                setSelectedUser({ id: 'all_properties', displayName: 'Todas las propiedades del sistema', email: 'Múltiples Agentes', role: 'admin' });
+                                setUserProperties(allProperties);
+                                setShowModal(true);
+                            }}
+                            className="bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2"
+                        >
+                            <Eye className="w-4 h-4" /> Administrar
+                        </button>
                     </div>
 
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
@@ -595,17 +658,18 @@ const SuperAdminDashboard = () => {
                                                         value={targetAgentId}
                                                         onChange={(e) => setTargetAgentId(e.target.value)}
                                                     >
-                                                        <option value="">-- Mudar al Agente --</option>
+                                                        <option value="">-- Asignar Propiedad(es) Al Agente... --</option>
                                                         {agents.filter(a => a.id !== selectedUser.id).map(agent => (
                                                             <option key={agent.id} value={agent.id}>{agent.displayName || agent.email}</option>
                                                         ))}
                                                     </select>
                                                     <button
-                                                        onClick={handleMigrateProperties}
+                                                        onClick={() => handleMigrateProperties()}
                                                         disabled={!targetAgentId || migrating}
                                                         className="bg-[#fc7f51] hover:bg-[#e56b3e] text-white px-4 py-2 rounded font-bold text-sm transition disabled:opacity-50 flex items-center justify-center"
+                                                        title="Heredar todo a este agente de una vez"
                                                     >
-                                                        {migrating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Mudar Todo'}
+                                                        {migrating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Mudar Todo El Lote'}
                                                     </button>
                                                 </div>
                                             )}
@@ -623,8 +687,10 @@ const SuperAdminDashboard = () => {
                                                             <p className="font-bold text-sm text-gray-800 truncate">{prop.title}</p>
                                                             <p className="text-xs text-gray-500 truncate">{prop.location}</p>
                                                             <p className="text-[#fc7f51] font-bold text-xs mt-1">${prop.price?.toLocaleString()}</p>
-                                                            {prop.agentId && selectedUser.id === 'orphans' && (
-                                                                <p className="text-red-400 text-[10px] mt-1 break-all">Huérfana (Agente Original: {prop.agentId})</p>
+                                                            {prop.agentId && (selectedUser.id === 'orphans' || selectedUser.id === 'all_properties') && (
+                                                                <p className="text-blue-500 text-[10px] mt-1 truncate">
+                                                                    {selectedUser.id === 'orphans' ? 'Huérfana' : 'Agente Actual'}: {prop.agentName || prop.agentId}
+                                                                </p>
                                                             )}
                                                         </div>
 
@@ -632,7 +698,7 @@ const SuperAdminDashboard = () => {
                                                         {targetAgentId && (
                                                             <button
                                                                 onClick={() => handleMigrateProperties(prop.id)}
-                                                                className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 bg-[#fc7f51] text-white p-2 rounded shadow transition hover:bg-[#e56b3e]"
+                                                                className="absolute right-2 top-2 bg-[#fc7f51] opacity-0 group-hover:opacity-100 text-white p-2 rounded shadow transition hover:bg-[#e56b3e]"
                                                                 title="Mudar solo esta propiedad"
                                                             >
                                                                 <RefreshCw className="w-4 h-4" />

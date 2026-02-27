@@ -7,9 +7,12 @@ import {
     signOut,
     signInWithPopup,
     sendPasswordResetEmail,
-    updateProfile
+    updateProfile,
+    setPersistence,
+    browserLocalPersistence,
+    browserSessionPersistence
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { Toaster, toast } from 'react-hot-toast';
 
 const AuthContext = createContext();
@@ -22,6 +25,7 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [roleOverride, setRoleOverride] = useState(null);
 
     const signup = async (email, password, role = 'cliente', name = '', phone = '', dni = '') => {
         try {
@@ -45,11 +49,13 @@ export function AuthProvider({ children }) {
         }
     };
 
-    const login = (email, password) => {
-        return signInWithEmailAndPassword(auth, email, password)
-            .catch((error) => {
-                throw translateError(error);
-            });
+    const login = async (email, password, remember = true) => {
+        try {
+            await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
+            return await signInWithEmailAndPassword(auth, email, password);
+        } catch (error) {
+            throw translateError(error);
+        }
     };
 
     const loginWithGoogle = async (role = 'cliente') => {
@@ -114,32 +120,122 @@ export function AuthProvider({ children }) {
     };
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+        let unsubscribeUserDoc = null;
+
+        const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
             setUser(currentUser);
             if (currentUser) {
-                // Fetch user data (role) from Firestore
-                const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-                if (userDoc.exists()) {
-                    setUserData(userDoc.data());
-                }
+                const docRef = doc(db, "users", currentUser.uid);
+                // Listen to live changes
+                unsubscribeUserDoc = onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        setUserData(docSnap.data());
+                    }
+                });
             } else {
                 setUserData(null);
+                if (unsubscribeUserDoc) {
+                    unsubscribeUserDoc();
+                    unsubscribeUserDoc = null;
+                }
             }
             setLoading(false);
         });
 
-        return unsubscribe;
+        return () => {
+            unsubscribeAuth();
+            if (unsubscribeUserDoc) {
+                unsubscribeUserDoc();
+            }
+        };
     }, []);
+
+    const toggleFavorite = async (propertyId) => {
+        if (!user) {
+            toast.error("Debes iniciar sesión para guardar propiedades.");
+            return;
+        }
+        try {
+            const userRef = doc(db, "users", user.uid);
+
+            // Re-read document to ensure we have the most accurate, zero-stale-closure state
+            const snap = await getDoc(userRef);
+            if (!snap.exists()) return;
+
+            const currentData = snap.data();
+            const isFavorite = currentData?.favorites?.includes(propertyId);
+
+            if (isFavorite) {
+                await updateDoc(userRef, {
+                    favorites: arrayRemove(propertyId)
+                });
+                toast.success("Propiedad eliminada de favoritos");
+            } else {
+                await updateDoc(userRef, {
+                    favorites: arrayUnion(propertyId)
+                });
+                toast.success("Propiedad guardada en favoritos");
+            }
+        } catch (error) {
+            console.error("Error toggling favorite:", error);
+            toast.error("Error al actualizar favoritos.");
+        }
+    };
+
+    const addRecentlyViewed = async (propertyId) => {
+        if (!user) return;
+        try {
+            const userRef = doc(db, "users", user.uid);
+
+            // Re-read document to prevent any stale state array overwrites
+            const snap = await getDoc(userRef);
+            if (!snap.exists()) return;
+
+            const currentData = snap.data();
+            const currentViewed = currentData?.recentlyViewed || [];
+
+            // Re-order to push to front
+            const updated = [propertyId, ...currentViewed.filter(id => id !== propertyId)].slice(0, 20); // Keep last 20
+
+            await updateDoc(userRef, {
+                recentlyViewed: updated
+            });
+        } catch (error) {
+            console.error("Error adding to recently viewed:", error);
+        }
+    };
+
+    const saveAlerts = async (alerts) => {
+        if (!user) return;
+        try {
+            const userRef = doc(db, "users", user.uid);
+            await updateDoc(userRef, {
+                alerts: alerts
+            });
+            toast.success("Alertas actualizadas exitosamente.");
+        } catch (error) {
+            console.error("Error saving alerts:", error);
+            toast.error("Error al actualizar alertas.");
+        }
+    };
+
+    const effectiveUserData = userData ? { ...userData, role: roleOverride || userData.role } : null;
 
     const value = {
         user,
-        userData,
+        userData: effectiveUserData,
+        realUserData: userData,
+        roleOverride,
+        setRoleOverride,
         signup,
         login,
         loginWithGoogle,
         loginWithApple,
         logout,
-        resetPassword
+        resetPassword,
+        toggleFavorite,
+        addRecentlyViewed,
+        saveAlerts
     };
 
     return (

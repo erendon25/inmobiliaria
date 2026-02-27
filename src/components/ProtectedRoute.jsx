@@ -29,6 +29,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
     if (allowedRoles && userData && !allowedRoles.includes(userData.role)) {
         // Redirect to their appropriate dashboard if they try to access a route they shouldn't
+        if (userData.role === 'superadmin') {
+            return <Navigate to="/superadmin" />;
+        }
         return userData.role === 'agente'
             ? <Navigate to="/agent-dashboard" />
             : <Navigate to="/client-dashboard" />;
