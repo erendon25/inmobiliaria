@@ -1,6 +1,8 @@
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import { useState, useEffect } from 'react';
+import Loader from './components/Loader';
 
 import Home from './pages/Home';
 import PropertyDetail from './pages/PropertyDetail';
@@ -22,6 +24,21 @@ import Setup from './pages/Setup';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
+// Page transition loader - shows on every route change
+function PageLoader() {
+  const location = useLocation();
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => setIsLoading(false), 600);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
+  if (!isLoading) return null;
+  return <Loader fullScreen />;
+}
+
 function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -32,6 +49,8 @@ function AppContent() {
 
   return (
     <div className={`flex flex-col min-h-screen ${isImpersonating ? 'pt-10' : ''}`}>
+      <PageLoader />
+
       {isImpersonating && (
         <div className="fixed top-0 left-0 w-full z-[100] bg-red-600 text-white text-xs font-bold px-4 py-2 flex justify-center items-center gap-4 shadow-xl">
           <span>⚠️ Modo de Prueba: Viendo como {roleOverride.toUpperCase()}</span>
