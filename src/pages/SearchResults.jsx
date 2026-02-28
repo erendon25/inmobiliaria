@@ -447,10 +447,12 @@ const SearchResults = () => {
                                             <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={parking} onChange={e => setParking(e.target.checked)} />
                                             <span className="text-sm font-medium text-gray-700">Con Cochera</span>
                                         </label>
-                                        <label className="flex items-center cursor-pointer gap-2">
-                                            <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={isDuplex} onChange={e => setIsDuplex(e.target.checked)} />
-                                            <span className="text-sm font-medium text-gray-700">Es Dúplex</span>
-                                        </label>
+                                        {(propertyType === 'Departamento' || propertyType === 'departamento' || !propertyType) && (
+                                            <label className="flex items-center cursor-pointer gap-2">
+                                                <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={isDuplex} onChange={e => setIsDuplex(e.target.checked)} />
+                                                <span className="text-sm font-medium text-gray-700">Es Dúplex</span>
+                                            </label>
+                                        )}
                                     </div>
                                 </div>
 

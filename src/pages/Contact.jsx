@@ -92,13 +92,7 @@ const Contact = () => {
 
                             <div className="space-y-8">
                                 <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 bg-[#262626] rounded-full flex items-center justify-center text-[#fc7f51] shrink-0">
-                                        <Phone className="w-6 h-6" />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-lg mb-1">Teléfono</h4>
-                                        <p className="text-gray-400 text-sm mb-1">+51 965355700</p>
-                                    </div>
+
                                 </div>
 
                                 <div className="flex items-start gap-4">
@@ -107,8 +101,8 @@ const Contact = () => {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-lg mb-1">Email</h4>
-                                        <p className="text-gray-400 text-sm mb-1">info@inmueveteinmobiliaria.com</p>
-                                        <p className="text-gray-400 text-sm">administracion@inmueveteinmobiliaria.com</p>
+                                        <p className="text-gray-400 text-sm mb-1">vanessam.rendon@inmueveteinmobiliaria.com</p>
+                                        <p className="text-gray-400 text-sm">soporte@inmueveteinmobiliaria.com</p>
                                     </div>
                                 </div>
 
@@ -119,8 +113,7 @@ const Contact = () => {
                                     <div>
                                         <h4 className="font-bold text-lg mb-1">Oficina Central</h4>
                                         <p className="text-gray-400 text-sm leading-relaxed">
-                                            Av. Principal 123, Oficina 404<br />
-                                            Centro Empresarial, Ciudad<br />
+                                            Arequipa,Perú<br />
                                             Perú
                                         </p>
                                     </div>

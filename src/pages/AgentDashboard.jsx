@@ -270,7 +270,7 @@ const AgentDashboard = () => {
 
             // 0. Update Profile Photo if selected
             if (profileImage) {
-                const storageRef = ref(storage, `profile_photos / ${user.uid}/${Date.now()}_${profileImage.name}`);
+                const storageRef = ref(storage, `profile_photos/${user.uid}/${Date.now()}_${profileImage.name}`);
                 const snapshot = await uploadBytes(storageRef, profileImage);
                 photoURL = await getDownloadURL(snapshot.ref);
                 await updateProfile(user, { photoURL });
@@ -281,7 +281,7 @@ const AgentDashboard = () => {
                 displayName: profileData.displayName,
                 email: profileData.email,
                 phoneNumber: profileData.phoneNumber,
-                photoURL: photoURL
+                photoURL: photoURL || ""
             });
 
             // 3.5 Update Password (now safe because we re-authenticated above)
@@ -295,14 +295,24 @@ const AgentDashboard = () => {
             const batch = writeBatch(db);
             const propsQuery = query(collection(db, "properties"), where("agentId", "==", user.uid));
             const propsSnap = await getDocs(propsQuery);
-
             propsSnap.forEach(doc => {
                 batch.update(doc.ref, {
                     agentName: profileData.displayName,
                     agentPhone: profileData.phoneNumber || '',
-                    agentPhotoURL: photoURL
+                    agentPhotoURL: photoURL || ""
                 });
             });
+
+            // 5. Batch Update all tips with new Agent Info
+            const tipsQuery = query(collection(db, "tips"), where("agentId", "==", user.uid));
+            const tipsSnap = await getDocs(tipsQuery);
+            tipsSnap.forEach(doc => {
+                batch.update(doc.ref, {
+                    agentName: profileData.displayName,
+                    agentPhotoURL: photoURL || ""
+                });
+            });
+
             await batch.commit();
 
             toast.success("Perfil actualizado correctamente.");
@@ -347,11 +357,11 @@ const AgentDashboard = () => {
                 }
                 await updateDoc(doc(db, "tips", editingTipId), updateData);
                 toast.success("Tip actualizado.");
-            } else {
                 await addDoc(collection(db, "tips"), {
                     ...tipForm,
                     agentId: user.uid,
                     agentName: userData?.displayName || user?.displayName || 'Agente',
+                    agentPhotoURL: userData?.photoURL || "",
                     createdAt: new Date(),
                     likes: 0,
                     imageUrl: imageUrl || null
@@ -1404,7 +1414,7 @@ const AgentDashboard = () => {
                                                     <div className="flex-grow p-0">
                                                         <MapPicker
                                                             initialLocation={formData.lat && formData.lng ? { lat: formData.lat, lng: formData.lng, address: formData.location } : null}
-                                                            initialQuery={formData.location}
+                                                            initialSearchQuery={formData.location}
                                                             onConfirm={(loc) => {
                                                                 setFormData({
                                                                     ...formData,
@@ -1457,39 +1467,41 @@ const AgentDashboard = () => {
                                                 {imagePreviews.map((url, idx) => (
                                                     <div key={idx} className="aspect-square relative rounded-lg overflow-hidden group">
                                                         <img src={url} alt="" className="w-full h-full object-cover" />
-                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
-                                                            <button
-                                                                type="button"
-                                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); openCropModal(idx); }}
-                                                                className="bg-white text-gray-800 rounded-full p-1.5 hover:bg-gray-200"
-                                                                title="Recortar imagen"
-                                                            >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-crop"><path d="M6 2v14a2 2 0 0 0 2 2h14" /><path d="M18 22V8a2 2 0 0 0-2-2H2" /></svg>
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={async (e) => {
-                                                                    e.preventDefault();
-                                                                    e.stopPropagation();
-                                                                    try {
-                                                                        await handleRotateImage(idx);
-                                                                    } catch (error) {
-                                                                        toast.error("Error al rotar la imagen. Asegúrate de que tu bucket de Firebase Storage tenga configurado CORS correctamente.");
-                                                                    }
-                                                                }}
-                                                                className="bg-white text-gray-800 rounded-full p-1.5 hover:bg-gray-200"
-                                                                title="Rotar 90°"
-                                                            >
-                                                                <RotateCw className="w-4 h-4" />
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeImage(idx); }}
-                                                                className="bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600"
-                                                                title="Eliminar imagen"
-                                                            >
-                                                                <X className="w-4 h-4" />
-                                                            </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeImage(idx); }}
+                                                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 z-10"
+                                                            title="Eliminar imagen"
+                                                        >
+                                                            <X className="w-3.5 h-3.5" />
+                                                        </button>
+                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex flex-col justify-center items-center gap-2">
+                                                            <div className="flex gap-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); openCropModal(idx); }}
+                                                                    className="bg-white text-gray-800 rounded-full p-1.5 hover:bg-gray-200"
+                                                                    title="Recortar imagen"
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-crop"><path d="M6 2v14a2 2 0 0 0 2 2h14" /><path d="M18 22V8a2 2 0 0 0-2-2H2" /></svg>
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={async (e) => {
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        try {
+                                                                            await handleRotateImage(idx);
+                                                                        } catch (error) {
+                                                                            toast.error("Error al rotar la imagen. Asegúrate de que tu bucket de Firebase Storage tenga configurado CORS correctamente.");
+                                                                        }
+                                                                    }}
+                                                                    className="bg-white text-gray-800 rounded-full p-1.5 hover:bg-gray-200"
+                                                                    title="Rotar 90°"
+                                                                >
+                                                                    <RotateCw className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 ))}

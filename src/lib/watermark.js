@@ -91,9 +91,19 @@ const applyLogoWatermark = (ctx, width, height, wmImg) => {
     // Shift slightly up to leave room for text below
     const y = (height - wmHeight) / 2 - (height * 0.05);
 
-    // Make it more transparent (35% opacity)
-    ctx.globalAlpha = 0.35;
-    ctx.drawImage(wmImg, x, y, wmWidth, wmHeight);
+    // Create an offscreen canvas to turn logo white
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = wmWidth;
+    offCanvas.height = wmHeight;
+    const offCtx = offCanvas.getContext('2d');
+    offCtx.drawImage(wmImg, 0, 0, wmWidth, wmHeight);
+    offCtx.globalCompositeOperation = 'source-in';
+    offCtx.fillStyle = '#ffffff';
+    offCtx.fillRect(0, 0, wmWidth, wmHeight);
+
+    // Draw the white logo with lower opacity
+    ctx.globalAlpha = 0.15;
+    ctx.drawImage(offCanvas, x, y, wmWidth, wmHeight);
 
     // Draw text "Inmuevete Inmobiliaria" below the logo
     const text = 'Inmuevete Inmobiliaria';
@@ -127,7 +137,7 @@ const drawTextWatermark = (ctx, width, height, text) => {
     const x = width / 2;
     const y = height / 2;
 
-    ctx.globalAlpha = 0.35;
+    ctx.globalAlpha = 0.15;
 
     // Shadow / outline for readability
     ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';

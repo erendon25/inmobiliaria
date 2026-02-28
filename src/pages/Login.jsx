@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [rememberMe, setRememberMe] = useState(true);
     const { login, loginWithGoogle, loginWithApple } = useAuth();
 
     // Need to navigate
@@ -39,7 +40,7 @@ const Login = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            const credential = await login(email, password);
+            const credential = await login(email, password, rememberMe);
             toast.success("¡Bienvenido de nuevo!");
             fetchUserRoleAndRedirect(credential.user.uid);
         } catch (error) {
@@ -84,6 +85,8 @@ const Login = () => {
                         </label>
                         <input
                             type="email"
+                            name="email"
+                            autoComplete="username"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
@@ -98,6 +101,8 @@ const Login = () => {
                         </label>
                         <input
                             type="password"
+                            name="password"
+                            autoComplete="current-password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
@@ -107,9 +112,14 @@ const Login = () => {
                     </div>
 
                     <div className="flex items-center justify-between text-sm">
-                        <label className="flex items-center text-gray-600">
-                            <input type="checkbox" className="mr-2 text-[#fc7f51] focus:ring-[#fc7f51] rounded border-gray-300" />
-                            Recordarme
+                        <label className="flex items-center text-gray-600 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={rememberMe}
+                                onChange={(e) => setRememberMe(e.target.checked)}
+                                className="mr-2 text-[#fc7f51] focus:ring-[#fc7f51] rounded border-gray-300 cursor-pointer"
+                            />
+                            Recordar contraseña
                         </label>
                         <Link to="/forgot-password" className="text-[#fc7f51] hover:underline font-medium">
                             ¿Olvidaste tu contraseña?

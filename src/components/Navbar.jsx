@@ -69,7 +69,7 @@ const Navbar = () => {
                 </Link>
 
                 {/* Search Bar (Desktop) */}
-                <div className="hidden lg:relative lg:flex items-center bg-white rounded-full py-2 pl-6 pr-2 shadow-xl hover:shadow-orange-500/5 transition cursor-pointer gap-4 min-w-[420px]">
+                <div className="hidden lg:relative lg:flex items-center bg-white rounded-full flex-1 mx-4 max-w-[420px] py-1.5 pl-4 pr-1.5 shadow-xl hover:shadow-orange-500/5 transition cursor-pointer gap-2">
                     <input
                         type="text"
                         placeholder="Buscar por zona, ciudad o tipo..."
@@ -104,9 +104,9 @@ const Navbar = () => {
                 </div>
 
                 {/* Right Actions (Desktop) */}
-                <div className="hidden md:flex items-center gap-4">
+                <div className="hidden lg:flex items-center gap-2 xl:gap-4 whitespace-nowrap">
                     <ExchangeRate />
-                    <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-3 xl:gap-6">
                         <Link to="/" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Propiedades</Link>
                         {userData?.role !== 'agente' && (
                             <>
@@ -150,7 +150,7 @@ const Navbar = () => {
                 {/* Mobile Menu Button */}
                 <button
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    className="md:hidden text-white p-2 hover:bg-gray-800 rounded-lg transition"
+                    className="lg:hidden text-white p-2 hover:bg-gray-800 rounded-lg transition"
                 >
                     {isMobileMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
                 </button>
@@ -158,7 +158,7 @@ const Navbar = () => {
 
             {/* Mobile Menu Overlay */}
             {isMobileMenuOpen && (
-                <div className="md:hidden bg-[#16151a] border-t border-gray-800 absolute w-full left-0 top-24 min-h-[calc(100vh-96px)] p-6 animate-fadeIn">
+                <div className="lg:hidden bg-[#16151a] border-t border-gray-800 absolute w-full left-0 top-24 min-h-[calc(100vh-96px)] p-6 animate-fadeIn">
                     <div className="flex flex-col gap-6">
                         {/* Mobile Search */}
                         <div className="flex items-center bg-white rounded-full py-2 pl-4 pr-2 shadow-lg mb-4">
