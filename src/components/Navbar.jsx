@@ -57,7 +57,7 @@ const Navbar = () => {
         <nav className="fixed w-full z-50 bg-[#16151a] border-b border-gray-800 shadow-lg">
             <div className="container mx-auto px-6 h-24 flex justify-between items-center">
                 {/* Brand Logo */}
-                <Link to="/" className="flex items-center gap-2 group">
+                <Link to="/" className="flex shrink-0 items-center gap-2 group">
                     <img
                         src={logo}
                         alt="Inmuévete"
@@ -73,7 +73,7 @@ const Navbar = () => {
                     <input
                         type="text"
                         placeholder="Buscar por zona, ciudad o tipo..."
-                        className="bg-transparent border-none outline-none text-[#262626] placeholder-gray-400 flex-1 font-medium text-sm"
+                        className="bg-transparent border-none outline-none text-[#262626] placeholder-gray-400 flex-1 font-medium text-sm min-w-[120px]"
                         value={searchTerm}
                         onChange={(e) => handleLocationChange(e.target.value)}
                         onFocus={() => searchTerm && setShowSuggestions(true)}

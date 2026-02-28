@@ -5,6 +5,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import PropertyCard from '../components/PropertyCard';
 import { Search, MapPin, Home as HomeIcon, ListFilter, ArrowLeft, SlidersHorizontal, X, Loader2, ChevronUp, ChevronDown } from 'lucide-react';
 import { PERU_LOCATIONS } from '../data/locations';
+import Loader from '../components/Loader';
 
 const EXCHANGE_RATE = 3.75;
 
@@ -22,8 +23,13 @@ const SearchResults = () => {
     const [bathrooms, setBathrooms] = useState(searchParams.get('bathrooms') || '');
     // New filters
     const [floor, setFloor] = useState(searchParams.get('floor') || '');
+    const [minArea, setMinArea] = useState(searchParams.get('minArea') || '');
     const [parking, setParking] = useState(searchParams.get('parking') === 'true');
     const [isDuplex, setIsDuplex] = useState(searchParams.get('isDuplex') === 'true');
+    const [pool, setPool] = useState(searchParams.get('pool') === 'true');
+    const [seaView, setSeaView] = useState(searchParams.get('seaView') === 'true');
+    const [furnished, setFurnished] = useState(searchParams.get('furnished') === 'true');
+    const [security, setSecurity] = useState(searchParams.get('security') === 'true');
 
     // Sync state with URL search params when they change (e.g. from Navbar navigation)
     useEffect(() => {
@@ -36,8 +42,13 @@ const SearchResults = () => {
         setBedrooms(searchParams.get('bedrooms') || '');
         setBathrooms(searchParams.get('bathrooms') || '');
         setFloor(searchParams.get('floor') || '');
+        setMinArea(searchParams.get('minArea') || '');
         setParking(searchParams.get('parking') === 'true');
         setIsDuplex(searchParams.get('isDuplex') === 'true');
+        setPool(searchParams.get('pool') === 'true');
+        setSeaView(searchParams.get('seaView') === 'true');
+        setFurnished(searchParams.get('furnished') === 'true');
+        setSecurity(searchParams.get('security') === 'true');
     }, [searchParams]);
 
     const [allProperties, setAllProperties] = useState([]);
@@ -164,12 +175,36 @@ const SearchResults = () => {
         if (parking) {
             results = results.filter(p => p.parking === true);
         }
+        if (pool) {
+            results = results.filter(p => p.pool === true);
+        }
+        if (seaView) {
+            results = results.filter(p => p.seaView === 'mar' || p.seaView === true); // Handle old vs new formats if applicable
+        }
+        if (furnished) {
+            results = results.filter(p => p.furnished === true);
+        }
+        if (security) {
+            results = results.filter(p => p.security === true);
+        }
         if (isDuplex) {
             results = results.filter(p => p.isDuplex === 'si' || p.isDuplex === true);
         }
         if (floor) {
             // Strict match for floor number/string
             results = results.filter(p => p.floor?.toString().toLowerCase() === floor.toLowerCase());
+        }
+        if (minArea) {
+            const minAreaVal = parseFloat(minArea);
+            results = results.filter(p => {
+                const pt = p.category?.toLowerCase() || '';
+                // Terrenos usually use areaTerreno. Casas use areaTerreno or areaConstruida. 
+                // We'll check both.
+                const areaTerreno = parseFloat(p.areaTerreno) || 0;
+                const areaConstruida = parseFloat(p.areaConstruida) || 0;
+                const maxArea = Math.max(areaTerreno, areaConstruida);
+                return maxArea >= minAreaVal;
+            });
         }
 
         // Only show available and taking properties
@@ -192,7 +227,7 @@ const SearchResults = () => {
         });
 
         setFilteredProperties(results);
-    }, [allProperties, operation, location, propertyType, currency, priceMin, priceMax, bedrooms, bathrooms, parking, isDuplex, floor, sortBy]);
+    }, [allProperties, operation, location, propertyType, currency, priceMin, priceMax, bedrooms, bathrooms, parking, pool, seaView, furnished, security, minArea, isDuplex, floor, sortBy]);
 
     // Update URL when filters change
     const handleSearch = () => {
@@ -206,7 +241,12 @@ const SearchResults = () => {
         if (bedrooms) params.bedrooms = bedrooms;
         if (bathrooms) params.bathrooms = bathrooms;
         if (floor) params.floor = floor;
+        if (minArea) params.minArea = minArea;
         if (parking) params.parking = 'true';
+        if (pool) params.pool = 'true';
+        if (seaView) params.seaView = 'true';
+        if (furnished) params.furnished = 'true';
+        if (security) params.security = 'true';
         if (isDuplex) params.isDuplex = 'true';
         setSearchParams(params);
     };
@@ -221,13 +261,18 @@ const SearchResults = () => {
         setBedrooms('');
         setBathrooms('');
         setFloor('');
+        setMinArea('');
         setParking(false);
+        setPool(false);
+        setSeaView(false);
+        setFurnished(false);
+        setSecurity(false);
         setIsDuplex(false);
         setSearchParams({});
         setShowSuggestions(false);
     };
 
-    const activeFilterCount = [operation, location, propertyType, priceMin, priceMax, bedrooms, bathrooms, floor, parking, isDuplex].filter(Boolean).length;
+    const activeFilterCount = [operation, location, propertyType, priceMin, priceMax, bedrooms, bathrooms, floor, minArea, parking, pool, seaView, furnished, security, isDuplex].filter(Boolean).length;
 
     return (
         <div className="min-h-screen bg-gray-50 font-sans text-[#262626] pt-24">
@@ -430,7 +475,7 @@ const SearchResults = () => {
                                 </div>
 
                                 {/* Additional Filters Row */}
-                                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 border-t border-gray-100 pt-4">
+                                <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 border-t border-gray-100 pt-4">
                                     <div>
                                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Piso</label>
                                         <input
@@ -442,15 +487,46 @@ const SearchResults = () => {
                                         />
                                     </div>
 
-                                    <div className="flex flex-col gap-2 justify-center h-full pt-1">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Área Mínima (m²)</label>
+                                        <input
+                                            type="number"
+                                            placeholder="Ej: 80"
+                                            value={minArea}
+                                            onChange={(e) => setMinArea(e.target.value)}
+                                            className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg focus:border-[#fc7f51] outline-none text-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Features Filters Row */}
+                                <div className="mt-4 border-t border-gray-100 pt-4">
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-3">Características adicionales</label>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                                         <label className="flex items-center cursor-pointer gap-2">
                                             <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={parking} onChange={e => setParking(e.target.checked)} />
-                                            <span className="text-sm font-medium text-gray-700">Con Cochera</span>
+                                            <span className="text-sm font-medium text-gray-700">Cochera</span>
                                         </label>
-                                        {(propertyType === 'Departamento' || propertyType === 'departamento' || !propertyType) && (
+                                        <label className="flex items-center cursor-pointer gap-2">
+                                            <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={pool} onChange={e => setPool(e.target.checked)} />
+                                            <span className="text-sm font-medium text-gray-700">Piscina</span>
+                                        </label>
+                                        <label className="flex items-center cursor-pointer gap-2">
+                                            <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={seaView} onChange={e => setSeaView(e.target.checked)} />
+                                            <span className="text-sm font-medium text-gray-700">Vista al mar</span>
+                                        </label>
+                                        <label className="flex items-center cursor-pointer gap-2">
+                                            <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={furnished} onChange={e => setFurnished(e.target.checked)} />
+                                            <span className="text-sm font-medium text-gray-700">Amoblado</span>
+                                        </label>
+                                        <label className="flex items-center cursor-pointer gap-2">
+                                            <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={security} onChange={e => setSecurity(e.target.checked)} />
+                                            <span className="text-sm font-medium text-gray-700">Seguridad 24/7</span>
+                                        </label>
+                                        {propertyType?.toLowerCase() === 'departamento' && (
                                             <label className="flex items-center cursor-pointer gap-2">
                                                 <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={isDuplex} onChange={e => setIsDuplex(e.target.checked)} />
-                                                <span className="text-sm font-medium text-gray-700">Es Dúplex</span>
+                                                <span className="text-sm font-medium text-gray-700">Dúplex</span>
                                             </label>
                                         )}
                                     </div>
@@ -511,9 +587,8 @@ const SearchResults = () => {
                 {/* Results Grid */}
                 {
                     loading ? (
-                        <div className="flex flex-col items-center justify-center py-24">
-                            <Loader2 className="w-12 h-12 animate-spin text-[#fc7f51] mb-4" />
-                            <p className="text-gray-500 font-medium">Buscando propiedades...</p>
+                        <div className="col-span-full w-full">
+                            <Loader />
                         </div>
                     ) : filteredProperties.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-24 text-center">

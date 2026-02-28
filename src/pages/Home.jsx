@@ -4,6 +4,7 @@ import { collection, query, where, getDocs, onSnapshot, limit } from 'firebase/f
 import PropertyCard from '../components/PropertyCard';
 import { Palmtree, Mountain, Waves, Building, Building2, Warehouse, ArrowRight, Search, MapPin, ListFilter, Home as HomeIcon, Key, Briefcase, X, Lightbulb, Star, Store, Factory, BedDouble, Sparkles, Map } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import Loader from '../components/Loader';
 import { PERU_LOCATIONS } from '../data/locations';
 
 const categories = [
@@ -23,12 +24,22 @@ const Home = () => {
     // Search State
     const [operation, setOperation] = useState('venta'); // venta, alquiler, anticresis
     const [location, setLocation] = useState('');
-    const [propertyType, setPropertyType] = useState('departamento');
+    const [propertyType, setPropertyType] = useState('Casa');
     const [currency, setCurrency] = useState('USD');
     const [priceMin, setPriceMin] = useState('');
     const [priceMax, setPriceMax] = useState('');
     const [showFilters, setShowFilters] = useState(false);
     const [isDuplex, setIsDuplex] = useState(false);
+
+    // New Advanced Filters State
+    const [bedrooms, setBedrooms] = useState('');
+    const [bathrooms, setBathrooms] = useState('');
+    const [minArea, setMinArea] = useState('');
+    const [parking, setParking] = useState(false);
+    const [pool, setPool] = useState(false);
+    const [seaView, setSeaView] = useState(false);
+    const [furnished, setFurnished] = useState(false);
+    const [security, setSecurity] = useState(false);
 
     // Modal State
     const [showSellModal, setShowSellModal] = useState(false);
@@ -204,10 +215,10 @@ const Home = () => {
                                             <option value="otro">Otro</option>
                                         </select>
                                     </div>
-                                    {(propertyType === 'Departamento' || propertyType === 'departamento') && (
+                                    {propertyType?.toLowerCase() === 'departamento' && (
                                         <label className="mt-2 flex items-center gap-2 cursor-pointer">
                                             <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={isDuplex} onChange={(e) => setIsDuplex(e.target.checked)} />
-                                            <span className="text-xs font-bold text-gray-600 uppercase">Es Dúplex</span>
+                                            <span className="text-xs font-bold text-gray-600 uppercase">Dúplex</span>
                                         </label>
                                     )}
                                 </div>
@@ -265,10 +276,15 @@ const Home = () => {
 
                             {/* Extra Filters */}
                             {showFilters && (
-                                <div className="grid grid-cols-2 gap-4 animate-fadeIn">
-                                    <div className="col-span-2 sm:col-span-1">
+                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 animate-fadeIn">
+                                    {/* Selects & Inputs */}
+                                    <div className="col-span-2 sm:col-span-1 lg:col-span-1">
                                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Habitaciones</label>
-                                        <select className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none">
+                                        <select
+                                            value={bedrooms}
+                                            onChange={(e) => setBedrooms(e.target.value)}
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none"
+                                        >
                                             <option value="">Cualquiera</option>
                                             <option value="1">1+</option>
                                             <option value="2">2+</option>
@@ -276,18 +292,52 @@ const Home = () => {
                                             <option value="4">4+</option>
                                         </select>
                                     </div>
-                                    <div className="col-span-2 sm:col-span-1">
+                                    <div className="col-span-2 sm:col-span-1 lg:col-span-1">
                                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Baños</label>
-                                        <select className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none">
+                                        <select
+                                            value={bathrooms}
+                                            onChange={(e) => setBathrooms(e.target.value)}
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none"
+                                        >
                                             <option value="">Cualquiera</option>
                                             <option value="1">1+</option>
                                             <option value="2">2+</option>
                                             <option value="3">3+</option>
                                         </select>
                                     </div>
-                                    <div className="col-span-2">
+                                    <div className="col-span-2 lg:col-span-1">
                                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Área Mínima (m²)</label>
-                                        <input type="number" placeholder="Ej: 80" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none" />
+                                        <input
+                                            type="number"
+                                            placeholder="Ej: 80"
+                                            value={minArea}
+                                            onChange={(e) => setMinArea(e.target.value)}
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none"
+                                        />
+                                    </div>
+
+                                    {/* Features Checkboxes */}
+                                    <div className="col-span-2 lg:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={parking} onChange={(e) => setParking(e.target.checked)} />
+                                            <span className="text-sm font-medium text-gray-700">Cochera</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={pool} onChange={(e) => setPool(e.target.checked)} />
+                                            <span className="text-sm font-medium text-gray-700">Piscina</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={seaView} onChange={(e) => setSeaView(e.target.checked)} />
+                                            <span className="text-sm font-medium text-gray-700">Vista al mar</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={furnished} onChange={(e) => setFurnished(e.target.checked)} />
+                                            <span className="text-sm font-medium text-gray-700">Amoblado</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={security} onChange={(e) => setSecurity(e.target.checked)} />
+                                            <span className="text-sm font-medium text-gray-700">Seguridad 24/7</span>
+                                        </label>
                                     </div>
                                 </div>
                             )}
@@ -302,6 +352,14 @@ const Home = () => {
                                     if (currency) params.set('currency', currency);
                                     if (priceMin) params.set('priceMin', priceMin);
                                     if (priceMax) params.set('priceMax', priceMax);
+                                    if (bedrooms) params.set('bedrooms', bedrooms);
+                                    if (bathrooms) params.set('bathrooms', bathrooms);
+                                    if (minArea) params.set('minArea', minArea);
+                                    if (parking) params.set('parking', 'true');
+                                    if (pool) params.set('pool', 'true');
+                                    if (seaView) params.set('seaView', 'true');
+                                    if (furnished) params.set('furnished', 'true');
+                                    if (security) params.set('security', 'true');
                                     if (isDuplex) params.set('isDuplex', 'true');
                                     navigate(`/search?${params.toString()}`);
                                 }}
@@ -499,7 +557,7 @@ const Home = () => {
                         </div>
 
                         {/* Exclusive Properties Scroll */}
-                        <div className="flex gap-6 overflow-x-auto no-scrollbar pb-4 -mx-2 px-2">
+                        <div className="flex gap-6 overflow-x-auto exclusive-scrollbar pb-4 -mx-2 px-2">
                             {properties
                                 .filter(p => p.isExclusive === true)
                                 .map((property) => (
@@ -538,9 +596,8 @@ const Home = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
                     {loadingProperties ? (
-                        <div className="col-span-full py-20 text-center">
-                            <div className="inline-block w-8 h-8 border-4 border-[#fc7f51] border-t-transparent rounded-full animate-spin"></div>
-                            <p className="mt-2 text-gray-500">Cargando propiedades...</p>
+                        <div className="col-span-full">
+                            <Loader />
                         </div>
                     ) : properties.length === 0 ? (
                         <div className="col-span-full py-20 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
@@ -548,51 +605,7 @@ const Home = () => {
                         </div>
                     ) : (
                         properties
-                            .filter(property => {
-                                // Filter by Operation Type (Venta/Alquiler)
-                                if (operation && property.type !== operation) return false;
-
-                                // Filter by Property Type
-                                if (propertyType && propertyType !== 'otro') {
-                                    const pt = propertyType.toLowerCase();
-                                    const pCat = property.category?.toLowerCase() || '';
-                                    if (pCat !== pt && !pCat.includes(pt) && !pt.includes(pCat)) {
-                                        return false;
-                                    }
-                                }
-
-                                // Filter by text search (multi-word match against all property text)
-                                if (location) {
-                                    const searchTerms = location.toLowerCase().split(' ').filter(term => term.trim() !== '');
-                                    const searchableText = [
-                                        property.location || '',
-                                        property.address || '',
-                                        property.title || '',
-                                        property.description || '',
-                                        property.category || '',
-                                        (property.isDuplex === 'si' || property.isDuplex === true) ? 'duplex' : ''
-                                    ].join(' ').toLowerCase();
-
-                                    // All search terms must be present in the searchable text
-                                    if (!searchTerms.every(term => searchableText.includes(term))) {
-                                        return false;
-                                    }
-                                }
-
-                                // Filter by Price
-                                const price = parseFloat(property.price);
-                                if (priceMin && price < parseFloat(priceMin)) return false;
-                                if (priceMax && price > parseFloat(priceMax)) return false;
-
-                                // Filter by Currency (Optional: convert or strict match. For now strict match or assume same currency display)
-                                // If user selects USD, show USD properties?
-                                if (currency && property.currency !== currency) return false;
-
-                                if (isDuplex && property.isDuplex !== 'si') return false;
-
-                                return true;
-                            })
-                            .sort((a, b) => (b.isExclusive === true ? 1 : 0) - (a.isExclusive === true ? 1 : 0))
+                            .slice(0, 8)
                             .map((property) => (
                                 <PropertyCard key={property.id} property={property} />
                             ))

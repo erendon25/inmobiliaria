@@ -102,19 +102,28 @@ const PropertyCard = ({ property }) => {
                     </span>
                 </div>
 
-                {/* Promote Badge */}
-                {property.isPromoted && (
-                    <div className="absolute top-3 left-3 bg-[#fc7f51] text-white px-2 py-1 rounded-md text-xs font-bold shadow-md z-10">
-                        DESTACADO
-                    </div>
-                )}
+                <div className="absolute top-3 left-3 flex flex-col gap-2 z-10 items-start">
+                    {/* Promote Badge */}
+                    {property.isPromoted && (
+                        <div className="bg-[#fc7f51] text-white px-2 py-1 rounded-md text-xs font-bold shadow-md">
+                            DESTACADO
+                        </div>
+                    )}
 
-                {/* Exclusive Badge */}
-                {property.isExclusive && (
-                    <div className={`absolute ${property.isPromoted ? 'top-10' : 'top-3'} left-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-white px-2 py-1 rounded-md text-xs font-bold shadow-md z-10 flex items-center gap-1`}>
-                        <Star className="w-3 h-3 fill-white" /> EXCLUSIVO
-                    </div>
-                )}
+                    {/* Exclusive Badge */}
+                    {property.isExclusive && (
+                        <div className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white px-2 py-1 rounded-md text-xs font-bold shadow-md flex items-center gap-1">
+                            <Star className="w-3 h-3 fill-white" /> EXCLUSIVO
+                        </div>
+                    )}
+
+                    {/* Duplex Badge */}
+                    {(property.isDuplex === 'si' || property.isDuplex === true) && (
+                        <div className="bg-[#fc7f51] text-white px-2 py-1 rounded-md text-xs font-bold shadow-md border border-white/20">
+                            DÚPLEX
+                        </div>
+                    )}
+                </div>
 
                 <button
                     onClick={(e) => {
