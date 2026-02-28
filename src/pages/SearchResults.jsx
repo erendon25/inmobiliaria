@@ -4,6 +4,7 @@ import { db } from '../lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import PropertyCard from '../components/PropertyCard';
 import { Search, MapPin, Home as HomeIcon, ListFilter, ArrowLeft, SlidersHorizontal, X, Loader2, ChevronUp, ChevronDown } from 'lucide-react';
+import { PERU_LOCATIONS } from '../data/locations';
 
 const EXCHANGE_RATE = 3.75;
 
@@ -46,6 +47,29 @@ const SearchResults = () => {
     const [isSearchCollapsed, setIsSearchCollapsed] = useState(false);
     const [sortBy, setSortBy] = useState('newest');
 
+    // Suggestions state
+    const [filteredLocations, setFilteredLocations] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+
+    const handleLocationChange = (val) => {
+        setLocation(val);
+        if (val.length > 0) {
+            const filtered = PERU_LOCATIONS.filter(loc =>
+                loc.name.toLowerCase().includes(val.toLowerCase()) ||
+                loc.label.toLowerCase().includes(val.toLowerCase())
+            ).slice(0, 8);
+            setFilteredLocations(filtered);
+            setShowSuggestions(true);
+        } else {
+            setShowSuggestions(false);
+        }
+    };
+
+    const selectLocation = (loc) => {
+        setLocation(loc.label);
+        setShowSuggestions(false);
+    };
+
     // Fetch all properties once
     useEffect(() => {
         const fetchAll = async () => {
@@ -72,14 +96,22 @@ const SearchResults = () => {
             results = results.filter(p => p.type?.toLowerCase() === operation.toLowerCase());
         }
 
-        // Filter by location (partial match)
+        // Filter by text search (multi-word match against all property text)
         if (location) {
-            const loc = location.toLowerCase();
-            results = results.filter(p =>
-                p.location?.toLowerCase().includes(loc) ||
-                p.address?.toLowerCase().includes(loc) ||
-                p.title?.toLowerCase().includes(loc)
-            );
+            const searchTerms = location.toLowerCase().split(' ').filter(term => term.trim() !== '');
+            results = results.filter(p => {
+                const searchableText = [
+                    p.location || '',
+                    p.address || '',
+                    p.title || '',
+                    p.description || '',
+                    p.category || '',
+                    (p.isDuplex === 'si' || p.isDuplex === true) ? 'duplex' : ''
+                ].join(' ').toLowerCase();
+
+                // All search terms must be present in the searchable text
+                return searchTerms.every(term => searchableText.includes(term));
+            });
         }
 
         // Filter by property type
@@ -133,7 +165,7 @@ const SearchResults = () => {
             results = results.filter(p => p.parking === true);
         }
         if (isDuplex) {
-            results = results.filter(p => p.isDuplex === true);
+            results = results.filter(p => p.isDuplex === 'si' || p.isDuplex === true);
         }
         if (floor) {
             // Strict match for floor number/string
@@ -192,6 +224,7 @@ const SearchResults = () => {
         setParking(false);
         setIsDuplex(false);
         setSearchParams({});
+        setShowSuggestions(false);
     };
 
     const activeFilterCount = [operation, location, propertyType, priceMin, priceMax, bedrooms, bathrooms, floor, parking, isDuplex].filter(Boolean).length;
@@ -245,11 +278,27 @@ const SearchResults = () => {
                                 <input
                                     type="text"
                                     value={location}
-                                    onChange={(e) => setLocation(e.target.value)}
+                                    onChange={(e) => handleLocationChange(e.target.value)}
+                                    onFocus={() => location && setShowSuggestions(true)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                                     placeholder="Buscar por ubicación, zona o nombre..."
                                     className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition font-medium"
                                 />
+                                {/* Suggestions Dropdown */}
+                                {showSuggestions && filteredLocations.length > 0 && (
+                                    <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+                                        {filteredLocations.map((loc, idx) => (
+                                            <div
+                                                key={idx}
+                                                onClick={() => selectLocation(loc)}
+                                                className="px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-center gap-2 text-gray-700 font-medium"
+                                            >
+                                                <MapPin className="w-4 h-4 text-[#fc7f51]" />
+                                                {loc.label}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Filter Toggle */}

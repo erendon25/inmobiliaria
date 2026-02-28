@@ -55,27 +55,31 @@ function MapUpdater({ center }) {
     return null;
 }
 
-const MapPicker = ({ onConfirm, initialLocation }) => {
+const MapPicker = ({ onConfirm, initialLocation, initialQuery }) => {
     const [position, setPosition] = useState(initialLocation ? { lat: initialLocation.lat, lng: initialLocation.lng } : null);
     const [address, setAddress] = useState(initialLocation?.address || '');
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(initialQuery || '');
     const [isSearching, setIsSearching] = useState(false);
 
     // Default center: Lima, Peru
     const defaultCenter = [-12.0464, -77.0428];
 
     const handleSearch = async (e) => {
-        e.preventDefault();
-        if (!searchQuery) return;
+        if (e && e.preventDefault) e.preventDefault();
+
+        // Use initialQuery if searchQuery is empty (for mount search)
+        const queryToUse = searchQuery || initialQuery;
+        if (!queryToUse) return;
+
         setIsSearching(true);
 
         try {
             // Append context to search query for better results in Peru if not specified
-            let query = searchQuery;
-            if (!query.toLowerCase().includes('peru') && !query.toLowerCase().includes('perú')) {
-                query += ', Perú';
+            let q = queryToUse;
+            if (!q.toLowerCase().includes('peru') && !q.toLowerCase().includes('perú')) {
+                q += ', Perú';
             }
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`);
             const data = await response.json();
 
             if (data && data.length > 0) {
@@ -84,7 +88,6 @@ const MapPicker = ({ onConfirm, initialLocation }) => {
                 setPosition(newPos);
                 setAddress(firstResult.display_name);
             } else {
-                // Toast or error: location not found
                 console.log("No location found");
             }
         } catch (error) {
@@ -93,6 +96,13 @@ const MapPicker = ({ onConfirm, initialLocation }) => {
             setIsSearching(false);
         }
     };
+
+    // Trigger initial search if query is provided and no position
+    useEffect(() => {
+        if (initialQuery && !position) {
+            handleSearch();
+        }
+    }, [initialQuery]);
 
     const confirmSelection = () => {
         if (position) {

@@ -21,45 +21,65 @@ export const fetchSunatExchangeRate = async () => {
     if (fetchPromise) return fetchPromise;
 
     fetchPromise = (async () => {
-        try {
-            // First try apis.net.pe (Standard SUNAT API free version without token)
-            let res = await fetch('https://api.apis.net.pe/v1/tipo-cambio-sunat');
-            if (res.ok) {
-                const data = await res.json();
-                const rate = data.compra;
-                if (rate) {
-                    if (typeof window !== 'undefined') {
-                        localStorage.setItem('sunat_exchange', rate.toString());
-                        localStorage.setItem('sunat_exchange_time', Date.now().toString());
-                    }
-                    memoryCache = parseFloat(rate);
-                    fetchPromise = null;
-                    return memoryCache;
-                }
-            }
+        let rate = null;
 
-            // Fallback to APISPeru.com dniruc endpoint
-            res = await fetch('https://dniruc.apisperu.com/api/v1/tipo-cambio');
+        // Try apis.net.pe first
+        try {
+            const res = await fetch('https://api.apis.net.pe/v1/tipo-cambio-sunat');
             if (res.ok) {
                 const data = await res.json();
-                const rate = data.compra;
-                if (rate) {
-                    if (typeof window !== 'undefined') {
-                        localStorage.setItem('sunat_exchange', rate.toString());
-                        localStorage.setItem('sunat_exchange_time', Date.now().toString());
-                    }
-                    memoryCache = parseFloat(rate);
-                    fetchPromise = null;
-                    return memoryCache;
-                }
+                if (data.compra) rate = data.compra;
             }
         } catch (e) {
-            console.error('Error fetching SUNAT rate:', e);
+            console.warn('apis.net.pe failed:', e.message);
         }
 
-        // Default to a recent rate if both APIs fail
+        // Try APISPeru if previous failed
+        if (!rate) {
+            try {
+                const res = await fetch('https://dniruc.apisperu.com/api/v1/tipo-cambio', {
+                    headers: {
+                        'Authorization': 'Bearer 72685412'
+                    }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.compra) rate = data.compra;
+                }
+            } catch (e) {
+                console.warn('dniruc.apisperu.com failed:', e.message);
+            }
+        }
+
+        // Try ExchangeRate-API as a reliable fallback
+        if (!rate) {
+            try {
+                const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.rates && data.rates.PEN) {
+                        rate = data.rates.PEN;
+                    }
+                }
+            } catch (e) {
+                console.warn('ExchangeRate-API failed:', e.message);
+            }
+        }
+
+        if (!rate) {
+            rate = 3.75; // More realistic current SUNAT rate approx 3.75
+        }
+
+        if (rate) {
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('sunat_exchange', rate.toString());
+                localStorage.setItem('sunat_exchange_time', Date.now().toString());
+            }
+            memoryCache = parseFloat(rate);
+        }
+
         fetchPromise = null;
-        return 3.36; // Closer to SUNAT current values approx 3.36
+        return memoryCache || 3.75;
     })();
 
     return fetchPromise;

@@ -14,6 +14,7 @@ import ContractTemplates from '../components/ContractTemplates';
 import GenerateContractModal from '../components/GenerateContractModal';
 import logo from '../assets/logo.png';
 import { fetchSunatExchangeRate } from '../lib/exchangeRate';
+import { PERU_LOCATIONS } from '../data/locations';
 
 const AgentDashboard = () => {
     const { user, userData } = useAuth();
@@ -71,6 +72,10 @@ const AgentDashboard = () => {
     const [newSlotDate, setNewSlotDate] = useState('');
     const [newSlotTime, setNewSlotTime] = useState('');
 
+    // Location Suggestions State
+    const [filteredLocations, setFilteredLocations] = useState([]);
+    const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+
     // Fetch my properties function
     const fetchMyProperties = async () => {
         if (!user) return;
@@ -93,13 +98,14 @@ const AgentDashboard = () => {
         if (!user) return;
         setLoadingTips(true);
         try {
-            // Note: This query requires a composite index on agentId (ASC) + createdAt (DESC)
-            const q = query(collection(db, "tips"), where("agentId", "==", user.uid), orderBy("createdAt", "desc"));
+            const q = query(collection(db, "tips"), where("agentId", "==", user.uid));
             const snap = await getDocs(q);
-            setTips(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            const tipsData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            tipsData.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+            setTips(tipsData);
         } catch (error) {
             console.error("Error fetching tips:", error);
-            // Don't show toast on initial load error, maybe index is building
+            toast.error("Error al cargar mis tips.");
         } finally {
             setLoadingTips(false);
         }
@@ -345,7 +351,7 @@ const AgentDashboard = () => {
                 await addDoc(collection(db, "tips"), {
                     ...tipForm,
                     agentId: user.uid,
-                    agentName: user.displayName || 'Agente',
+                    agentName: userData?.displayName || user?.displayName || 'Agente',
                     createdAt: new Date(),
                     likes: 0,
                     imageUrl: imageUrl || null
@@ -1267,7 +1273,7 @@ const AgentDashboard = () => {
                                             </div>
                                         </div>
 
-                                        <div>
+                                        <div className="relative">
                                             <label className="block text-sm font-medium text-gray-700 mb-2">Ubicación</label>
                                             <div className="flex gap-2">
                                                 <div className="relative flex-grow">
@@ -1278,8 +1284,22 @@ const AgentDashboard = () => {
                                                         className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition uppercase"
                                                         placeholder="Dirección o Link Maps"
                                                         value={formData.location}
+                                                        onFocus={() => formData.location && setShowLocationSuggestions(true)}
                                                         onChange={async (e) => {
                                                             const value = e.target.value;
+
+                                                            // Filter suggestions
+                                                            if (value.length > 0) {
+                                                                const filtered = PERU_LOCATIONS.filter(loc =>
+                                                                    loc.name.toLowerCase().includes(value.toLowerCase()) ||
+                                                                    loc.label.toLowerCase().includes(value.toLowerCase())
+                                                                ).slice(0, 8);
+                                                                setFilteredLocations(filtered);
+                                                                setShowLocationSuggestions(true);
+                                                            } else {
+                                                                setShowLocationSuggestions(false);
+                                                            }
+
                                                             // Check if value is a Google Maps link and try to extract coordinates
                                                             let lat = null, lng = null;
 
@@ -1325,8 +1345,10 @@ const AgentDashboard = () => {
                                                                             lng: lng
                                                                         }));
                                                                         toast.success("Dirección detectada automáticamente.");
+                                                                        setShowLocationSuggestions(false);
                                                                     } else {
                                                                         toast.success("¡Coordenadas detectadas del enlace!");
+                                                                        setShowLocationSuggestions(false);
                                                                     }
                                                                 } catch (error) {
                                                                     console.error("Geocoding error:", error);
@@ -1335,6 +1357,25 @@ const AgentDashboard = () => {
                                                             }
                                                         }}
                                                     />
+
+                                                    {/* Suggestions Dropdown */}
+                                                    {showLocationSuggestions && filteredLocations.length > 0 && (
+                                                        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-100 z-[60] overflow-hidden">
+                                                            {filteredLocations.map((loc, idx) => (
+                                                                <div
+                                                                    key={idx}
+                                                                    onClick={() => {
+                                                                        setFormData(prev => ({ ...prev, location: loc.label }));
+                                                                        setShowLocationSuggestions(false);
+                                                                    }}
+                                                                    className="px-4 py-3 hover:bg-orange-50 cursor-pointer flex items-center gap-2 text-gray-700 text-sm border-b border-gray-50 last:border-0"
+                                                                >
+                                                                    <MapPin className="w-4 h-4 text-[#fc7f51]" />
+                                                                    {loc.label}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <button
                                                     type="button"
@@ -1362,6 +1403,8 @@ const AgentDashboard = () => {
                                                     </div>
                                                     <div className="flex-grow p-0">
                                                         <MapPicker
+                                                            initialLocation={formData.lat && formData.lng ? { lat: formData.lat, lng: formData.lng, address: formData.location } : null}
+                                                            initialQuery={formData.location}
                                                             onConfirm={(loc) => {
                                                                 setFormData({
                                                                     ...formData,

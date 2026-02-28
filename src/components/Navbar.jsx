@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, UserCircle, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.png'; // Import the logo image
+import { PERU_LOCATIONS } from '../data/locations';
+import { MapPin } from 'lucide-react';
 
 import ExchangeRate from './ExchangeRate';
 
@@ -12,12 +14,37 @@ const Navbar = () => {
     const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    // Suggestions state
+    const [filteredLocations, setFilteredLocations] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
     const isAboutPage = location.pathname === '/about';
 
-    const handleSearch = () => {
-        if (searchTerm.trim()) {
-            navigate(`/search?location=${encodeURIComponent(searchTerm)}`);
+    const handleSearch = (term = searchTerm) => {
+        if (term.trim()) {
+            navigate(`/search?location=${encodeURIComponent(term)}`);
+            setShowSuggestions(false);
         }
+    };
+
+    const handleLocationChange = (val) => {
+        setSearchTerm(val);
+        if (val.length > 0) {
+            const filtered = PERU_LOCATIONS.filter(loc =>
+                loc.name.toLowerCase().includes(val.toLowerCase()) ||
+                loc.label.toLowerCase().includes(val.toLowerCase())
+            ).slice(0, 5);
+            setFilteredLocations(filtered);
+            setShowSuggestions(true);
+        } else {
+            setShowSuggestions(false);
+        }
+    };
+
+    const selectLocation = (loc) => {
+        setSearchTerm(loc.label);
+        setShowSuggestions(false);
+        handleSearch(loc.label);
     };
 
     const handleKeyDown = (e) => {
@@ -42,21 +69,38 @@ const Navbar = () => {
                 </Link>
 
                 {/* Search Bar (Desktop) */}
-                <div className="hidden lg:flex items-center bg-white rounded-full py-2 pl-6 pr-2 shadow-xl hover:shadow-orange-500/5 transition cursor-pointer gap-4 min-w-[420px]">
+                <div className="hidden lg:relative lg:flex items-center bg-white rounded-full py-2 pl-6 pr-2 shadow-xl hover:shadow-orange-500/5 transition cursor-pointer gap-4 min-w-[420px]">
                     <input
                         type="text"
                         placeholder="Buscar por zona, ciudad o tipo..."
                         className="bg-transparent border-none outline-none text-[#262626] placeholder-gray-400 flex-1 font-medium text-sm"
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => handleLocationChange(e.target.value)}
+                        onFocus={() => searchTerm && setShowSuggestions(true)}
                         onKeyDown={handleKeyDown}
                     />
                     <div
                         className="bg-[#fc7f51] p-2.5 rounded-full text-white hover:bg-[#e56b3e] transition shadow-md"
-                        onClick={handleSearch}
+                        onClick={() => handleSearch()}
                     >
                         <Search className="w-5 h-5" strokeWidth={2.5} />
                     </div>
+
+                    {/* Suggestions Dropdown */}
+                    {showSuggestions && filteredLocations.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[60] overflow-hidden py-2 animate-fadeIn">
+                            {filteredLocations.map((loc, idx) => (
+                                <div
+                                    key={idx}
+                                    onClick={() => selectLocation(loc)}
+                                    className="px-6 py-3 hover:bg-orange-50 cursor-pointer flex items-center gap-3 text-gray-700 font-medium text-sm transition"
+                                >
+                                    <MapPin className="w-4 h-4 text-[#fc7f51]" />
+                                    {loc.label}
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Right Actions (Desktop) */}

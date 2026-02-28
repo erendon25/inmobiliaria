@@ -4,6 +4,7 @@ import { collection, query, where, getDocs, onSnapshot, limit } from 'firebase/f
 import PropertyCard from '../components/PropertyCard';
 import { Palmtree, Mountain, Waves, Building, Building2, Warehouse, ArrowRight, Search, MapPin, ListFilter, Home as HomeIcon, Key, Briefcase, X, Lightbulb, Star, Store, Factory, BedDouble, Sparkles, Map } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { PERU_LOCATIONS } from '../data/locations';
 
 const categories = [
     { icon: Building2, label: 'Departamento', value: 'Departamento' },
@@ -27,6 +28,7 @@ const Home = () => {
     const [priceMin, setPriceMin] = useState('');
     const [priceMax, setPriceMax] = useState('');
     const [showFilters, setShowFilters] = useState(false);
+    const [isDuplex, setIsDuplex] = useState(false);
 
     // Modal State
     const [showSellModal, setShowSellModal] = useState(false);
@@ -45,24 +47,26 @@ const Home = () => {
     };
 
     // Simple mock for city autocomplete
-    const cities = ["Lima", "Arequipa", "Cusco", "Trujillo", "Piura", "Ica", "Tacna"];
-    const [filteredCities, setFilteredCities] = useState([]);
+    const [filteredLocations, setFilteredLocations] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
 
     const handleLocationChange = (e) => {
         const val = e.target.value;
         setLocation(val);
         if (val.length > 0) {
-            const filtered = cities.filter(city => city.toLowerCase().includes(val.toLowerCase()));
-            setFilteredCities(filtered);
+            const filtered = PERU_LOCATIONS.filter(loc =>
+                loc.name.toLowerCase().includes(val.toLowerCase()) ||
+                loc.label.toLowerCase().includes(val.toLowerCase())
+            ).slice(0, 10); // Limit to 10 suggestions
+            setFilteredLocations(filtered);
             setShowSuggestions(true);
         } else {
             setShowSuggestions(false);
         }
     };
 
-    const selectCity = (city) => {
-        setLocation(city);
+    const selectLocation = (loc) => {
+        setLocation(loc.label);
         setShowSuggestions(false);
     };
 
@@ -160,16 +164,16 @@ const Home = () => {
                                         className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition font-medium"
                                     />
                                     {/* Suggestions Dropdown */}
-                                    {showSuggestions && filteredCities.length > 0 && (
+                                    {showSuggestions && filteredLocations.length > 0 && (
                                         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
-                                            {filteredCities.map((city) => (
+                                            {filteredLocations.map((loc, idx) => (
                                                 <div
-                                                    key={city}
-                                                    onClick={() => selectCity(city)}
+                                                    key={idx}
+                                                    onClick={() => selectLocation(loc)}
                                                     className="px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-center gap-2 text-gray-700 font-medium"
                                                 >
                                                     <MapPin className="w-4 h-4 text-[#fc7f51]" />
-                                                    {city}
+                                                    {loc.label}
                                                 </div>
                                             ))}
                                         </div>
@@ -200,6 +204,12 @@ const Home = () => {
                                             <option value="otro">Otro</option>
                                         </select>
                                     </div>
+                                    {(propertyType === 'Departamento' || propertyType === 'departamento') && (
+                                        <label className="mt-2 flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" className="w-4 h-4 accent-[#fc7f51]" checked={isDuplex} onChange={(e) => setIsDuplex(e.target.checked)} />
+                                            <span className="text-xs font-bold text-gray-600 uppercase">Es Dúplex</span>
+                                        </label>
+                                    )}
                                 </div>
 
                                 <div>
@@ -292,6 +302,7 @@ const Home = () => {
                                     if (currency) params.set('currency', currency);
                                     if (priceMin) params.set('priceMin', priceMin);
                                     if (priceMax) params.set('priceMax', priceMax);
+                                    if (isDuplex) params.set('isDuplex', 'true');
                                     navigate(`/search?${params.toString()}`);
                                 }}
                                 className="w-full bg-[#fc7f51] hover:bg-[#e56b3e] text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-orange-500/30 transition flex items-center justify-center gap-2"
@@ -542,17 +553,31 @@ const Home = () => {
                                 if (operation && property.type !== operation) return false;
 
                                 // Filter by Property Type
-                                if (propertyType) {
-                                    if (propertyType === 'terreno') {
-                                        if (property.category !== 'terreno') return false;
-                                    }
-                                    else if (propertyType !== 'otro') {
-                                        if (property.category === 'terreno') return false;
+                                if (propertyType && propertyType !== 'otro') {
+                                    const pt = propertyType.toLowerCase();
+                                    const pCat = property.category?.toLowerCase() || '';
+                                    if (pCat !== pt && !pCat.includes(pt) && !pt.includes(pCat)) {
+                                        return false;
                                     }
                                 }
 
-                                // Filter by Location
-                                if (location && !property.location?.toLowerCase().includes(location.toLowerCase()) && !property.address?.toLowerCase().includes(location.toLowerCase())) return false;
+                                // Filter by text search (multi-word match against all property text)
+                                if (location) {
+                                    const searchTerms = location.toLowerCase().split(' ').filter(term => term.trim() !== '');
+                                    const searchableText = [
+                                        property.location || '',
+                                        property.address || '',
+                                        property.title || '',
+                                        property.description || '',
+                                        property.category || '',
+                                        (property.isDuplex === 'si' || property.isDuplex === true) ? 'duplex' : ''
+                                    ].join(' ').toLowerCase();
+
+                                    // All search terms must be present in the searchable text
+                                    if (!searchTerms.every(term => searchableText.includes(term))) {
+                                        return false;
+                                    }
+                                }
 
                                 // Filter by Price
                                 const price = parseFloat(property.price);
@@ -562,6 +587,8 @@ const Home = () => {
                                 // Filter by Currency (Optional: convert or strict match. For now strict match or assume same currency display)
                                 // If user selects USD, show USD properties?
                                 if (currency && property.currency !== currency) return false;
+
+                                if (isDuplex && property.isDuplex !== 'si') return false;
 
                                 return true;
                             })
