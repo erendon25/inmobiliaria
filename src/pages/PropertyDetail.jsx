@@ -317,8 +317,8 @@ END:VCALENDAR`;
                 .replace(/[^a-z0-9]/gi, '_')
                 .toLowerCase();
             const filename = `inmueveteperu-${safeName}-${activeImage + 1}.jpg`;
-            downloadImage(watermarkedDataUrl, filename);
-            toast.success('✅ Imagen descargada con marca de agua', { id: toastId });
+            await downloadImage(watermarkedDataUrl, filename);
+            toast.success('✅ Imagen lista', { id: toastId });
         } catch (error) {
             console.error('Error al descargar imagen:', error);
             toast.error('No se pudo descargar la imagen. Verifica tu conexión.', { id: toastId });
@@ -493,11 +493,16 @@ END:VCALENDAR`;
                                                     onContextMenu={(e) => e.preventDefault()}
                                                 />
                                                 {/* Watermark Overlay */}
-                                                <div className="absolute inset-0 pointer-events-none select-none z-10 flex flex-col items-center justify-center p-4 gap-2 opacity-15">
-                                                    <img src={logo} alt="" className="w-32 md:w-48 h-auto object-contain filter drop-shadow-lg brightness-0 invert" />
-                                                    <span className="text-white text-lg md:text-2xl font-bold tracking-widest uppercase drop-shadow-lg" style={{ textShadow: '0 0 8px rgba(0,0,0,0.8)' }}>
-                                                        Inmuevete Inmobiliaria
-                                                    </span>
+                                                <div className="absolute inset-0 pointer-events-none select-none z-10 flex items-center justify-center p-4 gap-3 md:gap-4 opacity-60">
+                                                    <img src={logo} alt="" className="h-12 md:h-20 w-auto object-contain" style={{ filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.6)) brightness(0) invert(1)' }} />
+                                                    <div className="flex flex-col items-start justify-center pt-1" style={{ filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.6))' }}>
+                                                        <span className="text-white text-3xl md:text-6xl font-black tracking-tight leading-none mb-1">
+                                                            Inmuévete
+                                                        </span>
+                                                        <span className="text-white text-[8px] md:text-sm tracking-[0.35em] font-bold leading-none ml-0.5 md:ml-1 uppercase">
+                                                            Asesoría Inmobiliaria
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </>
                                         ) : (
@@ -1077,11 +1082,16 @@ END:VCALENDAR`;
                                     onContextMenu={(e) => e.preventDefault()}
                                 />
                                 {/* Watermark overlay in lightbox */}
-                                <div className="absolute inset-0 pointer-events-none select-none flex flex-col items-center justify-center p-4 gap-2 opacity-35 z-10">
-                                    <img src={logo} alt="" className="w-32 md:w-64 h-auto object-contain filter drop-shadow-md" />
-                                    <span className="text-white text-sm md:text-2xl font-bold tracking-widest uppercase drop-shadow-md text-center">
-                                        Inmuevete Inmobiliaria
-                                    </span>
+                                <div className="absolute inset-0 pointer-events-none select-none z-10 flex items-center justify-center p-4 gap-4 md:gap-6 opacity-60">
+                                    <img src={logo} alt="" className="h-16 md:h-24 w-auto object-contain" style={{ filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.6)) brightness(0) invert(1)' }} />
+                                    <div className="flex flex-col items-start justify-center pt-1" style={{ filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.6))' }}>
+                                        <span className="text-white text-4xl md:text-7xl font-black tracking-tight leading-none mb-1 md:mb-2">
+                                            Inmuévete
+                                        </span>
+                                        <span className="text-white text-[10px] md:text-base tracking-[0.35em] font-bold leading-none ml-1 uppercase">
+                                            Asesoría Inmobiliaria
+                                        </span>
+                                    </div>
                                 </div>
                             </>
                         ) : (

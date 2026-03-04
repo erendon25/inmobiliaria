@@ -83,45 +83,75 @@ const fetchImageAsBlob = async (url) => {
  * Applies a semi-transparent logo watermark in the center.
  */
 const applyLogoWatermark = (ctx, width, height, wmImg) => {
-    // Logo watermark: center, 35% of image width
-    const wmWidth = width * 0.35;
-    const wmHeight = wmWidth * (wmImg.naturalHeight / wmImg.naturalWidth);
+    // Sizing
+    const iconHeight = height * 0.11; // 11% height for the logo icon
+    const iconWidth = iconHeight * (wmImg.naturalWidth / wmImg.naturalHeight);
 
-    const x = (width - wmWidth) / 2;
-    // Shift slightly up to leave room for text below
-    const y = (height - wmHeight) / 2 - (height * 0.05);
+    // Title font
+    const titleSize = iconHeight * 0.70;
+    ctx.font = `900 ${titleSize}px Montserrat, Arial, sans-serif`;
+    const titleWidth = ctx.measureText("Inmuévete").width;
+
+    // Gap and layout positioning
+    const gap = iconWidth * 0.25;
+    const totalWidth = iconWidth + gap + titleWidth;
+
+    const startX = (width - totalWidth) / 2;
+    const startY = (height - iconHeight) / 2;
 
     // Create an offscreen canvas to turn logo white
     const offCanvas = document.createElement('canvas');
-    offCanvas.width = wmWidth;
-    offCanvas.height = wmHeight;
+    offCanvas.width = iconWidth;
+    offCanvas.height = iconHeight;
     const offCtx = offCanvas.getContext('2d');
-    offCtx.drawImage(wmImg, 0, 0, wmWidth, wmHeight);
+    offCtx.drawImage(wmImg, 0, 0, iconWidth, iconHeight);
     offCtx.globalCompositeOperation = 'source-in';
     offCtx.fillStyle = '#ffffff';
-    offCtx.fillRect(0, 0, wmWidth, wmHeight);
+    offCtx.fillRect(0, 0, iconWidth, iconHeight);
 
-    // Draw the white logo with lower opacity
-    ctx.globalAlpha = 0.15;
-    ctx.drawImage(offCanvas, x, y, wmWidth, wmHeight);
+    // Apply main styles
+    ctx.globalAlpha = 0.60;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+    ctx.shadowBlur = 6;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
 
-    // Draw text "Inmuevete Inmobiliaria" below the logo
-    const text = 'Inmuevete Inmobiliaria';
-    const fontSize = Math.max(24, Math.floor(width * 0.04));
-    ctx.font = `bold ${fontSize}px Montserrat, Arial, sans-serif`;
-    ctx.textAlign = 'center';
+    // Draw the white logo icon
+    ctx.drawImage(offCanvas, startX, startY, iconWidth, iconHeight);
+
+    // Start drawing text
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
 
-    const textX = width / 2;
-    const textY = y + wmHeight + (height * 0.02);
+    const textStartX = startX + iconWidth + gap;
+    const titleY = startY + (iconHeight * 0.05);
 
-    ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-    ctx.shadowBlur = 8;
-    ctx.fillText(text, textX, textY);
+    // Draw Title "Inmuévete"
+    ctx.font = `900 ${titleSize}px Montserrat, Arial, sans-serif`;
+    ctx.fillText("Inmuévete", textStartX, titleY);
+
+    // Draw Subtitle "ASESORÍA INMOBILIARIA"
+    const subtitleSize = iconHeight * 0.16;
+    ctx.font = `bold ${subtitleSize}px Montserrat, Arial, sans-serif`;
+
+    // Modern canvas has letterSpacing, fallback to spaced text if not 
+    let subtitleText = "A S E S O R Í A   I N M O B I L I A R I A";
+    if (ctx.letterSpacing !== undefined) {
+        ctx.letterSpacing = `${subtitleSize * 0.3}px`;
+        subtitleText = "ASESORÍA INMOBILIARIA";
+    }
+
+    const subtitleY = titleY + titleSize + (iconHeight * 0.04);
+    ctx.fillText(subtitleText, textStartX + (iconWidth * 0.05), subtitleY);
 
     // Reset global styles
+    if (ctx.letterSpacing !== undefined) {
+        ctx.letterSpacing = "0px";
+    }
     ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
     ctx.globalAlpha = 1.0;
 };
 
@@ -137,7 +167,7 @@ const drawTextWatermark = (ctx, width, height, text) => {
     const x = width / 2;
     const y = height / 2;
 
-    ctx.globalAlpha = 0.15;
+    ctx.globalAlpha = 0.40;
 
     // Shadow / outline for readability
     ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
@@ -152,13 +182,46 @@ const drawTextWatermark = (ctx, width, height, text) => {
 };
 
 /**
- * Triggers a browser file download from a data URL.
+ * Triggers a browser file download from a data URL, with mobile fallback.
  */
-export const downloadImage = (dataUrl, filename) => {
+export const downloadImage = async (dataUrl, filename) => {
+    // Convert base64 Data URL to Blob
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    const blob = new Blob([u8arr], { type: mime });
+
+    // Check if we can use Web Share API (Great for iOS/Android WebViews/Browsers)
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile && navigator.canShare) {
+        try {
+            const file = new File([blob], filename, { type: mime });
+            if (navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: filename
+                });
+                return; // Shared/Saved successfully
+            }
+        } catch (e) {
+            console.warn('Share API failed or cancelled', e);
+        }
+    }
+
+    // Standard fallback download via Anchor tag using Object URL
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = dataUrl;
+    link.href = url;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    // Cleanup URL after interaction
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 };

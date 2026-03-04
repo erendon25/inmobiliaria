@@ -95,11 +95,16 @@ const PropertyCard = ({ property }) => {
                 />
 
                 {/* Watermark Overlay */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-15 pointer-events-none select-none z-0 gap-1">
-                    <img src={logo} alt="" className="w-1/3 h-auto object-contain filter drop-shadow-md brightness-0 invert" />
-                    <span className="text-white text-[10px] sm:text-xs font-bold tracking-widest uppercase drop-shadow-md text-center" style={{ textShadow: '0 0 4px rgba(0,0,0,0.8)' }}>
-                        Inmuevete Inmobiliaria
-                    </span>
+                <div className="absolute inset-0 pointer-events-none select-none z-0 flex items-center justify-center p-2 gap-1.5 opacity-60">
+                    <img src={logo} alt="" className="h-6 sm:h-8 w-auto object-contain" style={{ filter: 'drop-shadow(1px 2px 3px rgba(0,0,0,0.6)) brightness(0) invert(1)' }} />
+                    <div className="flex flex-col items-start justify-center" style={{ filter: 'drop-shadow(1px 2px 3px rgba(0,0,0,0.6))' }}>
+                        <span className="text-white text-xl sm:text-2xl font-black tracking-tight leading-none mb-0.5">
+                            Inmuévete
+                        </span>
+                        <span className="text-white text-[5px] sm:text-[6px] tracking-[0.35em] font-bold leading-none ml-0.5 uppercase">
+                            Asesoría Inmobiliaria
+                        </span>
+                    </div>
                 </div>
 
                 <div className="absolute top-3 left-3 flex flex-col gap-2 z-10 items-start">
