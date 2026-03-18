@@ -88,7 +88,8 @@ const Home = () => {
     useEffect(() => {
         setLoadingProperties(true);
         const q = query(
-            collection(db, "properties")
+            collection(db, "properties"),
+            limit(80) // Limit to prevent massive initial payload
         );
 
         // Real-time listener

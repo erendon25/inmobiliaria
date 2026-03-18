@@ -15,6 +15,7 @@ import GenerateContractModal from '../components/GenerateContractModal';
 import logo from '../assets/logo.png';
 import { fetchSunatExchangeRate } from '../lib/exchangeRate';
 import { PERU_LOCATIONS } from '../data/locations';
+import imageCompression from 'browser-image-compression';
 
 const AgentDashboard = () => {
     const { user, userData } = useAuth();
@@ -954,10 +955,23 @@ const AgentDashboard = () => {
 
         try {
             // Parallel Uploads
-            toast.loading(`Subiendo ${images.length} imagen(es)... Esto tomará unos momentos según el peso.`, { id: toastId });
+            toast.loading(`Comprimiendo y subiendo ${images.length} imagen(es)... Esto tomará unos momentos según el peso.`, { id: toastId });
             const uploadPromises = images.map(async (image) => {
-                const storageRef = ref(storage, `properties/${user.uid}/${Date.now()}_${image.name}`);
-                const snapshot = await uploadBytes(storageRef, image);
+                // Compress image before upload to avoid extremely huge files that slow down the website
+                const options = {
+                    maxSizeMB: 0.6, // Optimize down to ~600KB
+                    maxWidthOrHeight: 1280, // Cap at Full HD sizes
+                    useWebWorker: true
+                };
+                let compressedImage = image;
+                try {
+                    compressedImage = await imageCompression(image, options);
+                } catch (error) {
+                    console.error("Compression Error:", error);
+                }
+
+                const storageRef = ref(storage, `properties/${user.uid}/${Date.now()}_${compressedImage.name}`);
+                const snapshot = await uploadBytes(storageRef, compressedImage);
                 return await getDownloadURL(snapshot.ref);
             });
 
