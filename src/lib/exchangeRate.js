@@ -23,9 +23,9 @@ export const fetchSunatExchangeRate = async () => {
     fetchPromise = (async () => {
         let rate = null;
 
-        // Try apis.net.pe first
+        // Try apis.net.pe first (using cors proxy to avoid origin blocks)
         try {
-            const res = await fetch('https://api.apis.net.pe/v1/tipo-cambio-sunat');
+            const res = await fetch('https://api.allorigins.win/raw?url=https://api.apis.net.pe/v1/tipo-cambio-sunat');
             if (res.ok) {
                 const data = await res.json();
                 if (data.compra) rate = data.compra;
@@ -34,24 +34,7 @@ export const fetchSunatExchangeRate = async () => {
             console.warn('apis.net.pe failed:', e.message);
         }
 
-        // Try APISPeru if previous failed
-        if (!rate) {
-            try {
-                const res = await fetch('https://dniruc.apisperu.com/api/v1/tipo-cambio', {
-                    headers: {
-                        'Authorization': 'Bearer 72685412'
-                    }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.compra) rate = data.compra;
-                }
-            } catch (e) {
-                console.warn('dniruc.apisperu.com failed:', e.message);
-            }
-        }
-
-        // Try ExchangeRate-API as a reliable fallback
+        // Try ExchangeRate-API directly if SUNAT fails
         if (!rate) {
             try {
                 const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
@@ -65,6 +48,8 @@ export const fetchSunatExchangeRate = async () => {
                 console.warn('ExchangeRate-API failed:', e.message);
             }
         }
+
+
 
         if (!rate) {
             rate = 3.75; // More realistic current SUNAT rate approx 3.75
