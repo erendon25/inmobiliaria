@@ -320,8 +320,16 @@ END:VCALENDAR`;
             await downloadImage(watermarkedDataUrl, filename);
             toast.success('✅ Imagen lista', { id: toastId });
         } catch (error) {
-            console.error('Error al descargar imagen:', error);
-            toast.error('No se pudo descargar la imagen. Verifica tu conexión.', { id: toastId });
+            console.error('Error al descargar imagen con marca de agua (posible CORS). Descargando original:', error);
+            toast.error('No se pudo aplicar la marca de agua, abriendo original...', { id: toastId });
+            // Fallback: Open/download original image directly
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.target = '_blank';
+            link.download = `imagen-${activeImage + 1}.jpg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     };
 
@@ -335,12 +343,8 @@ END:VCALENDAR`;
                 if (docSnap.exists()) {
                     const data = docSnap.data();
 
-                    // Block access to draft properties for non-owners
-                    if (data.status === 'borrador' && (!user || data.agentId !== user.uid)) {
-                        setProperty(null);
-                        setLoading(false);
-                        return;
-                    }
+                    // Draft ("borrador") properties are now accessible if you have the direct link,
+                    // allowing agents to share the page for image downloading as requested.
 
                     // Increment view counter only for published properties
                     if (!hasViewedRef.current && data.status !== 'borrador') {

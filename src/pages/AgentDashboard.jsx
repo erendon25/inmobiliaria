@@ -25,6 +25,8 @@ const AgentDashboard = () => {
 
     // Contract State
     const [visitToContract, setVisitToContract] = useState(null);
+    const [textDraftVisit, setTextDraftVisit] = useState(null);
+    const [textDraftContent, setTextDraftContent] = useState('');
 
     // Activation State
     const [activationCode, setActivationCode] = useState('');
@@ -174,18 +176,38 @@ const AgentDashboard = () => {
             const storageRef = ref(storage, `contracts/${user.uid}/${visit.id}_${Date.now()}_${file.name}`);
             await uploadBytes(storageRef, file);
             const downloadURL = await getDownloadURL(storageRef);
-
             const visitRef = doc(db, "visits", visit.id);
             await updateDoc(visitRef, {
                 contractDraftUrl: downloadURL,
-                contractDraftName: file.name
             });
 
-            setVisits(prev => prev.map(v => v.id === visit.id ? { ...v, contractDraftUrl: downloadURL, contractDraftName: file.name } : v));
-            toast.success("Borrador subido exitosamente.", { id: toastId });
+            setVisits(visits.map(v => v.id === visit.id ? { ...v, contractDraftUrl: downloadURL } : v));
+            toast.success("Borrador subido exitosamente");
         } catch (error) {
-            console.error(error);
-            toast.error("Error al subir el borrador.", { id: toastId });
+            console.error("Error uploading draft:", error);
+            toast.error("Error al subir el borrador");
+        } finally {
+            toast.dismiss(toastId);
+        }
+    };
+
+    const handleSaveTextDraft = async () => {
+        if (!textDraftVisit) return;
+        const toastId = toast.loading("Guardando borrador web...");
+        try {
+            const visitRef = doc(db, "visits", textDraftVisit.id);
+            await updateDoc(visitRef, {
+                contractDraftText: textDraftContent
+            });
+            setVisits(visits.map(v => v.id === textDraftVisit.id ? { ...v, contractDraftText: textDraftContent } : v));
+            toast.success("Borrador de texto guardado");
+            setTextDraftVisit(null);
+            setTextDraftContent('');
+        } catch (error) {
+            console.error("Error saving text draft:", error);
+            toast.error("Error al guardar el borrador de texto");
+        } finally {
+            toast.dismiss(toastId);
         }
     };
 
@@ -927,11 +949,12 @@ const AgentDashboard = () => {
                 if (!proceed) return;
             }
         }
-
         setLoading(true);
+        const toastId = toast.loading(`Iniciando publicación...`);
 
         try {
             // Parallel Uploads
+            toast.loading(`Subiendo ${images.length} imagen(es)... Esto tomará unos momentos según el peso.`, { id: toastId });
             const uploadPromises = images.map(async (image) => {
                 const storageRef = ref(storage, `properties/${user.uid}/${Date.now()}_${image.name}`);
                 const snapshot = await uploadBytes(storageRef, image);
@@ -939,63 +962,69 @@ const AgentDashboard = () => {
             });
 
             const newImageUrls = await Promise.all(uploadPromises);
-            // Removed redundant declaration of statusToUse here
-
+            toast.loading(`Imágenes subidas. Guardando datos de la propiedad...`, { id: toastId });
+            
             if (editingId) {
-                // Update existing property
+                // Handle existing property editing
                 const updateData = {
                     ...formData,
                     status: statusToUse,
                     price: parseFloat(formData.price),
-                    footage: parseFloat(formData.footage),
+                    secondaryPrice: parseFloat(formData.secondaryPrice) || 0,
                     bedrooms: formData.category === 'construido' ? parseInt(formData.bedrooms) : 0,
                     bathrooms: formData.category === 'construido' ? parseInt(formData.bathrooms) : 0,
-                    agentPhone: userData.phoneNumber || '',
-                    agentPhotoURL: userData.photoURL || ''
+                    agentPhone: userData?.phoneNumber || '',
+                    agentPhotoURL: userData?.photoURL || ''
                 };
 
-                // Filter out old image URLs that are no longer in imagePreviews
+                // Remove undefined values
+                Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+
                 const existingImageUrls = imagePreviews.filter(url => !url.startsWith('blob:'));
                 updateData.images = [...existingImageUrls, ...newImageUrls];
-
+                
                 await updateDoc(doc(db, "properties", editingId), updateData);
-                toast.success(statusToUse === 'draft' ? "Borrador guardado" : "¡Propiedad actualizada!");
+                toast.success(statusToUse === 'draft' ? "Borrador guardado" : "¡Propiedad actualizada!", { id: toastId });
+
+                // Reset editing state after success
+                setEditingId(null);
+                handleCancelEdit();
             } else {
                 // Create new property
                 const newPropertyData = {
                     ...formData,
                     status: statusToUse, // Use override or form data
                     agentId: user.uid,
-                    agentName: userData.displayName || 'Agente',
-                    agentPhone: userData.phoneNumber || '',
-                    agentPhotoURL: userData.photoURL || '',
+                    agentName: userData?.displayName || 'Agente',
+                    agentPhone: userData?.phoneNumber || '',
+                    agentPhotoURL: userData?.photoURL || '',
                     images: newImageUrls,
                     createdAt: new Date(),
                     views: 0,
                     isPromoted: false,
                     price: parseFloat(formData.price),
-                    footage: parseFloat(formData.footage),
+                    secondaryPrice: parseFloat(formData.secondaryPrice) || 0,
                     bedrooms: formData.category === 'construido' ? parseInt(formData.bedrooms) : 0,
                     bathrooms: formData.category === 'construido' ? parseInt(formData.bathrooms) : 0,
                 };
 
                 await addDoc(collection(db, "properties"), newPropertyData);
-                toast.success(statusToUse === 'draft' ? "Borrador guardado" : "¡Propiedad publicada!");
+                toast.success(statusToUse === 'draft' ? "Borrador guardado" : "¡Propiedad publicada!", { id: toastId });
 
                 // Reset form
                 handleCancelEdit();
                 fetchMyProperties();
             }
+
         } catch (error) {
             console.error("Error adding property: ", error);
-            toast.error("Hubo un error al guardar.");
+            toast.error("Hubo un error al guardar. Verifica tu conexión.", { id: toastId });
         } finally {
             setLoading(false);
         }
     };
 
     const handleSubmit = (e) => {
-        e.preventDefault();
         saveProperty();
     };
 
@@ -1836,13 +1865,34 @@ const AgentDashboard = () => {
                                                                 <Upload className="w-4 h-4" /> Subir Borrador
                                                                 <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={(e) => handleUploadDraft(visit, e.target.files[0])} />
                                                             </label>
+                                                            <button
+                                                                onClick={() => {
+                                                                    setTextDraftVisit(visit);
+                                                                    setTextDraftContent(visit.contractDraftText || '');
+                                                                }}
+                                                                className="border-2 border-dashed border-gray-300 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:border-gray-400 px-4 py-2 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2 w-full md:w-auto"
+                                                            >
+                                                                <FileText className="w-4 h-4" /> Editor Web
+                                                            </button>
                                                         </div>
                                                     )}
 
                                                     {visit.contractDraftUrl && (
-                                                        <a href={visit.contractDraftUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-2">
-                                                            <FileText className="w-3 h-3" /> Ver Borrador
+                                                        <a href={visit.contractDraftUrl} download target="_blank" rel="noopener noreferrer" className="text-sm text-green-600 font-bold hover:underline flex items-center gap-1 mt-2 p-2 bg-green-50 rounded w-fit">
+                                                            <FileText className="w-4 h-4" /> Descargar Borrador o Archivo Subido
                                                         </a>
+                                                    )}
+                                                    
+                                                    {visit.contractDraftText && (
+                                                        <button 
+                                                            onClick={() => {
+                                                                setTextDraftVisit(visit);
+                                                                setTextDraftContent(visit.contractDraftText);
+                                                            }}
+                                                            className="text-sm text-blue-600 font-bold hover:underline flex items-center gap-1 mt-2 p-2 bg-blue-50 rounded w-fit"
+                                                        >
+                                                            <FileText className="w-4 h-4" /> Ver / Editar Borrador Web
+                                                        </button>
                                                     )}
 
                                                     {visit.outcome === 'tomó la propiedad' && (
@@ -2073,6 +2123,45 @@ const AgentDashboard = () => {
             )}
 
             {/* Contract Loading / Modals */}
+            {textDraftVisit && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50">
+                            <div>
+                                <h2 className="text-xl font-bold flex items-center gap-2 text-gray-800">
+                                    <FileText className="w-5 h-5 text-[#fc7f51]" /> Editor de Borrador PDF/Web
+                                </h2>
+                                <p className="text-sm text-gray-500 mt-1">Visita: {textDraftVisit.propertyTitle} - {textDraftVisit.clientName}</p>
+                            </div>
+                            <button onClick={() => setTextDraftVisit(null)} className="p-2 text-gray-400 hover:text-gray-800 bg-white rounded-full shadow-sm">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-6">
+                            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-xl text-sm flex gap-3 mb-4">
+                                <div><Lightbulb className="w-5 h-5 text-yellow-600" /></div>
+                                <div>Escribe o pega aquí el contenido de tu borrador. Este texto se guardará en la plataforma para que puedas editarlo desde cualquier dispositivo sin necesidad de descargar archivos Word.</div>
+                            </div>
+                            <textarea
+                                className="w-full h-96 p-4 border-2 border-gray-200 rounded-xl outline-none focus:border-[#fc7f51] transition font-mono text-sm leading-relaxed resize-y shadow-inner"
+                                placeholder="Escribe el contrato aquí..."
+                                value={textDraftContent}
+                                onChange={e => setTextDraftContent(e.target.value)}
+                            />
+                        </div>
+                        <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end items-center gap-3">
+                            <button onClick={() => setTextDraftVisit(null)} className="text-gray-500 font-bold px-4 py-2 hover:bg-gray-200 rounded-lg transition">Cancelar</button>
+                            <button
+                                onClick={handleSaveTextDraft}
+                                className="bg-[#fc7f51] text-white px-6 py-2 rounded-xl font-bold hover:bg-[#e56b3e] shadow-lg shadow-orange-500/20 transition flex items-center gap-2"
+                            >
+                                <CheckCircle2 className="w-5 h-5" /> Guardar Borrador Web
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {visitToContract && (
                 <GenerateContractModal
                     visit={visitToContract}

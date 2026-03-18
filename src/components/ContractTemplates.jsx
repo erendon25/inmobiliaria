@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { db, storage } from '../lib/firebase';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { FileText, Plus, Edit2, Trash2, Loader2, Save, X, Upload } from 'lucide-react';
+import { FileText, Plus, Edit2, Trash2, Loader2, Save, X, Upload, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ContractTemplates({ userId }) {
@@ -273,12 +273,19 @@ SEGUNDO: El precio pactado es de [PRECIO] [MONEDA].
                                 </div>
                                 <h3 className="font-bold text-gray-900 mt-2 line-clamp-2">{tpl.title}</h3>
                                 {tpl.templateFileName && (
-                                    <div className="flex items-center gap-1 mt-2 text-xs font-bold text-blue-600 bg-blue-50 w-fit px-2 py-1 rounded">
-                                        <FileText className="w-3 h-3" /> Plantilla Word (.docx)
+                                    <div className="flex flex-col gap-2 mt-2">
+                                        <div className="flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 w-fit px-2 py-1 rounded">
+                                            <FileText className="w-3 h-3" /> Plantilla Word (.docx)
+                                        </div>
                                     </div>
                                 )}
                             </div>
                             <div className="flex gap-2 justify-end mt-4 opacity-0 group-hover:opacity-100 transition">
+                                {tpl.templateFileUrl && (
+                                    <a href={tpl.templateFileUrl} download target="_blank" rel="noopener noreferrer" className="p-2 bg-white text-green-600 hover:bg-green-50 rounded-lg shadow-sm" title="Descargar Word">
+                                        <Download className="w-4 h-4" />
+                                    </a>
+                                )}
                                 <button onClick={() => handleEdit(tpl)} className="p-2 bg-white text-blue-600 hover:bg-blue-50 rounded-lg shadow-sm" title="Editar">
                                     <Edit2 className="w-4 h-4" />
                                 </button>
