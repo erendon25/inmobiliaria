@@ -23,15 +23,14 @@ export const fetchSunatExchangeRate = async () => {
     fetchPromise = (async () => {
         let rate = null;
 
-        // Try apis.net.pe first (using cors proxy to avoid origin blocks)
+        // Try apis.net.pe first (using corsproxy.io as it is more reliable for localhost)
         try {
-            const res = await fetch('https://api.allorigins.win/raw?url=https://api.apis.net.pe/v1/tipo-cambio-sunat');
+            const res = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://api.apis.net.pe/v1/tipo-cambio-sunat')}`);
             if (res.ok) {
-                const data = await res.json();
-                if (data.compra) rate = data.compra;
+                rate = await res.json().then(data => data.compra);
             }
         } catch (e) {
-            console.warn('apis.net.pe failed:', e.message);
+            console.warn('apis.net.pe (proxy) failed:', e.message);
         }
 
         // Try ExchangeRate-API directly if SUNAT fails

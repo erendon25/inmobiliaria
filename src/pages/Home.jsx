@@ -86,38 +86,36 @@ const Home = () => {
     const [loadingProperties, setLoadingProperties] = useState(true);
 
     useEffect(() => {
-        setLoadingProperties(true);
-        const q = query(
-            collection(db, "properties"),
-            limit(80) // Limit to prevent massive initial payload
-        );
+        const fetchProperties = async () => {
+            setLoadingProperties(true);
+            try {
+                const q = query(
+                    collection(db, "properties"),
+                    limit(60) // Slightly reduced limit for faster loading and fewer reads
+                );
 
-        // Real-time listener
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const props = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-                .filter(p => p.status === 'disponible' || p.status === 'tomada'); // Show available or taken (sold) properties
+                const querySnapshot = await getDocs(q);
+                const props = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+                    .filter(p => p.status === 'disponible');
 
-            // Sort properties: Promoted first, then Newest first
-            props.sort((a, b) => {
-                // 1. Promoted check (Promoted items at top)
-                if (a.isPromoted && !b.isPromoted) return -1;
-                if (!a.isPromoted && b.isPromoted) return 1;
+                // Sort properties: Promoted first, then Newest first
+                props.sort((a, b) => {
+                    if (a.isPromoted && !b.isPromoted) return -1;
+                    if (!a.isPromoted && b.isPromoted) return 1;
+                    const dateA = a.createdAt?.seconds || 0;
+                    const dateB = b.createdAt?.seconds || 0;
+                    return dateB - dateA;
+                });
 
-                // 2. Date check (Newest first)
-                const dateA = a.createdAt?.seconds || 0;
-                const dateB = b.createdAt?.seconds || 0;
-                return dateB - dateA;
-            });
+                setProperties(props);
+            } catch (error) {
+                console.error("Error fetching properties:", error);
+            } finally {
+                setLoadingProperties(false);
+            }
+        };
 
-            setProperties(props);
-            setLoadingProperties(false);
-        }, (error) => {
-            console.error("Error fetching properties:", error);
-            setLoadingProperties(false);
-        });
-
-        // Cleanup subscription
-        return () => unsubscribe();
+        fetchProperties();
     }, []);
 
 

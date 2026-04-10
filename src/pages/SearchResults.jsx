@@ -207,8 +207,8 @@ const SearchResults = () => {
             });
         }
 
-        // Only show available and taking properties
-        results = results.filter(p => p.status === 'disponible' || p.status === 'tomada');
+        // Only show available properties
+        results = results.filter(p => p.status === 'disponible');
 
         // Sort
         if (sortBy === 'newest') {

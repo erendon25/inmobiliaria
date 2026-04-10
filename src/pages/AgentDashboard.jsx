@@ -153,19 +153,43 @@ const AgentDashboard = () => {
         });
     }, [user, userData]);
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("¿Estás seguro de que deseas eliminar esta propiedad?")) return;
-        // Optimistic: remove immediately from UI
-        const backup = myProperties;
-        setMyProperties(prev => prev.filter(p => p.id !== id));
-        toast.success("Propiedad eliminada correctamente.");
+    const deletePropertyImages = async (imageUrls) => {
+        if (!imageUrls || !Array.isArray(imageUrls)) return;
+        
+        const deletePromises = imageUrls.map(async (url) => {
+            try {
+                if (url && url.includes('firebasestorage.googleapis.com')) {
+                    const imageRef = ref(storage, url);
+                    await deleteObject(imageRef);
+                }
+            } catch (error) {
+                console.error("Error deleting image from storage:", error);
+            }
+        });
+        await Promise.all(deletePromises);
+    };
+
+    const handleDelete = async (propertyId) => {
+        const property = myProperties.find(p => p.id === propertyId);
+        if (!property) return;
+
+        if (!window.confirm(`¿Estás seguro de que deseas eliminar permanentemente "${property.title}"? Esta acción borrará las fotos de la base de datos y ahorrará espacio de almacenamiento.`)) return;
+        
+        const toastId = toast.loading("Eliminando propiedad y archivos...");
+        
         try {
-            await deleteDoc(doc(db, "properties", id));
+            // 1. Delete images from Storage first
+            await deletePropertyImages(property.images);
+            
+            // 2. Delete document from Firestore
+            await deleteDoc(doc(db, "properties", propertyId));
+            
+            // 3. Update local state
+            setMyProperties(prev => prev.filter(p => p.id !== propertyId));
+            toast.success("Propiedad y fotos eliminadas del sistema.", { id: toastId });
         } catch (error) {
-            // Revert on error
-            setMyProperties(backup);
             console.error("Error deleting property:", error);
-            toast.error("Error al eliminar la propiedad.");
+            toast.error("Error al eliminar la propiedad completamente.", { id: toastId });
         }
     };
 
@@ -441,19 +465,35 @@ const AgentDashboard = () => {
     };
 
     const handleStatusToggle = async (propertyId, currentStatus) => {
-        const newStatus = currentStatus === 'disponible' ? 'tomada' : 'disponible';
-        // Optimistic update: update local state immediately
+        if (currentStatus === 'disponible') {
+            const choice = window.confirm("¿Deseas marcar esta propiedad como VENDIDA/ALQUILADA?\n\nOPCIÓN RECOMENDADA: Si ya fue cerrada, lo mejor es eliminarla del sistema para ahorrar costos de almacenamiento de imágenes.");
+            
+            if (choice) {
+                // User wants to mark as sold/closed. We recommend full deletion to save costs.
+                handleDelete(propertyId);
+                return;
+            }
+            // If they cancel, we just change status to 'tomada' without deleting
+            const newStatus = 'tomada';
+            setMyProperties(prev => prev.map(p => p.id === propertyId ? { ...p, status: newStatus } : p));
+            try {
+                await updateDoc(doc(db, "properties", propertyId), { status: newStatus });
+                toast.success("Estado actualizado a: No Disponible");
+            } catch (error) {
+                console.error("Error updating status:", error);
+            }
+            return;
+        }
+
+        const newStatus = 'disponible';
         setMyProperties(prev => prev.map(p => p.id === propertyId ? { ...p, status: newStatus } : p));
-        toast.success(`Estado actualizado a: ${newStatus === 'disponible' ? 'Disponible' : 'No Disponible'}`);
+        toast.success("Propiedad marcada como Disponible nuevamente.");
         try {
             await updateDoc(doc(db, "properties", propertyId), {
                 status: newStatus
             });
         } catch (error) {
-            // Revert on error
-            setMyProperties(prev => prev.map(p => p.id === propertyId ? { ...p, status: currentStatus } : p));
-            console.error("Error updating status:", error);
-            toast.error("No se pudo actualizar el estado.");
+            console.error("Error reactivating property:", error);
         }
     };
 
@@ -959,8 +999,8 @@ const AgentDashboard = () => {
             const uploadPromises = images.map(async (image) => {
                 // Compress image before upload to avoid extremely huge files that slow down the website
                 const options = {
-                    maxSizeMB: 0.6, // Optimize down to ~600KB
-                    maxWidthOrHeight: 1280, // Cap at Full HD sizes
+                    maxSizeMB: 0.3, // Optimized down to ~300KB to save on egress costs
+                    maxWidthOrHeight: 1200, // Ideal size for web performance
                     useWebWorker: true
                 };
                 let compressedImage = image;
