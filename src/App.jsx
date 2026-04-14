@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import { useState, useEffect } from 'react';
 import Loader from './components/Loader';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import Home from './pages/Home';
 import PropertyDetail from './pages/PropertyDetail';
@@ -39,24 +40,37 @@ function PageLoader() {
   return <Loader fullScreen />;
 }
 
+// Scroll to top on route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  
+  return null;
+}
+
 function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { realUserData, roleOverride, setRoleOverride } = useAuth();
+  const { realUserData, roleOverride, setRoleOverride, impersonatedUser, setImpersonatedUser, userData } = useAuth();
 
   const isSuperAdminRoute = location.pathname === '/superadmin';
-  const isImpersonating = realUserData?.role === 'superadmin' && roleOverride;
+  const isImpersonating = realUserData?.role === 'superadmin' && (roleOverride || impersonatedUser);
 
   return (
     <div className={`flex flex-col min-h-screen ${isImpersonating ? 'pt-10' : ''}`}>
+      <ScrollToTop />
       <PageLoader />
 
       {isImpersonating && (
         <div className="fixed top-0 left-0 w-full z-[100] bg-red-600 text-white text-xs font-bold px-4 py-2 flex justify-center items-center gap-4 shadow-xl">
-          <span>⚠️ Modo de Prueba: Viendo como {roleOverride.toUpperCase()}</span>
+          <span>⚠️ Modo de Prueba: Viendo como {roleOverride?.toUpperCase()} {impersonatedUser ? `(${userData?.displayName || userData?.email})` : ''}</span>
           <button
             onClick={() => {
               setRoleOverride(null);
+              setImpersonatedUser(null);
               navigate('/superadmin');
             }}
             className="bg-white text-red-600 px-3 py-1 rounded-full hover:bg-red-50 transition"
@@ -68,50 +82,60 @@ function AppContent() {
 
       {!isSuperAdminRoute && <Navbar />}
       <main className="flex-grow">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/properties" element={<SearchResults />} />
-          <Route path="/properties/:id" element={<PropertyDetail />} />
-          <Route path="/search" element={<SearchResults />} />
-          <Route path="/tips" element={<Tips />} />
-          <Route path="/tips/:id" element={<TipDetail />} />
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+          >
+            <Routes location={location}>
+              <Route path="/" element={<Home />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/properties" element={<SearchResults />} />
+              <Route path="/properties/:id" element={<PropertyDetail />} />
+              <Route path="/search" element={<SearchResults />} />
+              <Route path="/tips" element={<Tips />} />
+              <Route path="/tips/:id" element={<TipDetail />} />
 
-          {/* Authentication Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/setup" element={<Setup />} />
+              {/* Authentication Routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/setup" element={<Setup />} />
 
-          {/* Protected Routes */}
-          <Route
-            path="/agent-dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['agente']}>
-                <AgentDashboard />
-              </ProtectedRoute>
-            }
-          />
+              {/* Protected Routes */}
+              <Route
+                path="/agent-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['agente']}>
+                    <AgentDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-          <Route
-            path="/client-dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['cliente']}>
-                <ClientDashboard />
-              </ProtectedRoute>
-            }
-          />
+              <Route
+                path="/client-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['cliente']}>
+                    <ClientDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-          <Route
-            path="/superadmin"
-            element={
-              <ProtectedRoute allowedRoles={['superadmin']}>
-                <SuperAdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
+              <Route
+                path="/superadmin"
+                element={
+                  <ProtectedRoute allowedRoles={['superadmin']}>
+                    <SuperAdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </motion.div>
+        </AnimatePresence>
       </main>
       {!isSuperAdminRoute && <Footer />}
     </div>

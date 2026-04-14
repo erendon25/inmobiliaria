@@ -16,5 +16,24 @@
                 "destination": "/index.html"
             }
         ]
-    }
+    },
+    "functions": [
+        {
+            "source": "functions",
+            "codebase": "default",
+            "ignore": [
+                "node_modules",
+                ".runtimeconfig.json",
+                "debian",
+                "firebase-debug.log",
+                "firebase-project.log",
+                "firestore-debug.log",
+                "firestore-project.log",
+                "pubsub-debug.log",
+                "pubsub-project.log",
+                "ui-debug.log",
+                "ui-project.log"
+            ]
+        }
+    ]
 }

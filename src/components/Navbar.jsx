@@ -1,230 +1,227 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, UserCircle, Menu, X } from 'lucide-react';
+import { Menu, X, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import logo from '../assets/logo.png'; // Import the logo image
-import { PERU_LOCATIONS } from '../data/locations';
-import { MapPin } from 'lucide-react';
-
+import logo from '../assets/logo.png';
 import ExchangeRate from './ExchangeRate';
 
 const Navbar = () => {
     const { user, userData, logout } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
-    const [searchTerm, setSearchTerm] = useState('');
+    const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // Suggestions state
-    const [filteredLocations, setFilteredLocations] = useState([]);
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const isAboutPage = location.pathname === '/about';
+    useEffect(() => {
+        const handleScroll = () => setIsScrolled(window.scrollY > 20);
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
-    const handleSearch = (term = searchTerm) => {
-        if (term.trim()) {
-            navigate(`/search?location=${encodeURIComponent(term)}`);
-            setShowSuggestions(false);
-        }
-    };
+    // On pages without a dark hero (anything other than home), use frosted glass from the start
+    const isHomePage = location.pathname === '/';
+    // transparent → frosted glass when scrolled (home only) | always frosted on other pages
+    const solidNav = !isHomePage || isScrolled;
+    // Use fully opaque white only after scrolling on home; on other pages use light frosted
+    const navBg = isHomePage
+        ? isScrolled ? 'bg-white/95 backdrop-blur-lg shadow-lg border border-white/30' : 'bg-transparent'
+        : 'bg-white/80 backdrop-blur-md shadow-sm border border-gray-100/80';
+    const textDark = solidNav;
 
-    const handleLocationChange = (val) => {
-        setSearchTerm(val);
-        if (val.length > 0) {
-            const filtered = PERU_LOCATIONS.filter(loc =>
-                loc.name.toLowerCase().includes(val.toLowerCase()) ||
-                loc.label.toLowerCase().includes(val.toLowerCase())
-            ).slice(0, 5);
-            setFilteredLocations(filtered);
-            setShowSuggestions(true);
-        } else {
-            setShowSuggestions(false);
-        }
-    };
+    const navLinks = [
+        { name: 'Propiedades', path: '/' },
+        { name: 'Blog', path: '/tips' },
+        { name: 'Nosotros', path: '/about' },
+        { name: 'Contacto', path: '/contact' },
+    ];
 
-    const selectLocation = (loc) => {
-        setSearchTerm(loc.label);
-        setShowSuggestions(false);
-        handleSearch(loc.label);
-    };
+    const isActive = (path) => location.pathname === path;
 
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            handleSearch();
-        }
-    };
+    const dashboardPath =
+        userData?.role === 'agente'
+            ? '/agent-dashboard'
+            : userData?.role === 'superadmin'
+            ? '/superadmin'
+            : '/client-dashboard';
 
     return (
-        <nav className="fixed w-full z-50 bg-[#16151a] border-b border-gray-800 shadow-lg">
-            <div className="container mx-auto px-6 h-24 flex justify-between items-center">
-                {/* Brand Logo */}
-                <Link to="/" className="flex shrink-0 items-center gap-2 group">
+        <nav
+            className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
+                solidNav ? 'py-2 px-4' : 'py-5 px-6'
+            }`}
+        >
+            <div
+                className={`container mx-auto max-w-7xl flex items-center justify-between px-6 py-3 rounded-full transition-all duration-300 ${navBg}`}
+            >
+                {/* ── LOGO ── */}
+                <Link to="/" className="flex items-center gap-2 shrink-0">
                     <img
                         src={logo}
                         alt="Inmuévete"
-                        className="h-10 md:h-12 w-auto object-contain"
+                        className="h-9 md:h-11 w-auto object-contain"
                     />
-                    <span className="text-2xl font-bold text-[#fc7f51] tracking-tight hidden md:block">
-                        Inmuévete
-                    </span>
                 </Link>
 
-                {/* Search Bar (Desktop) */}
-                <div className="hidden lg:relative lg:flex items-center bg-white rounded-full flex-1 mx-4 max-w-[420px] py-1.5 pl-4 pr-1.5 shadow-xl hover:shadow-orange-500/5 transition cursor-pointer gap-2">
-                    <input
-                        type="text"
-                        placeholder="Buscar por zona, ciudad o tipo..."
-                        className="bg-transparent border-none outline-none text-[#262626] placeholder-gray-400 flex-1 font-medium text-sm min-w-[120px]"
-                        value={searchTerm}
-                        onChange={(e) => handleLocationChange(e.target.value)}
-                        onFocus={() => searchTerm && setShowSuggestions(true)}
-                        onKeyDown={handleKeyDown}
-                    />
-                    <div
-                        className="bg-[#fc7f51] p-2.5 rounded-full text-white hover:bg-[#e56b3e] transition shadow-md"
-                        onClick={() => handleSearch()}
-                    >
-                        <Search className="w-5 h-5" strokeWidth={2.5} />
-                    </div>
-
-                    {/* Suggestions Dropdown */}
-                    {showSuggestions && filteredLocations.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[60] overflow-hidden py-2 animate-fadeIn">
-                            {filteredLocations.map((loc, idx) => (
-                                <div
-                                    key={idx}
-                                    onClick={() => selectLocation(loc)}
-                                    className="px-6 py-3 hover:bg-orange-50 cursor-pointer flex items-center gap-3 text-gray-700 font-medium text-sm transition"
-                                >
-                                    <MapPin className="w-4 h-4 text-[#fc7f51]" />
-                                    {loc.label}
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                {/* ── CENTRAL PILL MENU (desktop) ── */}
+                <div
+                    className={`hidden md:flex items-center gap-1 p-1 rounded-full transition-all duration-300 ${
+                        solidNav
+                            ? 'bg-gray-100/70'
+                            : 'bg-white/10 backdrop-blur-md border border-white/10'
+                    }`}
+                >
+                    {navLinks.map((link) => (
+                        <Link
+                            key={link.path}
+                            to={link.path}
+                            className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 ${
+                                isActive(link.path)
+                                    ? solidNav
+                                        ? 'bg-white text-[#fc7f51] shadow-sm'
+                                        : 'bg-white text-gray-900 shadow-lg scale-105'
+                                    : solidNav
+                                    ? 'text-gray-600 hover:text-[#fc7f51]'
+                                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                            }`}
+                        >
+                            {link.name}
+                        </Link>
+                    ))}
                 </div>
 
-                {/* Right Actions (Desktop) */}
-                <div className="hidden lg:flex items-center gap-2 xl:gap-4 whitespace-nowrap">
-                    <ExchangeRate />
-                    <div className="flex items-center gap-3 xl:gap-6">
-                        <Link to="/" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Propiedades</Link>
-                        {userData?.role !== 'agente' && (
-                            <>
-                                <Link to="/tips" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Blog</Link>
-                                <Link to="/about" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Nosotros</Link>
-                                <Link to="/contact" className="text-sm font-bold text-gray-200 hover:text-[#fc7f51] transition uppercase tracking-wide">Contacto</Link>
-                            </>
-                        )}
+                {/* ── RIGHT ACTIONS ── */}
+                <div className="flex items-center gap-3">
+                    {/* Exchange Rate (desktop only) */}
+                    <div>
+                        <ExchangeRate isScrolled={solidNav} />
                     </div>
 
-                    {user ? (
-                        <div className="flex items-center gap-4">
+                    {!user ? (
+                        <div className="hidden md:flex items-center gap-2">
                             <Link
-                                to={userData?.role === 'agente' ? '/agent-dashboard' : '/client-dashboard'}
-                                className="text-white hover:text-[#fc7f51] transition font-medium mr-2"
+                                to="/login"
+                                className={`px-5 py-2 text-sm font-bold transition rounded-full ${
+                                    solidNav
+                                        ? 'text-gray-600 hover:text-[#fc7f51]'
+                                        : 'text-white/90 hover:text-white hover:bg-white/10'
+                                }`}
                             >
-                                Hola, {user.displayName ? user.displayName.split(' ')[0] : (userData?.role === 'agente' ? 'Agente' : 'Usuario')}
+                                Ingresar
                             </Link>
-                            <button
-                                onClick={logout}
-                                className="bg-[#262626] border border-gray-600 text-white px-4 py-2 rounded-full text-sm hover:bg-gray-800 transition"
+                            <Link
+                                to="/register"
+                                className="bg-[#fc7f51] hover:bg-[#e56b3e] text-white px-6 py-2.5 rounded-full text-sm font-black shadow-lg shadow-orange-500/25 transition-all hover:scale-105 active:scale-95"
                             >
-                                Salir
-                            </button>
-                            <Link to={userData?.role === 'agente' ? '/agent-dashboard' : '/client-dashboard'}>
-                                <div className="bg-gray-600 rounded-full p-0.5 cursor-pointer">
-                                    <UserCircle className="w-8 h-8 text-white fill-gray-600" />
-                                </div>
+                                Registrarse
                             </Link>
                         </div>
                     ) : (
-                        <Link
-                            to="/login"
-                            className="bg-[#fc7f51] hover:bg-[#e56b3e] text-white px-6 py-2 rounded-full font-bold transition shadow-lg shadow-orange-500/20"
-                        >
-                            Ingresar
-                        </Link>
+                        <div className="flex items-center gap-3">
+                            <span
+                                className={`hidden lg:block text-sm font-bold ${
+                                    solidNav ? 'text-gray-700' : 'text-white/90'
+                                }`}
+                            >
+                                Hola,{' '}
+                                {user.displayName
+                                    ? user.displayName.split(' ')[0]
+                                    : userData?.role === 'agente'
+                                    ? 'Agente'
+                                    : 'Usuario'}
+                            </span>
+                            <Link to={dashboardPath} className="group">
+                                <div className="w-9 h-9 rounded-full bg-[#fc7f51] flex items-center justify-center text-white shadow-md group-hover:bg-[#e56b3e] transition">
+                                    <User className="w-5 h-5" />
+                                </div>
+                            </Link>
+                        </div>
                     )}
-                </div>
 
-                {/* Mobile Menu Button */}
-                <button
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    className="lg:hidden text-white p-2 hover:bg-gray-800 rounded-lg transition"
-                >
-                    {isMobileMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
-                </button>
+                    {/* Mobile hamburger */}
+                    <button
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className={`md:hidden p-2 rounded-full transition ${
+                            solidNav
+                                ? 'text-gray-900 bg-gray-100'
+                                : 'text-white bg-white/10'
+                        }`}
+                    >
+                        {isMobileMenuOpen ? (
+                            <X className="w-6 h-6" />
+                        ) : (
+                            <Menu className="w-6 h-6" />
+                        )}
+                    </button>
+                </div>
             </div>
 
-            {/* Mobile Menu Overlay */}
+            {/* ── MOBILE MENU ── */}
             {isMobileMenuOpen && (
-                <div className="lg:hidden bg-[#16151a] border-t border-gray-800 absolute w-full left-0 top-24 min-h-[calc(100vh-96px)] p-6 animate-fadeIn">
-                    <div className="flex flex-col gap-6">
-                        {/* Mobile Search */}
-                        <div className="flex items-center bg-white rounded-full py-2 pl-4 pr-2 shadow-lg mb-4">
-                            <input
-                                type="text"
-                                placeholder="Buscar..."
-                                className="bg-transparent border-none outline-none text-[#262626] placeholder-gray-400 flex-1 font-medium text-sm w-full"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        handleSearch();
-                                        setIsMobileMenuOpen(false);
-                                    }
-                                }}
-                            />
-                            <div
-                                className="bg-[#fc7f51] p-2 rounded-full text-white"
-                                onClick={() => {
-                                    handleSearch();
-                                    setIsMobileMenuOpen(false);
-                                }}
+                <div className="md:hidden fixed inset-0 z-[60] bg-white flex flex-col animate-fadeIn">
+                    <div className="p-6 flex flex-col h-full">
+                        {/* Header */}
+                        <div className="flex justify-between items-center mb-10">
+                            <img src={logo} alt="Inmuévete" className="h-10 w-auto object-contain" />
+                            <button
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="p-2 bg-gray-100 rounded-full"
                             >
-                                <Search className="w-4 h-4" strokeWidth={2.5} />
-                            </div>
+                                <X className="w-6 h-6 text-gray-900" />
+                            </button>
                         </div>
 
-                        {/* Navigation Links */}
-                        <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-bold text-gray-200 hover:text-[#fc7f51] py-2 border-b border-gray-800">Propiedades</Link>
-                        <Link to="/tips" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-bold text-gray-200 hover:text-[#fc7f51] py-2 border-b border-gray-800">Blog</Link>
-                        {userData?.role !== 'agente' && (
-                            <>
-                                <Link to="/about" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-bold text-gray-200 hover:text-[#fc7f51] py-2 border-b border-gray-800">Nosotros</Link>
-                                <Link to="/contact" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-bold text-gray-200 hover:text-[#fc7f51] py-2 border-b border-gray-800">Contacto</Link>
-                            </>
-                        )}
-
-                        {/* User Actions */}
-                        {user ? (
-                            <div className="flex flex-col gap-4 mt-4">
+                        {/* Links */}
+                        <div className="flex flex-col gap-6 flex-grow">
+                            {navLinks.map((link) => (
                                 <Link
-                                    to={userData?.role === 'agente' ? '/agent-dashboard' : '/client-dashboard'}
+                                    key={link.path}
+                                    to={link.path}
                                     onClick={() => setIsMobileMenuOpen(false)}
-                                    className="text-white hover:text-[#fc7f51] font-medium flex items-center gap-2"
+                                    className={`text-2xl font-black ${
+                                        isActive(link.path)
+                                            ? 'text-[#fc7f51]'
+                                            : 'text-gray-400 hover:text-gray-900'
+                                    }`}
                                 >
-                                    <UserCircle className="w-6 h-6" />
-                                    Hola, {user.displayName || (userData?.role === 'agente' ? 'Agente' : 'Usuario')}
+                                    {link.name}
+                                </Link>
+                            ))}
+                        </div>
+
+                        {/* Bottom Actions */}
+                        {!user ? (
+                            <div className="flex flex-col gap-3 pt-6 border-t border-gray-100">
+                                <Link
+                                    to="/login"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="w-full py-4 text-center font-bold text-gray-600 rounded-2xl border border-gray-200"
+                                >
+                                    Ingresar
+                                </Link>
+                                <Link
+                                    to="/register"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="w-full py-4 text-center font-black bg-[#fc7f51] text-white rounded-2xl shadow-lg"
+                                >
+                                    Registrarse
+                                </Link>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-3 pt-6 border-t border-gray-100">
+                                <Link
+                                    to={dashboardPath}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="w-full py-4 text-center font-bold text-gray-700 rounded-2xl border border-gray-200"
+                                >
+                                    Mi Panel
                                 </Link>
                                 <button
-                                    onClick={() => {
-                                        logout();
-                                        setIsMobileMenuOpen(false);
-                                    }}
-                                    className="bg-[#262626] border border-gray-600 text-white w-full py-3 rounded-xl font-bold hover:bg-gray-800 transition"
+                                    onClick={() => { logout(); setIsMobileMenuOpen(false); }}
+                                    className="w-full py-4 text-center font-black text-red-500 rounded-2xl border border-red-100"
                                 >
                                     Cerrar Sesión
                                 </button>
                             </div>
-                        ) : (
-                            <Link
-                                to="/login"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="bg-[#fc7f51] text-white w-full py-3 rounded-xl font-bold text-center mt-4 shadow-lg shadow-orange-500/20"
-                            >
-                                Ingresar
-                            </Link>
                         )}
                     </div>
                 </div>

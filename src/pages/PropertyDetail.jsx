@@ -862,25 +862,29 @@ END:VCALENDAR`;
                                 </div>
                             )}
 
-                            <button
-                                onClick={handleWhatsAppClick}
-                                className="w-full bg-[#25D366] text-white font-bold text-lg py-3 rounded-lg hover:bg-[#20bd5a] transition mb-4 shadow-lg shadow-green-500/30 flex items-center justify-center gap-2"
-                            >
-                                <Phone className="w-5 h-5" />
-                                Contactar por WhatsApp
-                            </button>
+                            {(!user || user.uid !== property.agentId) && (
+                                <>
+                                    <button
+                                        onClick={handleWhatsAppClick}
+                                        className="w-full bg-[#25D366] text-white font-bold text-lg py-3 rounded-lg hover:bg-[#20bd5a] transition mb-4 shadow-lg shadow-green-500/30 flex items-center justify-center gap-2"
+                                    >
+                                        <Phone className="w-5 h-5" />
+                                        Contactar por WhatsApp
+                                    </button>
 
-                            <button
-                                onClick={handleScheduleVisit}
-                                className="w-full bg-[#fc7f51] text-white font-bold py-3 rounded-lg hover:bg-[#e56b3e] transition mb-6 flex items-center justify-center gap-2 shadow-lg shadow-orange-500/30"
-                            >
-                                <Calendar className="w-5 h-5" />
-                                Agendar Visita
-                            </button>
+                                    <button
+                                        onClick={handleScheduleVisit}
+                                        className="w-full bg-[#fc7f51] text-white font-bold py-3 rounded-lg hover:bg-[#e56b3e] transition mb-6 flex items-center justify-center gap-2 shadow-lg shadow-orange-500/30"
+                                    >
+                                        <Calendar className="w-5 h-5" />
+                                        Agendar Visita
+                                    </button>
 
-                            <div className="text-center text-xs text-gray-400">
-                                * Al contactar aceptas nuestros términos y condiciones.
-                            </div>
+                                    <div className="text-center text-xs text-gray-400">
+                                        * Al contactar aceptas nuestros términos y condiciones.
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div >

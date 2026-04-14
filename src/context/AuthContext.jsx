@@ -5,7 +5,10 @@ import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     signOut,
-    signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
+    signInWithCredential,
+    GoogleAuthProvider,
     sendPasswordResetEmail,
     updateProfile,
     setPersistence,
@@ -26,6 +29,8 @@ export function AuthProvider({ children }) {
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [roleOverride, setRoleOverride] = useState(null);
+    const [impersonatedUser, setImpersonatedUserInternal] = useState(null);
+    const [impersonatedUserData, setImpersonatedUserData] = useState(null);
 
     const signup = async (email, password, role = 'cliente', name = '', phone = '', dni = '') => {
         try {
@@ -60,19 +65,16 @@ export function AuthProvider({ children }) {
 
     const loginWithGoogle = async (role = 'cliente') => {
         try {
-            const result = await signInWithPopup(auth, googleProvider);
-            // Check if user exists in Firestore, if not create default with selected role
-            const userDoc = await getDoc(doc(db, "users", result.user.uid));
-            if (!userDoc.exists()) {
-                await setDoc(doc(db, "users", result.user.uid), {
-                    email: result.user.email,
-                    displayName: result.user.displayName,
-                    phoneNumber: result.user.phoneNumber || '',
-                    role: role,
-                    createdAt: new Date()
-                });
+            // Check if running in Android Native bridge
+            if (window.Android && window.Android.loginWithGoogle) {
+                localStorage.setItem('pending_google_role', role);
+                window.Android.loginWithGoogle();
+                return;
             }
-            return result;
+            
+            // Standard Web flow
+            localStorage.setItem('pending_google_role', role);
+            await signInWithRedirect(auth, googleProvider);
         } catch (error) {
             throw translateError(error);
         }
@@ -80,18 +82,8 @@ export function AuthProvider({ children }) {
 
     const loginWithApple = async (role = 'cliente') => {
         try {
-            const result = await signInWithPopup(auth, appleProvider);
-            const userDoc = await getDoc(doc(db, "users", result.user.uid));
-            if (!userDoc.exists()) {
-                await setDoc(doc(db, "users", result.user.uid), {
-                    email: result.user.email,
-                    displayName: result.user.displayName,
-                    phoneNumber: result.user.phoneNumber || '',
-                    role: role,
-                    createdAt: new Date()
-                });
-            }
-            return result;
+            localStorage.setItem('pending_apple_role', role);
+            await signInWithRedirect(auth, appleProvider);
         } catch (error) {
             throw translateError(error);
         }
@@ -119,6 +111,65 @@ export function AuthProvider({ children }) {
         return new Error(message);
     };
 
+    // Handle Auth Redirect Result & Native Bridge
+    useEffect(() => {
+        // Global callback for Android bridge
+        window.onAndroidLoginSuccess = async (idToken) => {
+            try {
+                const credential = GoogleAuthProvider.credential(idToken);
+                const result = await signInWithCredential(auth, credential);
+                
+                const role = localStorage.getItem('pending_google_role') || 'cliente';
+                const userDoc = await getDoc(doc(db, "users", result.user.uid));
+                
+                if (!userDoc.exists()) {
+                    await setDoc(doc(db, "users", result.user.uid), {
+                        email: result.user.email,
+                        displayName: result.user.displayName,
+                        phoneNumber: result.user.phoneNumber || '',
+                        role: role,
+                        createdAt: new Date()
+                    });
+                }
+                localStorage.removeItem('pending_google_role');
+                toast.success("¡Bienvenido!");
+            } catch (error) {
+                console.error("Native login error", error);
+                toast.error("Error al iniciar sesión con Google nativo");
+            }
+        };
+
+        window.onAndroidLoginError = (error) => {
+            console.error("Native login error", error);
+            toast.error("Error en el inicio de sesión nativo");
+        };
+
+        const checkRedirect = async () => {
+            try {
+                const result = await getRedirectResult(auth);
+                if (result) {
+                    const role = localStorage.getItem('pending_google_role') || localStorage.getItem('pending_apple_role') || 'cliente';
+                    const userDoc = await getDoc(doc(db, "users", result.user.uid));
+                    
+                    if (!userDoc.exists()) {
+                        await setDoc(doc(db, "users", result.user.uid), {
+                            email: result.user.email,
+                            displayName: result.user.displayName,
+                            phoneNumber: result.user.phoneNumber || '',
+                            role: role,
+                            createdAt: new Date()
+                        });
+                    }
+                    localStorage.removeItem('pending_google_role');
+                    localStorage.removeItem('pending_apple_role');
+                }
+            } catch (error) {
+                console.error("Error processing redirect result", error);
+            }
+        };
+        checkRedirect();
+    }, []);
+
     useEffect(() => {
         let unsubscribeUserDoc = null;
 
@@ -130,6 +181,19 @@ export function AuthProvider({ children }) {
                 unsubscribeUserDoc = onSnapshot(docRef, (docSnap) => {
                     if (docSnap.exists()) {
                         setUserData(docSnap.data());
+                        
+                        // Bridge: Register FCM Token if running in Android app
+                        if (window.Android && window.Android.getFCMToken) {
+                            const token = window.Android.getFCMToken();
+                            if (token && token.length > 10) {
+                                const currentTokens = docSnap.data().fcmTokens || [];
+                                if (!currentTokens.includes(token)) {
+                                    updateDoc(docRef, {
+                                        fcmTokens: arrayUnion(token)
+                                    }).catch(e => console.error("Error saving FCM token", e));
+                                }
+                            }
+                        }
                     }
                 });
             } else {
@@ -219,12 +283,55 @@ export function AuthProvider({ children }) {
         }
     };
 
-    const effectiveUserData = userData ? { ...userData, role: roleOverride || userData.role } : null;
+    const setImpersonatedUser = async (uid) => {
+        if (!uid) {
+            setImpersonatedUserInternal(null);
+            setImpersonatedUserData(null);
+            setRoleOverride(null);
+            localStorage.removeItem('impersonated_uid');
+            return;
+        }
+        
+        try {
+            const userDoc = await getDoc(doc(db, "users", uid));
+            if (userDoc.exists()) {
+                const data = userDoc.data();
+                setImpersonatedUserInternal({ uid: uid, email: data.email, displayName: data.displayName, isImpersonated: true });
+                setImpersonatedUserData({ ...data, id: uid });
+                setRoleOverride(data.role);
+                localStorage.setItem('impersonated_uid', uid);
+                toast.success(`Actuando como: ${data.displayName || data.email}`);
+            } else {
+                toast.error("Usuario no encontrado para suplantación");
+                localStorage.removeItem('impersonated_uid');
+            }
+        } catch (error) {
+            console.error("Error setting impersonated user:", error);
+            toast.error("Error al iniciar suplantación");
+        }
+    };
+
+    // Restore impersonation on load
+    useEffect(() => {
+        const storedUid = localStorage.getItem('impersonated_uid');
+        if (storedUid && userData?.role === 'superadmin') {
+            setImpersonatedUser(storedUid);
+        } else if (userData && userData.role !== 'superadmin') {
+            // Security: clear impersonation if real user is no longer superadmin
+            localStorage.removeItem('impersonated_uid');
+        }
+    }, [userData?.role]); // Re-run when user data/role is available
+
+    const effectiveUser = impersonatedUser || user;
+    const effectiveUserData = impersonatedUserData || (userData ? { ...userData, role: roleOverride || userData.role } : null);
 
     const value = {
-        user,
+        user: effectiveUser,
         userData: effectiveUserData,
+        realUser: user,
         realUserData: userData,
+        impersonatedUser,
+        setImpersonatedUser,
         roleOverride,
         setRoleOverride,
         signup,

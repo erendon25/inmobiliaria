@@ -19,16 +19,41 @@
 }
 
 :root {
-  --color-primary: #fc7f51;
-  --color-secondary: #262626;
-  --color-dark: #16151a;
-  --color-grey: #878787;
+  --color-primary: #10b981; /* Emerald 500 */
+  --color-primary-dark: #059669; /* Emerald 600 */
+  --color-secondary: #16151a;
+  --color-dark: #0a0a0a;
+  --color-grey: #a3a3a3;
 
-  --color-text-main: #262626;
+  --color-text-main: #171717;
   --color-bg: #FFFFFF;
 
+  --radius-pill: 9999px;
+  --radius-2xl: 24px;
   --radius-xl: 16px;
   --radius-lg: 12px;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-navbar {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.text-emerald {
+  color: var(--color-primary);
+}
+
+.bg-emerald {
+  background-color: var(--color-primary);
 }
 
 .text-primary {

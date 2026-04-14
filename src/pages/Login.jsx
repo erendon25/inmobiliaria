@@ -1,19 +1,19 @@
 
 import { auth, googleProvider, db } from "../lib/firebase";
-import { signInWithPopup } from "firebase/auth";
 import { doc, getDoc } from 'firebase/firestore';
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
+import { motion } from "framer-motion";
+import { Mail, Lock, ArrowRight, Chrome, Apple, CheckCircle2 } from "lucide-react";
 
 const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [rememberMe, setRememberMe] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const { login, loginWithGoogle, loginWithApple } = useAuth();
-
-    // Need to navigate
     const navigate = useNavigate();
 
     const fetchUserRoleAndRedirect = async (uid) => {
@@ -29,7 +29,6 @@ const Login = () => {
                     navigate("/client-dashboard");
                 }
             } else {
-                // Fallback
                 navigate("/");
             }
         } catch (error) {
@@ -39,12 +38,15 @@ const Login = () => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
         try {
             const credential = await login(email, password, rememberMe);
             toast.success("¡Bienvenido de nuevo!");
             fetchUserRoleAndRedirect(credential.user.uid);
         } catch (error) {
             toast.error(error.message);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -69,103 +71,201 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
-            <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
-                <h2 className="text-3xl font-bold mb-2 text-center text-gray-800">
-                    Iniciar Sesión
-                </h2>
-                <p className="text-center text-gray-500 mb-8">
-                    Accede a tu cuenta de Inmuévete
-                </p>
-
-                <form onSubmit={handleLogin} className="space-y-6">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Correo Electrónico
-                        </label>
-                        <input
-                            type="email"
-                            name="email"
-                            autoComplete="username"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
-                            placeholder="tu@correo.com"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Contraseña
-                        </label>
-                        <input
-                            type="password"
-                            name="password"
-                            autoComplete="current-password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
-                            placeholder="••••••••"
-                            required
-                        />
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm">
-                        <label className="flex items-center text-gray-600 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={rememberMe}
-                                onChange={(e) => setRememberMe(e.target.checked)}
-                                className="mr-2 text-[#fc7f51] focus:ring-[#fc7f51] rounded border-gray-300 cursor-pointer"
-                            />
-                            Recordar contraseña
-                        </label>
-                        <Link to="/forgot-password" className="text-[#fc7f51] hover:underline font-medium">
-                            ¿Olvidaste tu contraseña?
-                        </Link>
-                    </div>
-
-                    <button
-                        type="submit"
-                        className="w-full bg-[#fc7f51] text-white py-3 rounded-lg font-bold hover:bg-[#e56b3e] transition shadow-lg shadow-orange-500/30"
-                    >
-                        Ingresar
-                    </button>
-                </form>
-
-                <div className="my-6 flex items-center">
-                    <div className="flex-grow border-t border-gray-200"></div>
-                    <span className="mx-4 text-gray-400 text-sm">O continúa con</span>
-                    <div className="flex-grow border-t border-gray-200"></div>
-                </div>
-
-                <div className="space-y-3">
-                    <button
-                        onClick={handleGoogleLogin}
-                        className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition"
-                    >
-                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
-                        Google
-                    </button>
-                    <button
-                        onClick={handleAppleLogin}
-                        className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-lg font-medium hover:bg-gray-900 transition"
-                    >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
-                        </svg>
-                        Apple
-                    </button>
-                </div>
-
-                <p className="mt-8 text-center text-gray-500 text-sm">
-                    ¿No tienes una cuenta?{" "}
-                    <Link to="/register" className="text-[#fc7f51] font-bold hover:underline">
-                        Regístrate aquí
-                    </Link>
-                </p>
+        <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#fafafa] p-6 pt-24 md:pt-6">
+            {/* Background Decorative Elements */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ 
+                        opacity: 0.4, 
+                        scale: 1,
+                        x: [0, 50, 0],
+                        y: [0, 30, 0]
+                    }}
+                    transition={{ 
+                        duration: 10, 
+                        repeat: Infinity,
+                        ease: "easeInOut" 
+                    }}
+                    className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-[#fc7f51]/40 to-transparent blur-[80px]"
+                />
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ 
+                        opacity: 0.3, 
+                        scale: 1.2,
+                        x: [0, -40, 0],
+                        y: [0, 60, 0]
+                    }}
+                    transition={{ 
+                        duration: 15, 
+                        repeat: Infinity,
+                        ease: "easeInOut" 
+                    }}
+                    className="absolute -bottom-[10%] -right-[10%] w-[60%] h-[60%] rounded-full bg-gradient-to-tl from-orange-200/50 to-transparent blur-[100px]"
+                />
             </div>
+
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+                className="relative z-10 w-full max-w-md"
+            >
+                <div className="bg-white/80 backdrop-blur-2xl p-8 md:p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.08)] border border-white/50 w-full overflow-hidden relative">
+                    {/* Top Accent Line */}
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-[#fc7f51] to-transparent opacity-50" />
+                    
+                    <div className="text-center mb-10">
+                        <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+                            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#fc7f51] to-[#e56b3e] text-white shadow-lg shadow-orange-500/20 mb-6"
+                        >
+                            <Lock className="w-8 h-8" />
+                        </motion.div>
+                        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 mb-2">
+                            Iniciar Sesión
+                        </h2>
+                        <p className="text-gray-500 font-medium">
+                            Bienvenido de nuevo a Inmuévete
+                        </p>
+                    </div>
+
+                    <form onSubmit={handleLogin} className="space-y-5">
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
+                                Correo Electrónico
+                            </label>
+                            <div className="relative group">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#fc7f51] transition-colors">
+                                    <Mail className="w-5 h-5" />
+                                </div>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    autoComplete="username"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full bg-gray-50/50 border border-gray-200 pl-12 pr-4 py-4 rounded-2xl focus:bg-white focus:border-[#fc7f51] focus:ring-4 focus:ring-[#fc7f51]/10 outline-none transition-all duration-300 placeholder:text-gray-300 font-medium"
+                                    placeholder="nombre@correo.com"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
+                                Contraseña
+                            </label>
+                            <div className="relative group">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#fc7f51] transition-colors">
+                                    <Lock className="w-5 h-5" />
+                                </div>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    autoComplete="current-password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full bg-gray-50/50 border border-gray-200 pl-12 pr-4 py-4 rounded-2xl focus:bg-white focus:border-[#fc7f51] focus:ring-4 focus:ring-[#fc7f51]/10 outline-none transition-all duration-300 placeholder:text-gray-300 font-medium"
+                                    placeholder="••••••••"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between px-1">
+                            <label className="flex items-center gap-2 cursor-pointer group">
+                                <div className="relative flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={rememberMe}
+                                        onChange={(e) => setRememberMe(e.target.checked)}
+                                        className="peer sr-only"
+                                    />
+                                    <div className="w-5 h-5 border-2 border-gray-300 rounded-md bg-white peer-checked:bg-[#fc7f51] peer-checked:border-[#fc7f51] transition-all flex items-center justify-center">
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
+                                    </div>
+                                </div>
+                                <span className="text-sm font-semibold text-gray-500 group-hover:text-gray-700 transition-colors">Recordarme</span>
+                            </label>
+                            <Link to="/forgot-password" title="Recuperar acceso" className="text-sm font-bold text-[#fc7f51] hover:text-[#e56b3e] transition-colors underline decoration-2 underline-offset-4 decoration-[#fc7f51]/20 hover:decoration-[#e56b3e]/40">
+                                ¿Olvidaste tu contraseña?
+                            </Link>
+                        </div>
+
+                        <motion.button
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.98 }}
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full relative overflow-hidden group bg-gradient-to-r from-[#fc7f51] to-[#ff9d7d] text-white py-4 rounded-2xl font-extrabold text-lg shadow-xl shadow-orange-500/25 hover:shadow-orange-500/40 transition-all flex items-center justify-center gap-3 disabled:opacity-70"
+                        >
+                            {isLoading ? (
+                                <motion.div 
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                    className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full"
+                                />
+                            ) : (
+                                <>
+                                    <span>Ingresar</span>
+                                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                </>
+                            )}
+                        </motion.button>
+                    </form>
+
+                    <div className="relative my-10 py-1">
+                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                            <div className="w-full border-t border-gray-100"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm font-bold uppercase tracking-widest">
+                            <span className="bg-white px-4 text-gray-300 rounded-full">O accede con</span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <motion.button
+                            whileHover={{ y: -2, backgroundColor: "#f9fafb" }}
+                            whileTap={{ y: 0 }}
+                            onClick={handleGoogleLogin}
+                            type="button"
+                            className="flex items-center justify-center gap-3 bg-white border border-gray-200 text-gray-700 py-4 rounded-2xl font-bold transition-all shadow-sm group"
+                        >
+                            <Chrome className="w-5 h-5 text-[#4285F4]" />
+                            <span>Google</span>
+                        </motion.button>
+                        <motion.button
+                            whileHover={{ y: -2, backgroundColor: "#000" }}
+                            whileTap={{ y: 0 }}
+                            onClick={handleAppleLogin}
+                            type="button"
+                            className="flex items-center justify-center gap-3 bg-[#1a1a1a] text-white py-4 rounded-2xl font-bold transition-all shadow-sm"
+                        >
+                            <Apple className="w-5 h-5" />
+                            <span>Apple</span>
+                        </motion.button>
+                    </div>
+
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.5 }}
+                        className="mt-10 text-center"
+                    >
+                        <p className="text-gray-500 font-medium">
+                            ¿Aún no tienes cuenta?{" "}
+                            <Link to="/register" className="text-[#fc7f51] font-extrabold hover:text-[#e56b3e] transition-colors relative inline-block">
+                                Regístrate ahora
+                                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#fc7f51]/20 group-hover:bg-[#e56b3e]/40 transition-colors" />
+                            </Link>
+                        </p>
+                    </motion.div>
+                </div>
+            </motion.div>
         </div>
     );
 };

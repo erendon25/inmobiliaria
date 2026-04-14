@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 
 const SuperAdminDashboard = () => {
-    const { setRoleOverride } = useAuth();
+    const { setRoleOverride, setImpersonatedUser } = useAuth();
     const navigate = useNavigate();
 
     const [stats, setStats] = useState({
@@ -557,13 +557,25 @@ const SuperAdminDashboard = () => {
                                                 )}
                                             </td>
                                             <td className="px-8 py-4">
-                                                <button
-                                                    onClick={() => handleViewDetails(agent.id)}
-                                                    className="flex items-center gap-2 text-blue-500 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-lg transition font-bold text-sm"
-                                                    title="Ver Detalles y Propiedades"
-                                                >
-                                                    <Eye className="w-5 h-5" /> Ver Propiedades
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => handleViewDetails(agent.id)}
+                                                        className="flex items-center gap-2 text-blue-500 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-lg transition font-bold text-sm"
+                                                        title="Ver Detalles y Propiedades"
+                                                    >
+                                                        <Eye className="w-5 h-5" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setImpersonatedUser(agent.id);
+                                                            navigate(agent.role === 'agente' ? '/agent-dashboard' : '/client-dashboard');
+                                                        }}
+                                                        className="flex items-center gap-2 text-[#fc7f51] hover:text-[#e56b3e] p-2 hover:bg-orange-50 rounded-lg transition font-bold text-sm"
+                                                        title="Entrar como este usuario (Impersonar)"
+                                                    >
+                                                        <MonitorPlay className="w-5 h-5" />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
@@ -625,6 +637,16 @@ const SuperAdminDashboard = () => {
                                                     Enviar Correo para Cambiar Contraseña
                                                 </button>
                                             )}
+                                            <button
+                                                onClick={() => {
+                                                    setImpersonatedUser(selectedUser.id);
+                                                    navigate(selectedUser.role === 'agente' ? '/agent-dashboard' : '/client-dashboard');
+                                                }}
+                                                className="mt-3 bg-[#fc7f51] hover:bg-[#e56b3e] text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-orange-500/20 transition"
+                                            >
+                                                <MonitorPlay className="w-4 h-4" />
+                                                Entrar como este {selectedUser.role === 'agente' ? 'Asesor' : 'Cliente'}
+                                            </button>
                                         </div>
                                         {selectedUser.id !== 'orphans' && (
                                             <div className="flex flex-col gap-2">

@@ -6,12 +6,13 @@ import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'fire
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { updateProfile, updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential, verifyBeforeUpdateEmail } from 'firebase/auth';
-import { Upload, MapPin, DollarSign, Home, Maximize, Loader2, Plus, X, Lock, User, FileText, Trash2, Calendar, Phone, Clock, Camera, Mail, Facebook, Youtube, RotateCw, Lightbulb, CheckCircle2 } from 'lucide-react';
+import { Upload, MapPin, DollarSign, Home, Maximize, Loader2, Plus, X, Lock, User, FileText, Trash2, Calendar, Phone, Clock, Camera, Mail, Facebook, Youtube, RotateCw, Lightbulb, CheckCircle2, BarChart2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import MapPicker from '../components/MapPicker';
 import PropertyFormFields from '../components/PropertyFormFields';
 import ContractTemplates from '../components/ContractTemplates';
 import GenerateContractModal from '../components/GenerateContractModal';
+import StatsDashboard from '../components/dashboard/StatsDashboard';
 import logo from '../assets/logo.png';
 import { fetchSunatExchangeRate } from '../lib/exchangeRate';
 import { PERU_LOCATIONS } from '../data/locations';
@@ -1140,6 +1141,12 @@ const AgentDashboard = () => {
                             <Home className="w-5 h-5" /> Propiedades
                         </button>
                         <button
+                            onClick={() => setActiveTab('stats')}
+                            className={`pb-4 px-2 flex items-center gap-2 font-bold text-lg transition-colors border-b-4 ${activeTab === 'stats' ? 'border-[#fc7f51] text-[#fc7f51]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+                        >
+                            <BarChart2 className="w-5 h-5" /> Estadísticas
+                        </button>
+                        <button
                             onClick={() => setActiveTab('inquiries')}
                             className={`pb-4 px-2 font-bold text-lg flex items-center gap-2 transition-colors border-b-4 ${activeTab === 'inquiries' ? 'border-[#fc7f51] text-[#fc7f51]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
                         >
@@ -1198,6 +1205,9 @@ const AgentDashboard = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-8">
+                        {/* STATS TAB */}
+                        {activeTab === 'stats' && <StatsDashboard properties={myProperties} />}
+
                         {/* PROPERTIES TAB */}
                         {activeTab === 'properties' && (
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
