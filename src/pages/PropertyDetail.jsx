@@ -382,6 +382,69 @@ END:VCALENDAR`;
         }
     }, [user, property?.id]);
 
+    // SEO JSON-LD for Property
+    useEffect(() => {
+        if (!property) return;
+
+        const script = document.createElement('script');
+        script.type = 'application/ld+json';
+
+        const schema = {
+            "@context": "https://schema.org",
+            "@type": "RealEstateListing",
+            "name": property.title,
+            "description": property.description?.substring(0, 300),
+            "url": window.location.href,
+            "image": property.images?.[0] || "",
+            "datePosted": property.createdAt?.toDate ? property.createdAt.toDate().toISOString() : new Date().toISOString(),
+            "address": {
+                "@type": "PostalAddress",
+                "streetAddress": property.location,
+                "addressLocality": property.location.split(',').pop()?.trim() || "Perú",
+                "addressCountry": "PE"
+            },
+            "offers": {
+                "@type": "Offer",
+                "price": property.price,
+                "priceCurrency": property.currency || "USD",
+                "availability": property.status === 'disponible' ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+                "businessFunction": property.type === 'alquiler' ? "https://schema.org/LeaseOut" : "https://schema.org/Sell"
+            }
+        };
+
+        // Add more specific item if possible
+        if (property.category?.toLowerCase() === 'departamento') {
+            schema.itemOffered = {
+                "@type": "Accommodation",
+                "name": property.title,
+                "numberOfRooms": property.bedrooms,
+                "floorSize": {
+                    "@type": "QuantitativeValue",
+                    "value": property.footage,
+                    "unitCode": "MTK"
+                }
+            };
+        } else if (property.category?.toLowerCase() === 'casa') {
+            schema.itemOffered = {
+                "@type": "House",
+                "name": property.title,
+                "numberOfRooms": property.bedrooms,
+                "floorSize": {
+                    "@type": "QuantitativeValue",
+                    "value": property.footage,
+                    "unitCode": "MTK"
+                }
+            };
+        }
+
+        script.innerHTML = JSON.stringify(schema);
+        document.head.appendChild(script);
+
+        return () => {
+            document.head.removeChild(script);
+        };
+    }, [property]);
+
     if (loading) {
         return (
             <div className="min-h-screen bg-white flex items-center justify-center">

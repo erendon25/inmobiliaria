@@ -154,6 +154,58 @@ const Home = () => {
         fetchProperties();
     }, []);
 
+    // SEO JSON-LD
+    useEffect(() => {
+        const script = document.createElement('script');
+        script.type = 'application/ld+json';
+        const schema = {
+            "@context": "https://schema.org",
+            "@type": "RealEstateAgent",
+            "name": "Inmuévete Inmobiliaria",
+            "url": "https://inmueveteperu.com",
+            "logo": "https://inmueveteperu.com/logo.png",
+            "description": "Encuentra los mejores departamentos, casas y terrenos en venta y alquiler en Perú. Asesoría experta en bienes raíces.",
+            "address": {
+                "@type": "PostalAddress",
+                "addressLocality": "Lima",
+                "addressCountry": "PE"
+            },
+            "sameAs": [
+                "https://www.facebook.com/inmueveteinmobiliaria",
+                "https://www.instagram.com/inmueveteinmobiliaria"
+            ],
+            "contactPoint": {
+                "@type": "ContactPoint",
+                "telephone": "+51 965355700",
+                "contactType": "customer service",
+                "areaServed": "PE",
+                "availableLanguage": "Spanish"
+            }
+        };
+        script.innerHTML = JSON.stringify(schema);
+        document.head.appendChild(script);
+
+        const websiteSchema = {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "url": "https://inmueveteperu.com",
+            "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://inmueveteperu.com/search?location={search_term_string}",
+                "query-input": "required name=search_term_string"
+            }
+        };
+        const websiteScript = document.createElement('script');
+        websiteScript.type = 'application/ld+json';
+        websiteScript.innerHTML = JSON.stringify(websiteSchema);
+        document.head.appendChild(websiteScript);
+
+        return () => {
+            document.head.removeChild(script);
+            document.head.removeChild(websiteScript);
+        };
+    }, []);
+
     return (
         <div className="min-h-screen bg-white font-sans text-[#262626]">
 
@@ -163,7 +215,7 @@ const Home = () => {
                 <div className="absolute inset-0 z-0">
                     <img
                         src="/hero-bg.png"
-                        alt="Hero"
+                        alt="Interior de una casa moderna de lujo en Perú - Inmuévete Inmobiliaria"
                         className="w-full h-full object-cover scale-105"
                         style={{ transform: 'scale(1.05)' }}
                         onError={(e) => {
@@ -239,6 +291,7 @@ const Home = () => {
                                     <button
                                         key={op}
                                         onClick={() => setOperation(op)}
+                                        aria-label={`Buscar propiedades en ${op}`}
                                         className={`flex-1 py-2.5 text-sm font-bold capitalize rounded-lg transition-all ${operation === op
                                             ? 'bg-white text-[#fc7f51] shadow-sm scale-105'
                                             : 'text-gray-500 hover:text-gray-700'
@@ -386,6 +439,7 @@ const Home = () => {
                             {/* Search Button */}
                             <button
                                 onClick={handleSearch}
+                                aria-label="Buscar propiedades según filtros seleccionados"
                                 className="w-full bg-[#fc7f51] hover:bg-[#e56b3e] text-white py-4 rounded-xl font-black text-base shadow-lg hover:shadow-orange-500/30 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
                             >
                                 <Search className="w-5 h-5" />
@@ -429,12 +483,12 @@ const Home = () => {
                                     <div className="h-px w-8 bg-gradient-to-l from-amber-500 to-yellow-500" />
                                 </div>
                                 <h2 className="text-3xl md:text-4xl font-black text-white flex items-center gap-3">
-                                    <Star className="w-8 h-8 text-amber-400 fill-amber-400" />
-                                    Propiedades Exclusivas
+                                    <Star className="w-8 h-8 text-amber-400 fill-amber-400" aria-hidden="true" />
+                                    Propiedades Exclusivas en Venta y Alquiler
                                 </h2>
-                                <p className="text-gray-400 mt-2 text-sm">Oportunidades únicas seleccionadas por nuestro equipo.</p>
+                                <p className="text-gray-400 mt-2 text-sm">Oportunidades únicas seleccionadas por nuestro equipo de expertos inmobiliarios.</p>
                             </div>
-                            <Link to="/search?exclusive=true" className="hidden md:flex items-center gap-2 text-amber-400 font-semibold hover:text-amber-300 transition group">
+                            <Link to="/search?exclusive=true" title="Ver todas las propiedades exclusivas" className="hidden md:flex items-center gap-2 text-amber-400 font-semibold hover:text-amber-300 transition group">
                                 Ver todas <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                             </Link>
                         </div>
@@ -570,7 +624,7 @@ const Home = () => {
                         <div className="lg:w-1/2 grid grid-cols-2 gap-4">
                             <div className="space-y-4 pt-12">
                                 <motion.div whileHover={{ scale: 1.03 }} className="h-60 rounded-3xl overflow-hidden shadow-2xl">
-                                    <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=600&auto=format&fit=crop" className="w-full h-full object-cover" alt="" />
+                                    <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=600&auto=format&fit=crop" className="w-full h-full object-cover" alt="Sala de estar moderna y elegante con vista panorámica" />
                                 </motion.div>
                                 <motion.div whileHover={{ scale: 1.03 }} className="h-40 rounded-3xl overflow-hidden shadow-2xl bg-[#fc7f51] flex flex-col justify-end p-8">
                                     <span className="text-3xl font-black text-white leading-none">24/7</span>
@@ -583,7 +637,7 @@ const Home = () => {
                                     <span className="text-[10px] font-bold uppercase tracking-widest text-white/50 mt-1">Inmuebles</span>
                                 </motion.div>
                                 <motion.div whileHover={{ scale: 1.03 }} className="h-60 rounded-3xl overflow-hidden shadow-2xl">
-                                    <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=600&auto=format&fit=crop" className="w-full h-full object-cover" alt="" />
+                                    <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=600&auto=format&fit=crop" className="w-full h-full object-cover" alt="Interior acogedor de un departamento minimalista" />
                                 </motion.div>
                             </div>
                         </div>

@@ -84,11 +84,12 @@ const PropertyCard = ({ property }) => {
             className="group block relative"
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
+            aria-label={`Ver detalles de ${property.title} en ${property.location}`}
         >
             <div className="relative aspect-[20/19] overflow-hidden rounded-xl bg-gray-200 mb-3">
                 <img
                     src={displayImage || 'https://placehold.co/400x300/e2e8f0/94a3b8?text=Sin+Imagen'}
-                    alt={property.title}
+                    alt={`Imagen de ${property.title} en ${property.location}`}
                     loading="lazy"
                     decoding="async"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -96,7 +97,7 @@ const PropertyCard = ({ property }) => {
 
                 {/* Watermark Overlay */}
                 <div className="absolute inset-0 pointer-events-none select-none z-0 flex items-center justify-center p-2 gap-1.5 opacity-60">
-                    <img src={logo} alt="" className="h-6 sm:h-8 w-auto object-contain" style={{ filter: 'drop-shadow(1px 2px 3px rgba(0,0,0,0.6)) brightness(0) invert(1)' }} />
+                    <img src={logo} alt="Inmuévete Inmobiliaria Logo" className="h-6 sm:h-8 w-auto object-contain" style={{ filter: 'drop-shadow(1px 2px 3px rgba(0,0,0,0.6)) brightness(0) invert(1)' }} />
                     <div className="flex flex-col items-start justify-center" style={{ filter: 'drop-shadow(1px 2px 3px rgba(0,0,0,0.6))' }}>
                         <span className="text-white text-xl sm:text-2xl font-black tracking-tight leading-none mb-0.5">
                             Inmuévete
@@ -140,6 +141,7 @@ const PropertyCard = ({ property }) => {
                         }
                         toggleFavorite(property.id);
                     }}
+                    aria-label={userData?.favorites?.includes(property.id) ? "Quitar de favoritos" : "Añadir a favoritos"}
                     className={`absolute top-3 right-3 transition z-10 p-2 hover:scale-110 active:scale-95`}
                 >
                     <Heart className={`w-6 h-6 stroke-[2px] transition ${userData?.favorites?.includes(property.id) ? 'fill-red-500 text-red-500 stroke-red-500' : 'fill-black/50 text-white'}`} />
