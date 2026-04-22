@@ -32,7 +32,7 @@ const db = getFirestore();
 async function generateSitemap() {
     console.log('🚀 Generating sitemap...');
     
-    const baseUrl = 'https://inmueveteperu.com';
+    const baseUrl = 'https://inmueveteinmobiliaria.com';
     const staticPages = [
         '',
         '/properties',
