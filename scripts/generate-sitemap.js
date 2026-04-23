@@ -14,7 +14,13 @@ let serviceAccount;
 
 if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     // If running in GitHub Actions
-    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    try {
+        const secretContent = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+        serviceAccount = JSON.parse(secretContent);
+    } catch (e) {
+        console.error('❌ Error parsing FIREBASE_SERVICE_ACCOUNT. Ensure it is a valid JSON string.');
+        process.exit(1);
+    }
 } else if (fs.existsSync(serviceAccountPath)) {
     // If running locally
     serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
@@ -32,7 +38,7 @@ const db = getFirestore();
 async function generateSitemap() {
     console.log('🚀 Generating sitemap...');
     
-    const baseUrl = 'https://inmueveteperu.com';
+    const baseUrl = 'https://inmueveteinmobiliaria.com';
     const staticPages = [
         '',
         '/properties',

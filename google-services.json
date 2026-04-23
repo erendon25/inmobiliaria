@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "264339137867",
+    "firebase_url": "https://inmobiliaria-89dca-default-rtdb.firebaseio.com",
+    "project_id": "inmobiliaria-89dca",
+    "storage_bucket": "inmobiliaria-89dca.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:264339137867:android:46e69777d3bfd0e31c34ce",
+        "android_client_info": {
+          "package_name": "com.inmobiliaria.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "264339137867-kfmnl3aheh8f86j3hhkk4oeku4olub4d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.inmobiliaria.app",
+            "certificate_hash": "808893bd9058a69d5b934e35386e684905494b03"
+          }
+        },
+        {
+          "client_id": "264339137867-tabgm7lm9agvb2ajs3vam3o7bnr67c4s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCeCBiEDQDUt9aN7bc1LwBvB2q11KJtxo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "264339137867-tabgm7lm9agvb2ajs3vam3o7bnr67c4s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
