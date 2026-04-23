@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 
 # Sitemaps
-Sitemap: https://inmueveteperu.com/sitemap.xml
+Sitemap: https://inmueveteinmobiliaria.com/sitemap.xml
