@@ -79,6 +79,7 @@ const PropertyFormFields = ({ formData, setFormData }) => {
                 )}
                 {category === 'Terreno Comercial' && (
                     <>
+                        <Input label="Área de Terreno (m²)" field="areaTerreno" type="number" />
                         <Input label="Área Frentera (m)" field="areaFrente" type="number" />
                         <Input label="Área Fondo (m)" field="areaFondo" type="number" />
                     </>
@@ -89,7 +90,7 @@ const PropertyFormFields = ({ formData, setFormData }) => {
                         {type === 'venta' && <Input label="Área de Terreno (m²)" field="areaTerreno" type="number" />}
                     </>
                 )}
-                {category === 'Terreno de playa' && (
+                {(category === 'Terreno de playa' || category === 'Terreno Rustico') && (
                     <Input label="Área de Terreno (m²)" field="areaTerreno" type="number" />
                 )}
 
