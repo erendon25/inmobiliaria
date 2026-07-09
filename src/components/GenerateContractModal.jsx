@@ -61,7 +61,9 @@ export default function GenerateContractModal({ visit, agent, onClose, onContrac
                             name: cd.name || cd.displayName || prev.name
                         }));
                     }
-                } catch (e) { }
+                } catch (error) {
+                    console.error("Error fetching client data", error);
+                }
             }
         };
 

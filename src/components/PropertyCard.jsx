@@ -11,6 +11,7 @@ const PropertyCard = ({ property }) => {
     // Image cycling state
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isHovering, setIsHovering] = useState(false);
+    const imageCount = property.images?.length || 0;
 
     // Exchange Rate
     const [liveRate, setLiveRate] = useState(property.exchangeRate || 3.36); // Default exchange rate
@@ -64,26 +65,29 @@ const PropertyCard = ({ property }) => {
 
     // Cycle images on hover
     useEffect(() => {
-        let interval;
-        if (isHovering && property.images && property.images.length > 1) {
-            interval = setInterval(() => {
-                setCurrentImageIndex((prev) => (prev + 1) % property.images.length);
-            }, 1000);
-        } else {
-            setCurrentImageIndex(0);
+        if (!isHovering || imageCount <= 1) {
+            return undefined;
         }
+
+        const interval = setInterval(() => {
+            setCurrentImageIndex((prev) => (prev + 1) % imageCount);
+        }, 1000);
+
         return () => clearInterval(interval);
-    }, [isHovering, property.images]);
+    }, [isHovering, imageCount]);
 
     const displayImage = property.images?.[currentImageIndex] || property.images?.[0] || 'https://placehold.co/400x300/e2e8f0/94a3b8?text=Sin+Imagen';
     // Ensure displayImage is always defined to prevent ReferenceError during HMR updates
 
     return (
         <Link
-            to={`/properties/${property.id}`}
+            to={`/property/${property.id}`}
             className="group block relative"
             onMouseEnter={() => setIsHovering(true)}
-            onMouseLeave={() => setIsHovering(false)}
+            onMouseLeave={() => {
+                setIsHovering(false);
+                setCurrentImageIndex(0);
+            }}
             aria-label={`Ver detalles de ${property.title} en ${property.location}`}
         >
             <div className="relative aspect-[20/19] overflow-hidden rounded-xl bg-gray-200 mb-3">

@@ -15,7 +15,7 @@ const ExchangeRate = ({ isScrolled = true }) => {
                     venta: data.rates.PEN,
                     fecha: new Date(data.date).toISOString().split('T')[0]
                 });
-            } catch (err) {
+            } catch {
                 setExchangeData({ venta: 3.78, fecha: new Date().toISOString().split('T')[0] });
             } finally {
                 setLoading(false);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { db, storage } from '../lib/firebase';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -27,11 +27,7 @@ SEGUNDO: El precio pactado es de [PRECIO] [MONEDA].
     const [uploadingFile, setUploadingFile] = useState(false);
     const [saving, setSaving] = useState(false);
 
-    useEffect(() => {
-        fetchTemplates();
-    }, [userId]);
-
-    const fetchTemplates = async () => {
+    const fetchTemplates = useCallback(async () => {
         try {
             const q = query(collection(db, "contract_templates"), where("agentId", "==", userId));
             const snapshot = await getDocs(q);
@@ -43,7 +39,11 @@ SEGUNDO: El precio pactado es de [PRECIO] [MONEDA].
         } finally {
             setLoading(false);
         }
-    };
+    }, [userId]);
+
+    useEffect(() => {
+        fetchTemplates();
+    }, [fetchTemplates]);
 
     const handleSave = async (e) => {
         e.preventDefault();
@@ -58,7 +58,6 @@ SEGUNDO: El precio pactado es de [PRECIO] [MONEDA].
                 await uploadBytes(storageRef, fileTemplate);
                 fileUrl = await getDownloadURL(storageRef);
                 fileName = fileTemplate.name;
-                setUploadingFile(false);
             }
 
             const templateData = {
@@ -87,6 +86,7 @@ SEGUNDO: El precio pactado es de [PRECIO] [MONEDA].
             toast.error("Error al guardar plantilla");
         } finally {
             setSaving(false);
+            setUploadingFile(false);
         }
     };
 
@@ -228,8 +228,9 @@ SEGUNDO: El precio pactado es de [PRECIO] [MONEDA].
 
                     <div className="flex justify-end gap-3 pt-4 border-t">
                         <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition">Cancelar</button>
-                        <button type="submit" disabled={saving} className="px-6 py-3 bg-[#fc7f51] text-white font-bold rounded-xl hover:bg-[#e56b3e] transition flex items-center gap-2">
-                            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />} Guardar Plantilla
+                        <button type="submit" disabled={saving || uploadingFile} className="px-6 py-3 bg-[#fc7f51] text-white font-bold rounded-xl hover:bg-[#e56b3e] transition flex items-center gap-2 disabled:opacity-70">
+                            {saving || uploadingFile ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                            {uploadingFile ? 'Subiendo archivo...' : 'Guardar Plantilla'}
                         </button>
                     </div>
                 </form>

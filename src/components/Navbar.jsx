@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.png';
@@ -8,7 +8,6 @@ import ExchangeRate from './ExchangeRate';
 const Navbar = () => {
     const { user, userData, logout } = useAuth();
     const location = useLocation();
-    const navigate = useNavigate();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -26,8 +25,6 @@ const Navbar = () => {
     const navBg = isHomePage
         ? isScrolled ? 'bg-white/95 backdrop-blur-lg shadow-lg border border-white/30' : 'bg-transparent'
         : 'bg-white/80 backdrop-blur-md shadow-sm border border-gray-100/80';
-    const textDark = solidNav;
-
     const navLinks = [
         { name: 'Propiedades', path: '/' },
         { name: 'Blog', path: '/tips' },

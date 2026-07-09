@@ -12,6 +12,10 @@
         ],
         "rewrites": [
             {
+                "source": "/property/**",
+                "function": "servePropertyMeta"
+            },
+            {
                 "source": "**",
                 "destination": "/index.html"
             }

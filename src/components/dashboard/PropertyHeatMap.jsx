@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Circle, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { motion } from 'framer-motion';
 import { Map as MapIcon, Layers, TrendingUp, CheckCircle } from 'lucide-react';
 
 // Coordenadas aproximadas para los distritos más comunes en Perú
@@ -59,6 +58,15 @@ function ChangeView({ center, zoom }) {
     return null;
 }
 
+function getCoordinateJitter(seed, axis) {
+    const text = `${seed || 'property'}-${axis}`;
+    let hash = 0;
+    for (let i = 0; i < text.length; i += 1) {
+        hash = (hash * 31 + text.charCodeAt(i)) % 100000;
+    }
+    return (hash / 100000 - 0.5) * 0.005;
+}
+
 const PropertyHeatMap = ({ properties }) => {
     const [viewType, setViewType] = useState('uploaded'); // 'uploaded' o 'closed'
 
@@ -93,9 +101,9 @@ const PropertyHeatMap = ({ properties }) => {
                 if (coords) {
                     // Añadir un pequeño "jitter" (desplazamiento aleatorio) 
                     // para que no todas las del mismo distrito se encimen exactamente
-                    const jitter = 0.005; 
-                    lat = coords[0] + (Math.random() - 0.5) * jitter;
-                    lng = coords[1] + (Math.random() - 0.5) * jitter;
+                    const seed = prop.id || prop.location || districtName;
+                    lat = coords[0] + getCoordinateJitter(seed, 'lat');
+                    lng = coords[1] + getCoordinateJitter(seed, 'lng');
                     isExact = false;
                 }
             }

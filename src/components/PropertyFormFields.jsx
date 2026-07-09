@@ -1,10 +1,18 @@
-import React from 'react';
+import { createContext, useContext } from 'react';
 import { DollarSign } from 'lucide-react';
 
-const PropertyFormFields = ({ formData, setFormData }) => {
-    const { category, type } = formData;
+const PropertyFieldContext = createContext(null);
 
-    const Input = ({ label, field, type = "text", placeholder = "" }) => (
+const usePropertyFieldContext = () => {
+    const context = useContext(PropertyFieldContext);
+    if (!context) throw new Error('Property field controls must be used inside PropertyFormFields.');
+    return context;
+};
+
+const Input = ({ label, field, type = "text", placeholder = "" }) => {
+    const { formData, setFormData } = usePropertyFieldContext();
+
+    return (
         <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
             <input
@@ -16,8 +24,12 @@ const PropertyFormFields = ({ formData, setFormData }) => {
             />
         </div>
     );
+};
 
-    const Select = ({ label, field, options }) => (
+const Select = ({ label, field, options }) => {
+    const { formData, setFormData } = usePropertyFieldContext();
+
+    return (
         <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
             <select
@@ -29,8 +41,12 @@ const PropertyFormFields = ({ formData, setFormData }) => {
             </select>
         </div>
     );
+};
 
-    const Checkbox = ({ label, field, icon = null }) => (
+const Checkbox = ({ label, field, icon = null }) => {
+    const { formData, setFormData } = usePropertyFieldContext();
+
+    return (
         <label className="flex items-center cursor-pointer gap-2">
             <input
                 type="checkbox"
@@ -43,8 +59,13 @@ const PropertyFormFields = ({ formData, setFormData }) => {
             </span>
         </label>
     );
+};
+
+const PropertyFormFields = ({ formData, setFormData }) => {
+    const { category, type } = formData;
 
     return (
+        <PropertyFieldContext.Provider value={{ formData, setFormData }}>
         <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
                 {/* Size & Room Fields mapping based on category/type */}
@@ -263,6 +284,7 @@ const PropertyFormFields = ({ formData, setFormData }) => {
                 </div>
             </div>
         </div>
+        </PropertyFieldContext.Provider>
     );
 };
 

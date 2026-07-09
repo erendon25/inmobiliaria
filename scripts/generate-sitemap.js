@@ -17,7 +17,7 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     try {
         const secretContent = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
         serviceAccount = JSON.parse(secretContent);
-    } catch (e) {
+    } catch {
         console.error('❌ Error parsing FIREBASE_SERVICE_ACCOUNT. Ensure it is a valid JSON string.');
         process.exit(1);
     }

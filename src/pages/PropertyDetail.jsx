@@ -15,6 +15,7 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import { addWatermark, downloadImage } from '../lib/watermark';
 import { fetchSunatExchangeRate } from '../lib/exchangeRate';
+import { SITE_URL, setCanonicalUrl, setMetaName, setMetaProperty, setPageTitle } from '../lib/seo';
 import logo from '../assets/logo.png';
 import { Download } from 'lucide-react';
 
@@ -28,6 +29,7 @@ const PropertyDetail = () => {
     const [showContact, setShowContact] = useState(false);
     const [contactLoading, setContactLoading] = useState(false);
     const hasViewedRef = useRef(false);
+    const addRecentlyViewedRef = useRef(addRecentlyViewed);
 
     // Visit State
     const [showVisitModal, setShowVisitModal] = useState(false);
@@ -58,6 +60,10 @@ const PropertyDetail = () => {
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
+
+    useEffect(() => {
+        addRecentlyViewedRef.current = addRecentlyViewed;
+    }, [addRecentlyViewed]);
 
     const mediaItems = useMemo(() => {
         if (!property) return [];
@@ -229,7 +235,7 @@ END:VCALENDAR`;
             }
         }
 
-        phoneNumber = phoneNumber.replace(/[\s\-\+]/g, '');
+        phoneNumber = phoneNumber.replace(/[\s+-]/g, '');
         if (!phoneNumber.startsWith('51') && phoneNumber.length === 9) {
             phoneNumber = '51' + phoneNumber;
         }
@@ -261,7 +267,7 @@ END:VCALENDAR`;
         }
 
         // Clean phone number: remove spaces, dashes, plus sign
-        phoneNumber = phoneNumber.replace(/[\s\-\+]/g, '');
+        phoneNumber = phoneNumber.replace(/[\s+-]/g, '');
         // Ensure it starts with country code
         if (!phoneNumber.startsWith('51') && phoneNumber.length === 9) {
             phoneNumber = '51' + phoneNumber;
@@ -378,9 +384,30 @@ END:VCALENDAR`;
     // Add to recently viewed if user is logged in
     useEffect(() => {
         if (user && property && property.status !== 'borrador') {
-            addRecentlyViewed(property.id);
+            addRecentlyViewedRef.current(property.id);
         }
-    }, [user, property?.id]);
+    }, [user, property]);
+
+    useEffect(() => {
+        if (!property) return;
+
+        const canonicalUrl = `${SITE_URL}/property/${id}`;
+        const title = `${property.title} | Inmuévete Inmobiliaria`;
+        const description = property.description?.substring(0, 160);
+        const image = property.images?.[0];
+
+        setPageTitle(title);
+        setCanonicalUrl(canonicalUrl);
+        setMetaName('description', description);
+        setMetaProperty('og:url', canonicalUrl);
+        setMetaProperty('og:title', title);
+        setMetaProperty('og:description', description);
+        setMetaProperty('twitter:url', canonicalUrl);
+        setMetaProperty('twitter:title', title);
+        setMetaProperty('twitter:description', description);
+        setMetaProperty('og:image', image);
+        setMetaProperty('twitter:image', image);
+    }, [id, property]);
 
     // SEO JSON-LD for Property
     useEffect(() => {
@@ -394,7 +421,7 @@ END:VCALENDAR`;
             "@type": "RealEstateListing",
             "name": property.title,
             "description": property.description?.substring(0, 300),
-            "url": window.location.href,
+            "url": `${SITE_URL}/property/${id}`,
             "image": property.images?.[0] || "",
             "datePosted": property.createdAt?.toDate ? property.createdAt.toDate().toISOString() : new Date().toISOString(),
             "address": {
@@ -443,7 +470,7 @@ END:VCALENDAR`;
         return () => {
             document.head.removeChild(script);
         };
-    }, [property]);
+    }, [id, property]);
 
     if (loading) {
         return (
@@ -630,7 +657,11 @@ END:VCALENDAR`;
                             <div>
                                 <h2 className="text-2xl font-bold mb-1">Publicado por {property.agentName || 'Agente Inmuévete'}</h2>
                                 <p className="text-gray-600 mb-0">
-                                    {property.bedrooms ? `${property.bedrooms} Habitaciones · ` : ''}{property.bathrooms ? `${property.bathrooms} Baños · ` : ''}{property.footage || property.areaTerreno} m²
+                                    {[
+                                        property.bedrooms ? `${property.bedrooms} Habitaciones` : null,
+                                        property.bathrooms ? `${property.bathrooms} Baños` : null,
+                                        (property.footage || property.areaTerreno || property.areaConstruida || property.areaLibre) ? `${property.footage || property.areaTerreno || property.areaConstruida || property.areaLibre} m²` : null
+                                    ].filter(Boolean).join(' · ')}
                                 </p>
                             </div>
                             <div className="w-14 h-14 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
@@ -646,10 +677,12 @@ END:VCALENDAR`;
                         <div className="border-b border-gray-200 pb-8 mb-8">
                             <h3 className="text-lg font-bold mb-4">Características</h3>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6">
-                                <div className="flex items-center gap-3 text-gray-700">
-                                    <Maximize className="w-5 h-5 text-[#fc7f51]" />
-                                    <span>{property.footage || property.areaTerreno} m²</span>
-                                </div>
+                                {(property.footage || property.areaTerreno || property.areaConstruida || property.areaLibre) && (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <Maximize className="w-5 h-5 text-[#fc7f51]" />
+                                        <span>{property.footage || property.areaTerreno || property.areaConstruida || property.areaLibre} m²</span>
+                                    </div>
+                                )}
                                 {property.bedrooms > 0 && (
                                     <div className="flex items-center gap-3 text-gray-700">
                                         <BedDouble className="w-5 h-5 text-[#fc7f51]" />
@@ -665,7 +698,7 @@ END:VCALENDAR`;
                                 {property.parking && (
                                     <div className="flex items-center gap-3 text-gray-700">
                                         <Car className="w-5 h-5 text-[#fc7f51]" />
-                                        <span>Cochera</span>
+                                        <span>{property.garageCapacity ? `${property.garageCapacity} Cochera${property.garageCapacity > 1 ? 's' : ''}` : 'Cochera'}</span>
                                     </div>
                                 )}
                                 {property.isDuplex && (
@@ -812,10 +845,12 @@ END:VCALENDAR`;
                                     <span className="text-gray-500">Categoría</span>
                                     <span className="font-semibold capitalize">{property.category}</span>
                                 </div>
-                                <div className="flex justify-between py-2 border-b border-gray-50">
-                                    <span className="text-gray-500">Área</span>
-                                    <span className="font-semibold">{property.footage || property.areaTerreno} m²</span>
-                                </div>
+                                {(property.footage || property.areaTerreno || property.areaConstruida || property.areaLibre) && (
+                                    <div className="flex justify-between py-2 border-b border-gray-50">
+                                        <span className="text-gray-500">Área</span>
+                                        <span className="font-semibold">{property.footage || property.areaTerreno || property.areaConstruida || property.areaLibre} m²</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between py-2 border-b border-gray-50">
                                     <span className="text-gray-500">Estado</span>
                                     <span className={`font-semibold capitalize ${property.status === 'disponible' ? 'text-green-600' : 'text-red-500'}`}>

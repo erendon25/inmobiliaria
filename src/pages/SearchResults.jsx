@@ -197,7 +197,6 @@ const SearchResults = () => {
         if (minArea) {
             const minAreaVal = parseFloat(minArea);
             results = results.filter(p => {
-                const pt = p.category?.toLowerCase() || '';
                 // Terrenos usually use areaTerreno. Casas use areaTerreno or areaConstruida. 
                 // We'll check both.
                 const areaTerreno = parseFloat(p.areaTerreno) || 0;

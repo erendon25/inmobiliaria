@@ -93,7 +93,7 @@ function extractStoragePath(imageUrl) {
     }
 }
 
-async function compressImage(imageUrl, propertyId, imageIndex) {
+async function compressImage(imageUrl, _propertyId, _imageIndex) {
     try {
         // 1. Download image via public URL
         const response = await fetch(imageUrl);

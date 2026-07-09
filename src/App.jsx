@@ -1,39 +1,64 @@
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect, useRef } from 'react';
 import Loader from './components/Loader';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import Home from './pages/Home';
-import PropertyDetail from './pages/PropertyDetail';
-import About from './pages/About';
-import Contact from './pages/Contact';
-import SearchResults from './pages/SearchResults';
-import Tips from './pages/Tips';
-import TipDetail from './pages/TipDetail';
-
-// Auth Pages
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
-import AgentDashboard from './pages/AgentDashboard';
-import ClientDashboard from './pages/ClientDashboard';
-import SuperAdminDashboard from './pages/SuperAdminDashboard';
-import Setup from './pages/Setup';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import { getCanonicalUrl, setCanonicalUrl, setMetaProperty } from './lib/seo';
+
+const About = lazy(() => import('./pages/About'));
+const Contact = lazy(() => import('./pages/Contact'));
+const SearchResults = lazy(() => import('./pages/SearchResults'));
+const PropertyDetail = lazy(() => import('./pages/PropertyDetail'));
+const Tips = lazy(() => import('./pages/Tips'));
+const TipDetail = lazy(() => import('./pages/TipDetail'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const Setup = lazy(() => import('./pages/Setup'));
+const AgentDashboard = lazy(() => import('./pages/AgentDashboard'));
+const ClientDashboard = lazy(() => import('./pages/ClientDashboard'));
+const SuperAdminDashboard = lazy(() => import('./pages/SuperAdminDashboard'));
+
+function RouteCanonicalMeta() {
+  const { pathname } = useLocation();
+  const isPropertyDetail = /^\/properties?\/[^/]+\/?$/.test(pathname);
+
+  useEffect(() => {
+    if (isPropertyDetail) return;
+
+    const canonicalUrl = getCanonicalUrl(pathname);
+    setCanonicalUrl(canonicalUrl);
+    setMetaProperty('og:url', canonicalUrl);
+    setMetaProperty('twitter:url', canonicalUrl);
+  }, [isPropertyDetail, pathname]);
+
+  return null;
+}
 
 // Page transition loader - shows on every route change
 function PageLoader() {
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
+  const hasMounted = useRef(false);
 
   useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => setIsLoading(false), 600);
-    return () => clearTimeout(timer);
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
+
+    const showTimer = setTimeout(() => setIsLoading(true), 0);
+    const hideTimer = setTimeout(() => setIsLoading(false), 600);
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(hideTimer);
+    };
   }, [location.pathname]);
 
   if (!isLoading) return null;
@@ -61,6 +86,7 @@ function AppContent() {
 
   return (
     <div className={`flex flex-col min-h-screen ${isImpersonating ? 'pt-10' : ''}`}>
+      <RouteCanonicalMeta />
       <ScrollToTop />
       <PageLoader />
 
@@ -90,50 +116,53 @@ function AppContent() {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.25, ease: "easeInOut" }}
           >
-            <Routes location={location}>
-              <Route path="/" element={<Home />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/properties" element={<SearchResults />} />
-              <Route path="/properties/:id" element={<PropertyDetail />} />
-              <Route path="/search" element={<SearchResults />} />
-              <Route path="/tips" element={<Tips />} />
-              <Route path="/tips/:id" element={<TipDetail />} />
+            <Suspense fallback={<Loader fullScreen />}>
+              <Routes location={location}>
+                <Route path="/" element={<Home />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/properties" element={<SearchResults />} />
+                <Route path="/property/:id" element={<PropertyDetail />} />
+                <Route path="/properties/:id" element={<PropertyDetail />} />
+                <Route path="/search" element={<SearchResults />} />
+                <Route path="/tips" element={<Tips />} />
+                <Route path="/tips/:id" element={<TipDetail />} />
 
-              {/* Authentication Routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/setup" element={<Setup />} />
+                {/* Authentication Routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/setup" element={<Setup />} />
 
-              {/* Protected Routes */}
-              <Route
-                path="/agent-dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={['agente']}>
-                    <AgentDashboard />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Protected Routes */}
+                <Route
+                  path="/agent-dashboard"
+                  element={
+                    <ProtectedRoute allowedRoles={['agente']}>
+                      <AgentDashboard />
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route
-                path="/client-dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={['cliente']}>
-                    <ClientDashboard />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/client-dashboard"
+                  element={
+                    <ProtectedRoute allowedRoles={['cliente']}>
+                      <ClientDashboard />
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route
-                path="/superadmin"
-                element={
-                  <ProtectedRoute allowedRoles={['superadmin']}>
-                    <SuperAdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
+                <Route
+                  path="/superadmin"
+                  element={
+                    <ProtectedRoute allowedRoles={['superadmin']}>
+                      <SuperAdminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            </Suspense>
           </motion.div>
         </AnimatePresence>
       </main>

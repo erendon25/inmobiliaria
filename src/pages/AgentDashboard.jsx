@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db, storage } from '../lib/firebase';
-import { collection, addDoc, query, where, getDocs, updateDoc, doc, deleteDoc, writeBatch, orderBy } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { collection, addDoc, query, where, getDocs, updateDoc, doc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { updateProfile, updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential, verifyBeforeUpdateEmail } from 'firebase/auth';
+import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential, verifyBeforeUpdateEmail } from 'firebase/auth';
 import { Upload, MapPin, DollarSign, Home, Maximize, Loader2, Plus, X, Lock, User, FileText, Trash2, Calendar, Phone, Clock, Camera, Mail, Facebook, Youtube, RotateCw, Lightbulb, CheckCircle2, BarChart2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import MapPicker from '../components/MapPicker';
@@ -13,7 +13,6 @@ import PropertyFormFields from '../components/PropertyFormFields';
 import ContractTemplates from '../components/ContractTemplates';
 import GenerateContractModal from '../components/GenerateContractModal';
 import StatsDashboard from '../components/dashboard/StatsDashboard';
-import logo from '../assets/logo.png';
 import { fetchSunatExchangeRate } from '../lib/exchangeRate';
 import { PERU_LOCATIONS } from '../data/locations';
 import imageCompression from 'browser-image-compression';
@@ -81,7 +80,7 @@ const AgentDashboard = () => {
     const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
 
     // Fetch my properties function
-    const fetchMyProperties = async () => {
+    const fetchMyProperties = useCallback(async () => {
         if (!user) return;
         setLoadingProps(true);
         try {
@@ -95,10 +94,10 @@ const AgentDashboard = () => {
         } finally {
             setLoadingProps(false);
         }
-    };
+    }, [user]);
 
     // Fetch my tips function
-    const fetchMyTips = async () => {
+    const fetchMyTips = useCallback(async () => {
         if (!user) return;
         setLoadingTips(true);
         try {
@@ -113,7 +112,7 @@ const AgentDashboard = () => {
         } finally {
             setLoadingTips(false);
         }
-    };
+    }, [user]);
 
     // Load data on mount/tab change if user is activated
     useEffect(() => {
@@ -152,7 +151,7 @@ const AgentDashboard = () => {
             newPassword: '',
             photoURL: userData?.photoURL || user?.photoURL || ''
         });
-    }, [user, userData]);
+    }, [user, userData, fetchMyProperties, fetchMyTips]);
 
     const deletePropertyImages = async (imageUrls) => {
         if (!imageUrls || !Array.isArray(imageUrls)) return;
@@ -553,7 +552,7 @@ const AgentDashboard = () => {
         }
     };
 
-    const handleVisitAction = async (visitId, action) => {
+    const _handleVisitAction = async (visitId, action) => {
         try {
             if (action === 'delete') {
                 const proceed = window.confirm("¿Seguro que deseas eliminar el registro de esta visita agendada?");
@@ -575,7 +574,7 @@ const AgentDashboard = () => {
         }
     };
 
-    const handlePromoteToggle = async (propertyId, currentPromoted) => {
+    const _handlePromoteToggle = async (propertyId, currentPromoted) => {
         try {
             await updateDoc(doc(db, "properties", propertyId), {
                 isPromoted: !currentPromoted
@@ -1080,6 +1079,7 @@ const AgentDashboard = () => {
     };
 
     const handleSubmit = (e) => {
+        e.preventDefault();
         saveProperty();
     };
 
@@ -1117,7 +1117,7 @@ const AgentDashboard = () => {
                         type: 'standard'
                     });
                 }
-            } catch (error) {
+            } catch {
                 // Silently ignore - only superadmins can create codes
                 console.debug("Skipping code creation (not authorized)");
             }
@@ -1585,7 +1585,7 @@ const AgentDashboard = () => {
                                                                         e.stopPropagation();
                                                                         try {
                                                                             await handleRotateImage(idx);
-                                                                        } catch (error) {
+                                                                        } catch {
                                                                             toast.error("Error al rotar la imagen. Asegúrate de que tu bucket de Firebase Storage tenga configurado CORS correctamente.");
                                                                         }
                                                                     }}
@@ -1896,7 +1896,7 @@ const AgentDashboard = () => {
                                                                         await updateDoc(doc(db, "visits", visit.id), { status: 'confirmed' });
                                                                         setVisits(prev => prev.map(v => v.id === visit.id ? { ...v, status: 'confirmed' } : v));
                                                                         toast.success("Visita aprobada");
-                                                                    } catch (err) { toast.error("Error al aprobar"); }
+                                                                    } catch { toast.error("Error al aprobar"); }
                                                                 }}
                                                                 className="bg-green-50 text-green-600 hover:bg-green-100 px-3 py-1.5 rounded-lg text-xs font-bold transition border border-green-200"
                                                             >
@@ -1908,7 +1908,7 @@ const AgentDashboard = () => {
                                                                         await updateDoc(doc(db, "visits", visit.id), { status: 'cancelled' });
                                                                         setVisits(prev => prev.map(v => v.id === visit.id ? { ...v, status: 'cancelled' } : v));
                                                                         toast.error("Visita denegada");
-                                                                    } catch (err) { toast.error("Error al denegar"); }
+                                                                    } catch { toast.error("Error al denegar"); }
                                                                 }}
                                                                 className="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition border border-red-200"
                                                             >
@@ -2132,9 +2132,8 @@ const AgentDashboard = () => {
                                     ref={imgRef}
                                     src={cropImageUrl}
                                     alt="Crop me"
-                                    onLoad={(e) => {
+                                    onLoad={() => {
                                         // Center crop on load
-                                        const { width, height } = e.currentTarget;
                                         setCrop({
                                             unit: '%',
                                             width: 80,

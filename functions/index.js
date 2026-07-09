@@ -184,3 +184,110 @@ exports.notifyPropertyFavorited = functions.firestore
             return null;
         }
     });
+
+const fs = require("fs");
+const path = require("path");
+const SITE_URL = "https://inmueveteinmobiliaria.com";
+
+function setCanonicalUrl(htmlString, url) {
+    const canonicalTag = `<link rel="canonical" href="${url}" />`;
+
+    if (/<link\s+rel=["']canonical["'][^>]*>/i.test(htmlString)) {
+        return htmlString.replace(/<link\s+rel=["']canonical["'][^>]*>/i, canonicalTag);
+    }
+
+    return htmlString.replace(/<\/head>/i, `  ${canonicalTag}\n</head>`);
+}
+
+function sendNotFoundProperty(res, propertyId) {
+    const url = `${SITE_URL}/property/${propertyId || ""}`;
+    res.set("Cache-Control", "no-store");
+
+    const htmlString = `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, follow" />
+  <link rel="canonical" href="${url}" />
+  <title>Propiedad no encontrada | Inmuévete Inmobiliaria</title>
+</head>
+<body>
+  <main>
+    <h1>Propiedad no encontrada</h1>
+    <p>La propiedad solicitada no está disponible.</p>
+    <a href="${SITE_URL}/properties">Ver propiedades disponibles</a>
+  </main>
+</body>
+</html>`;
+
+    return res.status(404).send(htmlString);
+}
+
+/**
+ * Serve dynamic meta tags for property pages to improve SEO and social sharing.
+ */
+exports.servePropertyMeta = functions.https.onRequest(async (req, res) => {
+    // Cache the response at the CDN for 5 minutes to reduce function invocations
+    res.set("Cache-Control", "public, max-age=300, s-maxage=600");
+
+    try {
+        const urlParts = req.path.split("/");
+        // Path should be something like /property/PROPERTY_ID
+        const propertyId = urlParts[urlParts.length - 1];
+
+        let htmlString = "";
+        try {
+            htmlString = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+        } catch (e) {
+            console.error("Could not find index.html in functions directory", e);
+            return res.status(500).send("Server Error: Missing index template");
+        }
+
+        if (!propertyId || propertyId === "property") {
+            return sendNotFoundProperty(res, propertyId);
+        }
+
+        const docSnap = await db.collection("properties").doc(propertyId).get();
+
+        if (!docSnap.exists) {
+            return sendNotFoundProperty(res, propertyId);
+        }
+
+        const property = docSnap.data();
+        const title = `${property.title || 'Propiedad'} | Inmuévete Inmobiliaria`;
+        // Clean description of newlines and quotes to avoid breaking HTML
+        const rawDesc = property.description || '';
+        const description = rawDesc.substring(0, 160).replace(/\n/g, ' ').replace(/"/g, '&quot;');
+        const image = (property.images && property.images.length > 0) ? property.images[0] : `${SITE_URL}/og-image.png`;
+        const url = `${SITE_URL}/property/${propertyId}`;
+
+        // Replace metadata
+        htmlString = htmlString.replace(/<title>[^<]*<\/title>/i, `<title>${title}</title>`);
+        htmlString = setCanonicalUrl(htmlString, url);
+        htmlString = htmlString.replace(/<meta name="description"[\s]+content="[^"]*"/i, `<meta name="description" content="${description}"`);
+
+        // Replace OG Tags
+        htmlString = htmlString.replace(/<meta property="og:title" content="[^"]*"/i, `<meta property="og:title" content="${title}"`);
+        htmlString = htmlString.replace(/<meta property="og:description"[\s]+content="[^"]*"/i, `<meta property="og:description" content="${description}"`);
+        htmlString = htmlString.replace(/<meta property="og:image" content="[^"]*"/i, `<meta property="og:image" content="${image}"`);
+        htmlString = htmlString.replace(/<meta property="og:url" content="[^"]*"/i, `<meta property="og:url" content="${url}"`);
+
+        // Replace Twitter Tags
+        htmlString = htmlString.replace(/<meta property="twitter:title" content="[^"]*"/i, `<meta property="twitter:title" content="${title}"`);
+        htmlString = htmlString.replace(/<meta property="twitter:description"[\s]+content="[^"]*"/i, `<meta property="twitter:description" content="${description}"`);
+        htmlString = htmlString.replace(/<meta property="twitter:image" content="[^"]*"/i, `<meta property="twitter:image" content="${image}"`);
+        htmlString = htmlString.replace(/<meta property="twitter:url" content="[^"]*"/i, `<meta property="twitter:url" content="${url}"`);
+
+        return res.status(200).send(htmlString);
+    } catch (error) {
+        console.error("Error serving property meta", error);
+        // Fallback to sending the default index.html if possible
+        try {
+            const htmlString = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+            return res.status(200).send(htmlString);
+        } catch {
+            return res.status(500).send("Server Error");
+        }
+    }
+});

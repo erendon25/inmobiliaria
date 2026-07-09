@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, getDocs } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { Heart, Search, Clock, Bell, Save, Loader2 } from 'lucide-react';
-import toast from 'react-hot-toast';
 import PropertyCard from '../components/PropertyCard';
 
 const ClientDashboard = () => {

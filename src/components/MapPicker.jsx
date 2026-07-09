@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import { Search, MapPin, Loader2 } from 'lucide-react';
 import L from 'leaflet';
@@ -67,7 +67,7 @@ const MapPicker = ({ onConfirm, initialLocation, initialSearchQuery }) => {
     // Default center: Lima, Peru
     const defaultCenter = [-12.0464, -77.0428];
 
-    const performSearch = async (queryToSearch) => {
+    const performSearch = useCallback(async (queryToSearch) => {
         if (!queryToSearch) return;
         setIsSearching(true);
 
@@ -95,9 +95,9 @@ const MapPicker = ({ onConfirm, initialLocation, initialSearchQuery }) => {
         } finally {
             setIsSearching(false);
         }
-    };
+    }, []);
 
-    const fetchSuggestions = async (queryToSearch) => {
+    const fetchSuggestions = useCallback(async (queryToSearch) => {
         if (!queryToSearch || queryToSearch.length < 3) {
             setSuggestions([]);
             return;
@@ -114,7 +114,7 @@ const MapPicker = ({ onConfirm, initialLocation, initialSearchQuery }) => {
         } catch (error) {
             console.error("Suggestion error:", error);
         }
-    };
+    }, []);
 
     const handleSearchChange = (e) => {
         const val = e.target.value;
@@ -150,7 +150,7 @@ const MapPicker = ({ onConfirm, initialLocation, initialSearchQuery }) => {
         if (initialSearchQuery && !initialLocation?.lat) {
             performSearch(initialSearchQuery);
         }
-    }, []);
+    }, [initialLocation?.lat, initialSearchQuery, performSearch]);
 
     const confirmSelection = () => {
         if (position) {

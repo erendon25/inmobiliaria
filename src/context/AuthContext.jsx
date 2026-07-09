@@ -1,24 +1,24 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { auth, db, googleProvider, appleProvider } from '../lib/firebase';
-import {
-    onAuthStateChanged,
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    signOut,
-    signInWithRedirect,
-    getRedirectResult,
-    signInWithCredential,
-    GoogleAuthProvider,
-    sendPasswordResetEmail,
-    updateProfile,
-    setPersistence,
-    browserLocalPersistence,
-    browserSessionPersistence
-} from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { Toaster, toast } from 'react-hot-toast';
 
 const AuthContext = createContext();
+let firebaseServicesPromise = null;
+
+function getFirebaseServices() {
+    if (!firebaseServicesPromise) {
+        firebaseServicesPromise = Promise.all([
+            import('../lib/firebase'),
+            import('firebase/auth'),
+            import('firebase/firestore')
+        ]).then(([firebase, auth, firestore]) => ({
+            ...firebase,
+            ...auth,
+            ...firestore
+        }));
+    }
+
+    return firebaseServicesPromise;
+}
 
 export function useAuth() {
     return useContext(AuthContext);
@@ -34,6 +34,7 @@ export function AuthProvider({ children }) {
 
     const signup = async (email, password, role = 'cliente', name = '', phone = '', dni = '') => {
         try {
+            const { auth, db, createUserWithEmailAndPassword, updateProfile, setDoc, doc } = await getFirebaseServices();
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             // Update Auth Profile with Name
             await updateProfile(userCredential.user, { displayName: name });
@@ -56,6 +57,7 @@ export function AuthProvider({ children }) {
 
     const login = async (email, password, remember = true) => {
         try {
+            const { auth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } = await getFirebaseServices();
             await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
             return await signInWithEmailAndPassword(auth, email, password);
         } catch (error) {
@@ -73,6 +75,7 @@ export function AuthProvider({ children }) {
             }
             
             // Standard Web flow
+            const { auth, googleProvider, signInWithRedirect } = await getFirebaseServices();
             localStorage.setItem('pending_google_role', role);
             await signInWithRedirect(auth, googleProvider);
         } catch (error) {
@@ -82,6 +85,7 @@ export function AuthProvider({ children }) {
 
     const loginWithApple = async (role = 'cliente') => {
         try {
+            const { auth, appleProvider, signInWithRedirect } = await getFirebaseServices();
             localStorage.setItem('pending_apple_role', role);
             await signInWithRedirect(auth, appleProvider);
         } catch (error) {
@@ -89,11 +93,13 @@ export function AuthProvider({ children }) {
         }
     };
 
-    const logout = () => {
+    const logout = async () => {
+        const { auth, signOut } = await getFirebaseServices();
         return signOut(auth);
     };
 
-    const resetPassword = (email) => {
+    const resetPassword = async (email) => {
+        const { auth, sendPasswordResetEmail } = await getFirebaseServices();
         return sendPasswordResetEmail(auth, email)
             .catch((error) => {
                 throw translateError(error);
@@ -116,6 +122,7 @@ export function AuthProvider({ children }) {
         // Global callback for Android bridge
         window.onAndroidLoginSuccess = async (idToken) => {
             try {
+                const { auth, db, GoogleAuthProvider, signInWithCredential, getDoc, setDoc, doc } = await getFirebaseServices();
                 const credential = GoogleAuthProvider.credential(idToken);
                 const result = await signInWithCredential(auth, credential);
                 
@@ -146,6 +153,7 @@ export function AuthProvider({ children }) {
 
         const checkRedirect = async () => {
             try {
+                const { auth, db, getRedirectResult, getDoc, setDoc, doc } = await getFirebaseServices();
                 const result = await getRedirectResult(auth);
                 if (result) {
                     const role = localStorage.getItem('pending_google_role') || localStorage.getItem('pending_apple_role') || 'cliente';
@@ -172,42 +180,54 @@ export function AuthProvider({ children }) {
 
     useEffect(() => {
         let unsubscribeUserDoc = null;
+        let unsubscribeAuth = null;
+        let cancelled = false;
 
-        const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
-            setUser(currentUser);
-            if (currentUser) {
-                const docRef = doc(db, "users", currentUser.uid);
-                // Listen to live changes
-                unsubscribeUserDoc = onSnapshot(docRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        setUserData(docSnap.data());
-                        
-                        // Bridge: Register FCM Token if running in Android app
-                        if (window.Android && window.Android.getFCMToken) {
-                            const token = window.Android.getFCMToken();
-                            if (token && token.length > 10) {
-                                const currentTokens = docSnap.data().fcmTokens || [];
-                                if (!currentTokens.includes(token)) {
-                                    updateDoc(docRef, {
-                                        fcmTokens: arrayUnion(token)
-                                    }).catch(e => console.error("Error saving FCM token", e));
+        getFirebaseServices().then(({ auth, db, onAuthStateChanged, onSnapshot, doc, updateDoc, arrayUnion }) => {
+            if (cancelled) return;
+
+            unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+                setUser(currentUser);
+                if (currentUser) {
+                    const docRef = doc(db, "users", currentUser.uid);
+                    // Listen to live changes
+                    unsubscribeUserDoc = onSnapshot(docRef, (docSnap) => {
+                        if (docSnap.exists()) {
+                            setUserData(docSnap.data());
+
+                            // Bridge: Register FCM Token if running in Android app
+                            if (window.Android && window.Android.getFCMToken) {
+                                const token = window.Android.getFCMToken();
+                                if (token && token.length > 10) {
+                                    const currentTokens = docSnap.data().fcmTokens || [];
+                                    if (!currentTokens.includes(token)) {
+                                        updateDoc(docRef, {
+                                            fcmTokens: arrayUnion(token)
+                                        }).catch(e => console.error("Error saving FCM token", e));
+                                    }
                                 }
                             }
                         }
+                    });
+                } else {
+                    setUserData(null);
+                    if (unsubscribeUserDoc) {
+                        unsubscribeUserDoc();
+                        unsubscribeUserDoc = null;
                     }
-                });
-            } else {
-                setUserData(null);
-                if (unsubscribeUserDoc) {
-                    unsubscribeUserDoc();
-                    unsubscribeUserDoc = null;
                 }
-            }
-            setLoading(false);
+                setLoading(false);
+            });
+        }).catch((error) => {
+            console.error("Error loading Firebase auth:", error);
+            if (!cancelled) setLoading(false);
         });
 
         return () => {
-            unsubscribeAuth();
+            cancelled = true;
+            if (unsubscribeAuth) {
+                unsubscribeAuth();
+            }
             if (unsubscribeUserDoc) {
                 unsubscribeUserDoc();
             }
@@ -220,6 +240,7 @@ export function AuthProvider({ children }) {
             return;
         }
         try {
+            const { db, doc, getDoc, updateDoc, arrayUnion, arrayRemove } = await getFirebaseServices();
             const userRef = doc(db, "users", user.uid);
 
             // Re-read document to ensure we have the most accurate, zero-stale-closure state
@@ -249,6 +270,7 @@ export function AuthProvider({ children }) {
     const addRecentlyViewed = async (propertyId) => {
         if (!user) return;
         try {
+            const { db, doc, getDoc, updateDoc } = await getFirebaseServices();
             const userRef = doc(db, "users", user.uid);
 
             // Re-read document to prevent any stale state array overwrites
@@ -272,6 +294,7 @@ export function AuthProvider({ children }) {
     const saveAlerts = async (alerts) => {
         if (!user) return;
         try {
+            const { db, doc, updateDoc } = await getFirebaseServices();
             const userRef = doc(db, "users", user.uid);
             await updateDoc(userRef, {
                 alerts: alerts
@@ -293,6 +316,7 @@ export function AuthProvider({ children }) {
         }
         
         try {
+            const { db, doc, getDoc } = await getFirebaseServices();
             const userDoc = await getDoc(doc(db, "users", uid));
             if (userDoc.exists()) {
                 const data = userDoc.data();
@@ -315,12 +339,14 @@ export function AuthProvider({ children }) {
     useEffect(() => {
         const storedUid = localStorage.getItem('impersonated_uid');
         if (storedUid && userData?.role === 'superadmin') {
-            setImpersonatedUser(storedUid);
+            const timer = setTimeout(() => setImpersonatedUser(storedUid), 0);
+            return () => clearTimeout(timer);
         } else if (userData && userData.role !== 'superadmin') {
             // Security: clear impersonation if real user is no longer superadmin
             localStorage.removeItem('impersonated_uid');
         }
-    }, [userData?.role]); // Re-run when user data/role is available
+        return undefined;
+    }, [userData]); // Re-run when user data/role is available
 
     const effectiveUser = impersonatedUser || user;
     const effectiveUserData = impersonatedUserData || (userData ? { ...userData, role: roleOverride || userData.role } : null);
@@ -330,6 +356,7 @@ export function AuthProvider({ children }) {
         userData: effectiveUserData,
         realUser: user,
         realUserData: userData,
+        loading,
         impersonatedUser,
         setImpersonatedUser,
         roleOverride,
@@ -347,7 +374,7 @@ export function AuthProvider({ children }) {
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {children}
             <Toaster position="top-center" />
         </AuthContext.Provider>
     );

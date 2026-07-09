@@ -1,6 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { db } from '../lib/firebase';
-import { collection, query, getDocs, limit } from 'firebase/firestore';
 import PropertyCard from '../components/PropertyCard';
 import {
     Palmtree, Mountain, Waves, Building, Building2, Warehouse,
@@ -132,6 +130,10 @@ const Home = () => {
         const fetchProperties = async () => {
             setLoadingProperties(true);
             try {
+                const [{ db }, { collection, query, getDocs, limit }] = await Promise.all([
+                    import('../lib/firebase'),
+                    import('firebase/firestore')
+                ]);
                 const q = query(collection(db, "properties"), limit(60));
                 const querySnapshot = await getDocs(q);
                 const props = querySnapshot.docs
@@ -213,24 +215,23 @@ const Home = () => {
             <div className="relative min-h-[100svh] lg:h-[88vh] lg:min-h-[700px] flex items-start lg:items-center pt-32 pb-16 lg:pt-20 lg:pb-0 overflow-hidden">
                 {/* Background */}
                 <div className="absolute inset-0 z-0">
+                    <picture>
+                        <source srcSet="/hero-bg-mobile.webp" media="(max-width: 640px)" type="image/webp" />
+                        <source srcSet="/hero-bg.webp" type="image/webp" />
                     <img
                         src="/hero-bg.png"
                         alt="Interior de una casa moderna de lujo en Perú - Inmuévete Inmobiliaria"
                         className="w-full h-full object-cover scale-105"
                         style={{ transform: 'scale(1.05)' }}
+                        fetchPriority="high"
+                        decoding="async"
                         onError={(e) => {
-                            e.target.src = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop';
+                            e.target.src = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1200&auto=format&fit=crop';
                         }}
                     />
+                    </picture>
                     <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/30 to-white" />
                 </div>
-
-                {/* Animated glow orb */}
-                <motion.div
-                    animate={{ x: [0, 40, 0], y: [0, -25, 0] }}
-                    transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-                    className="absolute top-20 right-10 w-[500px] h-[500px] bg-[#fc7f51]/15 blur-[120px] rounded-full pointer-events-none z-0"
-                />
 
                 <div className="relative z-10 container mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
 
