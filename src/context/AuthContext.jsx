@@ -20,6 +20,36 @@ function getFirebaseServices() {
     return firebaseServicesPromise;
 }
 
+function scheduleFirebaseInit(callback) {
+    const isHomePage = window.location.pathname === '/';
+    const hasPendingAuth = Object.keys(localStorage).some((key) =>
+        key.startsWith('firebase:authUser:') || key.startsWith('pending_') || key === 'impersonated_uid'
+    );
+
+    if (!isHomePage || hasPendingAuth) {
+        callback();
+        return () => {};
+    }
+
+    let started = false;
+    const start = () => {
+        if (started) return;
+        started = true;
+        window.removeEventListener('pointerdown', start);
+        window.removeEventListener('keydown', start);
+        callback();
+    };
+    const timer = window.setTimeout(start, 10000);
+    window.addEventListener('pointerdown', start, { once: true, passive: true });
+    window.addEventListener('keydown', start, { once: true });
+
+    return () => {
+        window.clearTimeout(timer);
+        window.removeEventListener('pointerdown', start);
+        window.removeEventListener('keydown', start);
+    };
+}
+
 export function useAuth() {
     return useContext(AuthContext);
 }
@@ -175,7 +205,8 @@ export function AuthProvider({ children }) {
                 console.error("Error processing redirect result", error);
             }
         };
-        checkRedirect();
+        const cancelInit = scheduleFirebaseInit(checkRedirect);
+        return cancelInit;
     }, []);
 
     useEffect(() => {
@@ -183,48 +214,51 @@ export function AuthProvider({ children }) {
         let unsubscribeAuth = null;
         let cancelled = false;
 
-        getFirebaseServices().then(({ auth, db, onAuthStateChanged, onSnapshot, doc, updateDoc, arrayUnion }) => {
-            if (cancelled) return;
+        const cancelInit = scheduleFirebaseInit(() => {
+            getFirebaseServices().then(({ auth, db, onAuthStateChanged, onSnapshot, doc, updateDoc, arrayUnion }) => {
+                if (cancelled) return;
 
-            unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
-                setUser(currentUser);
-                if (currentUser) {
-                    const docRef = doc(db, "users", currentUser.uid);
-                    // Listen to live changes
-                    unsubscribeUserDoc = onSnapshot(docRef, (docSnap) => {
-                        if (docSnap.exists()) {
-                            setUserData(docSnap.data());
+                unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+                    setUser(currentUser);
+                    if (currentUser) {
+                        const docRef = doc(db, "users", currentUser.uid);
+                        // Listen to live changes
+                        unsubscribeUserDoc = onSnapshot(docRef, (docSnap) => {
+                            if (docSnap.exists()) {
+                                setUserData(docSnap.data());
 
-                            // Bridge: Register FCM Token if running in Android app
-                            if (window.Android && window.Android.getFCMToken) {
-                                const token = window.Android.getFCMToken();
-                                if (token && token.length > 10) {
-                                    const currentTokens = docSnap.data().fcmTokens || [];
-                                    if (!currentTokens.includes(token)) {
-                                        updateDoc(docRef, {
-                                            fcmTokens: arrayUnion(token)
-                                        }).catch(e => console.error("Error saving FCM token", e));
+                                // Bridge: Register FCM Token if running in Android app
+                                if (window.Android && window.Android.getFCMToken) {
+                                    const token = window.Android.getFCMToken();
+                                    if (token && token.length > 10) {
+                                        const currentTokens = docSnap.data().fcmTokens || [];
+                                        if (!currentTokens.includes(token)) {
+                                            updateDoc(docRef, {
+                                                fcmTokens: arrayUnion(token)
+                                            }).catch(e => console.error("Error saving FCM token", e));
+                                        }
                                     }
                                 }
                             }
+                        });
+                    } else {
+                        setUserData(null);
+                        if (unsubscribeUserDoc) {
+                            unsubscribeUserDoc();
+                            unsubscribeUserDoc = null;
                         }
-                    });
-                } else {
-                    setUserData(null);
-                    if (unsubscribeUserDoc) {
-                        unsubscribeUserDoc();
-                        unsubscribeUserDoc = null;
                     }
-                }
-                setLoading(false);
+                    setLoading(false);
+                });
+            }).catch((error) => {
+                console.error("Error loading Firebase auth:", error);
+                if (!cancelled) setLoading(false);
             });
-        }).catch((error) => {
-            console.error("Error loading Firebase auth:", error);
-            if (!cancelled) setLoading(false);
         });
 
         return () => {
             cancelled = true;
+            cancelInit();
             if (unsubscribeAuth) {
                 unsubscribeAuth();
             }

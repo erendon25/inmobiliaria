@@ -3,13 +3,13 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import { lazy, Suspense, useState, useEffect, useRef } from 'react';
 import Loader from './components/Loader';
-import { motion, AnimatePresence } from 'framer-motion';
 
 import Home from './pages/Home';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import { getCanonicalUrl, setCanonicalUrl, setMetaProperty } from './lib/seo';
+import { getCanonicalUrl, setCanonicalUrl, setMetaName, setMetaProperty, setPageTitle } from './lib/seo';
+import { SEO_LANDING_META, SEO_LANDING_PATHS } from './data/seoPageMeta';
 
 const About = lazy(() => import('./pages/About'));
 const Contact = lazy(() => import('./pages/Contact'));
@@ -24,19 +24,73 @@ const Setup = lazy(() => import('./pages/Setup'));
 const AgentDashboard = lazy(() => import('./pages/AgentDashboard'));
 const ClientDashboard = lazy(() => import('./pages/ClientDashboard'));
 const SuperAdminDashboard = lazy(() => import('./pages/SuperAdminDashboard'));
+const SeoLandingPage = lazy(() => import('./pages/SeoLandingPage'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+
+const STATIC_PAGE_META = {
+  '/': {
+    title: 'Inmobiliaria en Arequipa | Casas y departamentos | Inmuévete',
+    description: 'Compra, vende o alquila casas, departamentos y terrenos en Arequipa con asesoría inmobiliaria especializada y propiedades verificadas.'
+  },
+  '/properties': {
+    title: 'Propiedades en venta y alquiler en Arequipa | Inmuévete',
+    description: 'Explora casas, departamentos, terrenos y locales disponibles en Arequipa. Compara precios, ubicación y características en una sola plataforma.'
+  },
+  '/about': {
+    title: 'Inmuévete: inmobiliaria y asesoría en Arequipa',
+    description: 'Conoce a Inmuévete Inmobiliaria y nuestro servicio de asesoría para comprar, vender, alquilar e invertir en propiedades en Arequipa.'
+  },
+  '/contact': {
+    title: 'Contacta una inmobiliaria en Arequipa | Inmuévete',
+    description: 'Habla con un asesor inmobiliario en Arequipa para comprar, vender o alquilar una propiedad. Atención personalizada por WhatsApp.'
+  },
+  '/tips': {
+    title: 'Blog inmobiliario de Arequipa | Guías y consejos',
+    description: 'Guías para comprar, vender, alquilar e invertir en propiedades en Arequipa. Consejos inmobiliarios claros del equipo de Inmuévete.'
+  }
+};
+
+const NOINDEX_PATHS = new Set([
+  '/search', '/login', '/register', '/forgot-password', '/setup',
+  '/agent-dashboard', '/client-dashboard', '/superadmin'
+]);
 
 function RouteCanonicalMeta() {
   const { pathname } = useLocation();
   const isPropertyDetail = /^\/properties?\/[^/]+\/?$/.test(pathname);
+  const isTipDetail = /^\/tips\/[^/]+\/?$/.test(pathname);
 
   useEffect(() => {
-    if (isPropertyDetail) return;
+    if (isPropertyDetail || isTipDetail) return;
 
     const canonicalUrl = getCanonicalUrl(pathname);
+    const pageMeta = SEO_LANDING_META[pathname] || STATIC_PAGE_META[pathname];
+    const shouldNoindex = NOINDEX_PATHS.has(pathname) || !pageMeta;
+
     setCanonicalUrl(canonicalUrl);
+    setMetaName('robots', shouldNoindex ? 'noindex, follow' : 'index, follow, max-image-preview:large');
+    setMetaProperty('og:type', 'website');
     setMetaProperty('og:url', canonicalUrl);
     setMetaProperty('twitter:url', canonicalUrl);
-  }, [isPropertyDetail, pathname]);
+
+    if (pageMeta) {
+      const title = pageMeta.metaTitle || pageMeta.title;
+      setPageTitle(title);
+      setMetaName('description', pageMeta.description);
+      setMetaProperty('og:title', title);
+      setMetaProperty('og:description', pageMeta.description);
+      setMetaProperty('og:image', 'https://inmueveteinmobiliaria.com/hero-bg.webp');
+      setMetaProperty('twitter:title', title);
+      setMetaProperty('twitter:description', pageMeta.description);
+      setMetaProperty('twitter:image', 'https://inmueveteinmobiliaria.com/hero-bg.webp');
+    } else if (NOINDEX_PATHS.has(pathname)) {
+      setPageTitle('Acceso | Inmuévete Inmobiliaria');
+      setMetaName('description', 'Acceso a las herramientas de Inmuévete Inmobiliaria.');
+    } else {
+      setPageTitle('Página no encontrada | Inmuévete');
+      setMetaName('description', 'La página solicitada no está disponible.');
+    }
+  }, [isPropertyDetail, isTipDetail, pathname]);
 
   return null;
 }
@@ -108,14 +162,7 @@ function AppContent() {
 
       {!isSuperAdminRoute && <Navbar />}
       <main className="flex-grow">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
-          >
+          <div key={location.pathname}>
             <Suspense fallback={<Loader fullScreen />}>
               <Routes location={location}>
                 <Route path="/" element={<Home />} />
@@ -127,6 +174,9 @@ function AppContent() {
                 <Route path="/search" element={<SearchResults />} />
                 <Route path="/tips" element={<Tips />} />
                 <Route path="/tips/:id" element={<TipDetail />} />
+                {SEO_LANDING_PATHS.map((path) => (
+                  <Route key={path} path={path} element={<SeoLandingPage />} />
+                ))}
 
                 {/* Authentication Routes */}
                 <Route path="/login" element={<Login />} />
@@ -161,10 +211,10 @@ function AppContent() {
                     </ProtectedRoute>
                   }
                 />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
-          </motion.div>
-        </AnimatePresence>
+          </div>
       </main>
       {!isSuperAdminRoute && <Footer />}
     </div>

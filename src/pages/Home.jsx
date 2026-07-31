@@ -9,7 +9,6 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import Loader from '../components/Loader';
 import { PERU_LOCATIONS } from '../data/locations';
-import { motion } from 'framer-motion';
 
 const categories = [
     { icon: Building2, label: 'Departamento', value: 'Departamento' },
@@ -25,6 +24,7 @@ const categories = [
 
 const Home = () => {
     const navigate = useNavigate();
+    const propertiesTriggerRef = useRef(null);
 
     // Drag-to-scroll for exclusive carousel
     const exclusiveRef = useRef(null);
@@ -127,6 +127,7 @@ const Home = () => {
     };
 
     useEffect(() => {
+        let cancelled = false;
         const fetchProperties = async () => {
             setLoadingProperties(true);
             try {
@@ -146,65 +147,30 @@ const Home = () => {
                     return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
                 });
 
-                setProperties(props);
+                if (!cancelled) setProperties(props);
             } catch (error) {
                 console.error("Error fetching properties:", error);
             } finally {
-                setLoadingProperties(false);
+                if (!cancelled) setLoadingProperties(false);
             }
         };
-        fetchProperties();
-    }, []);
+        const trigger = propertiesTriggerRef.current;
+        if (!trigger || !('IntersectionObserver' in window)) {
+            fetchProperties();
+            return () => { cancelled = true; };
+        }
 
-    // SEO JSON-LD
-    useEffect(() => {
-        const script = document.createElement('script');
-        script.type = 'application/ld+json';
-        const schema = {
-            "@context": "https://schema.org",
-            "@type": "RealEstateAgent",
-            "name": "Inmuévete Inmobiliaria",
-            "url": "https://inmueveteperu.com",
-            "logo": "https://inmueveteperu.com/logo.png",
-            "description": "Encuentra los mejores departamentos, casas y terrenos en venta y alquiler en Perú. Asesoría experta en bienes raíces.",
-            "address": {
-                "@type": "PostalAddress",
-                "addressLocality": "Lima",
-                "addressCountry": "PE"
-            },
-            "sameAs": [
-                "https://www.facebook.com/inmueveteinmobiliaria",
-                "https://www.instagram.com/inmueveteinmobiliaria"
-            ],
-            "contactPoint": {
-                "@type": "ContactPoint",
-                "telephone": "+51 965355700",
-                "contactType": "customer service",
-                "areaServed": "PE",
-                "availableLanguage": "Spanish"
+        const observer = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting) {
+                observer.disconnect();
+                fetchProperties();
             }
-        };
-        script.innerHTML = JSON.stringify(schema);
-        document.head.appendChild(script);
-
-        const websiteSchema = {
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            "url": "https://inmueveteperu.com",
-            "potentialAction": {
-                "@type": "SearchAction",
-                "target": "https://inmueveteperu.com/search?location={search_term_string}",
-                "query-input": "required name=search_term_string"
-            }
-        };
-        const websiteScript = document.createElement('script');
-        websiteScript.type = 'application/ld+json';
-        websiteScript.innerHTML = JSON.stringify(websiteSchema);
-        document.head.appendChild(websiteScript);
+        }, { rootMargin: '0px' });
+        observer.observe(trigger);
 
         return () => {
-            document.head.removeChild(script);
-            document.head.removeChild(websiteScript);
+            cancelled = true;
+            observer.disconnect();
         };
     }, []);
 
@@ -224,7 +190,9 @@ const Home = () => {
                         className="w-full h-full object-cover scale-105"
                         style={{ transform: 'scale(1.05)' }}
                         fetchPriority="high"
-                        decoding="async"
+                        decoding="sync"
+                        width="1024"
+                        height="1024"
                         onError={(e) => {
                             e.target.src = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1200&auto=format&fit=crop';
                         }}
@@ -237,23 +205,19 @@ const Home = () => {
 
                     {/* Left: Headline + Quick Stats */}
                     <div className="lg:col-span-6 text-white">
-                        <motion.div
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.7 }}
-                        >
+                        <div className="hero-enter">
                             <div className="inline-flex items-center gap-2 bg-white/10 border border-white/15 backdrop-blur-sm px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest text-white/90 mb-8">
                                 <span className="w-2 h-2 rounded-full bg-[#fc7f51] animate-pulse" />
                                 Encuentra tu próximo hogar
                             </div>
                             <h1 className="text-4xl md:text-6xl font-black leading-tight mb-6 drop-shadow-lg">
-                                Tu Nuevo Hogar<br />
+                                Propiedades en Arequipa<br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#fc7f51] to-orange-300">
-                                    Te Espera
+                                    Para Vivir o Invertir
                                 </span>
                             </h1>
-                            <p className="text-white/75 text-lg leading-relaxed mb-12 max-w-lg">
-                                Explora propiedades exclusivas en las mejores ubicaciones del Perú con el mejor equipo de agentes.
+                            <p className="text-white/90 text-lg leading-relaxed mb-12 max-w-lg">
+                                Encuentra casas, departamentos y terrenos en venta o alquiler con asesoría inmobiliaria personalizada.
                             </p>
 
                             {/* Quick Stats */}
@@ -265,20 +229,15 @@ const Home = () => {
                                 ].map((s, i) => (
                                     <div key={i} className="flex flex-col">
                                         <span className="text-3xl font-black text-white leading-none">{s.val}</span>
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-white/50 mt-1">{s.label}</span>
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-white/80 mt-1">{s.label}</span>
                                     </div>
                                 ))}
                             </div>
-                        </motion.div>
+                        </div>
                     </div>
 
                     {/* Right: Search Card */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.7, delay: 0.2 }}
-                        className="lg:col-span-6 bg-white rounded-3xl shadow-2xl overflow-hidden"
-                    >
+                    <div className="hero-enter-delayed lg:col-span-6 bg-white rounded-3xl shadow-2xl overflow-hidden">
                         {/* Card Header */}
                         <div className="p-8 pb-5 bg-[#16151a]">
                             <h2 className="text-2xl font-black text-white mb-1">Buscar Propiedad</h2>
@@ -305,10 +264,11 @@ const Home = () => {
 
                             {/* Location  */}
                             <div className="relative">
-                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">¿En dónde buscas?</label>
+                                <label htmlFor="home-location" className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">¿En dónde buscas?</label>
                                 <div className="relative">
                                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 w-5 h-5" />
                                     <input
+                                        id="home-location"
                                         type="text"
                                         value={location}
                                         onChange={handleLocationChange}
@@ -336,10 +296,11 @@ const Home = () => {
                             {/* Type & Currency */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tipo</label>
+                                    <label htmlFor="home-property-type" className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Tipo</label>
                                     <div className="relative">
                                         <HomeIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 w-5 h-5" />
                                         <select
+                                            id="home-property-type"
                                             value={propertyType}
                                             onChange={(e) => setPropertyType(e.target.value)}
                                             className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none appearance-none font-medium text-sm cursor-pointer"
@@ -365,12 +326,14 @@ const Home = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Moneda</label>
+                                    <span className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Moneda</span>
                                     <div className="flex bg-gray-50 rounded-xl border border-gray-200 p-1 h-[58px] items-center">
                                         {['USD', 'PEN'].map(c => (
                                             <button
                                                 key={c}
                                                 onClick={() => setCurrency(c)}
+                                                aria-label={`Usar moneda ${c}`}
+                                                aria-pressed={currency === c}
                                                 className={`flex-1 h-full rounded-lg text-sm font-bold transition ${currency === c ? 'bg-[#fc7f51] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                                             >
                                                 {c === 'USD' ? '$ USD' : 'S/ PEN'}
@@ -382,10 +345,10 @@ const Home = () => {
 
                             {/* Price */}
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Rango de Precio</label>
+                                <span className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Rango de Precio</span>
                                 <div className="flex gap-3">
-                                    <input type="number" placeholder="Mínimo" value={priceMin} onChange={(e) => setPriceMin(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none transition text-sm" />
-                                    <input type="number" placeholder="Máximo" value={priceMax} onChange={(e) => setPriceMax(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none transition text-sm" />
+                                    <input type="number" aria-label="Precio mínimo" placeholder="Mínimo" value={priceMin} onChange={(e) => setPriceMin(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none transition text-sm" />
+                                    <input type="number" aria-label="Precio máximo" placeholder="Máximo" value={priceMax} onChange={(e) => setPriceMax(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none transition text-sm" />
                                 </div>
                             </div>
 
@@ -398,8 +361,8 @@ const Home = () => {
                             {showFilters && (
                                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 animate-fadeIn">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Habitaciones</label>
-                                        <select value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none text-sm">
+                                        <label htmlFor="home-bedrooms" className="block text-xs font-bold text-gray-600 uppercase mb-1">Habitaciones</label>
+                                        <select id="home-bedrooms" value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none text-sm">
                                             <option value="">Cualquiera</option>
                                             <option value="1">1+</option>
                                             <option value="2">2+</option>
@@ -408,8 +371,8 @@ const Home = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Baños</label>
-                                        <select value={bathrooms} onChange={(e) => setBathrooms(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none text-sm">
+                                        <label htmlFor="home-bathrooms" className="block text-xs font-bold text-gray-600 uppercase mb-1">Baños</label>
+                                        <select id="home-bathrooms" value={bathrooms} onChange={(e) => setBathrooms(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none text-sm">
                                             <option value="">Cualquiera</option>
                                             <option value="1">1+</option>
                                             <option value="2">2+</option>
@@ -417,8 +380,8 @@ const Home = () => {
                                         </select>
                                     </div>
                                     <div className="col-span-2 lg:col-span-1">
-                                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Área Mín. (m²)</label>
-                                        <input type="number" placeholder="Ej: 80" value={minArea} onChange={(e) => setMinArea(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none text-sm" />
+                                        <label htmlFor="home-min-area" className="block text-xs font-bold text-gray-600 uppercase mb-1">Área Mín. (m²)</label>
+                                        <input id="home-min-area" type="number" placeholder="Ej: 80" value={minArea} onChange={(e) => setMinArea(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#fc7f51] outline-none text-sm" />
                                     </div>
                                     <div className="col-span-2 lg:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-2 mt-1">
                                         {[
@@ -447,16 +410,17 @@ const Home = () => {
                                 BUSCAR PROPIEDADES
                             </button>
                         </div>
-                    </motion.div>
+                    </div>
                 </div>
             </div>
 
             {/* ─────────────────── CATEGORIES ─────────────────── */}
-            <div className="bg-white py-10 border-b border-gray-100 shadow-sm">
+            <div ref={propertiesTriggerRef} className="bg-white py-10 border-b border-gray-100 shadow-sm">
                 <div className="container mx-auto px-6">
                     <div className="flex gap-6 md:gap-10 overflow-x-auto no-scrollbar items-center justify-start md:justify-center py-2">
                         {categories.map((cat, idx) => (
-                            <div
+                            <button
+                                type="button"
                                 key={idx}
                                 onClick={() => navigate(`/search?propertyType=${cat.value}`)}
                                 className="flex flex-col items-center gap-3 min-w-[90px] cursor-pointer group opacity-60 hover:opacity-100 transition-all duration-300 hover:-translate-y-1"
@@ -465,7 +429,7 @@ const Home = () => {
                                     <cat.icon className="w-6 h-6 text-[#262626] group-hover:text-[#fc7f51] transition" strokeWidth={1.5} />
                                 </div>
                                 <span className="text-xs font-bold text-[#262626] group-hover:text-[#fc7f51] whitespace-nowrap transition text-center">{cat.label}</span>
-                            </div>
+                            </button>
                         ))}
                     </div>
                 </div>
@@ -522,14 +486,14 @@ const Home = () => {
             )}
 
             {/* ─────────────────── PROPERTIES GRID ─────────────────── */}
-            <main id="properties" className="container mx-auto px-6 py-20">
+            <section id="properties" aria-labelledby="featured-properties-title" className="container mx-auto px-6 py-20">
                 <div className="flex justify-between items-end mb-12">
                     <div>
                         <div className="flex items-center gap-2 mb-2">
                             <Sparkles className="w-5 h-5 text-[#fc7f51]" />
                             <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Oportunidades</span>
                         </div>
-                        <h2 className="text-3xl md:text-4xl font-black text-[#16151a]">Propiedades Destacadas</h2>
+                        <h2 id="featured-properties-title" className="text-3xl md:text-4xl font-black text-[#16151a]">Propiedades Destacadas</h2>
                     </div>
                     <Link to="/properties" className="hidden md:flex items-center gap-2 text-[#262626] font-semibold hover:text-[#fc7f51] transition group">
                         Ver todo <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -555,7 +519,7 @@ const Home = () => {
                         Ver todas las propiedades
                     </Link>
                 </div>
-            </main>
+            </section>
 
             {/* ─────────────────── WHY US ─────────────────── */}
             <section className="bg-gray-50 py-24">
@@ -570,18 +534,16 @@ const Home = () => {
                             { icon: Star, color: 'bg-orange-50 text-[#fc7f51]', title: 'Las Mejores Ofertas', desc: 'Accede a oportunidades exclusivas del mercado antes que nadie con nuestras alertas.' },
                             { icon: TrendingUp, color: 'bg-emerald-50 text-emerald-500', title: 'Asesoría Experta', desc: 'Contamos con un equipo de profesionales listos para guiarte en cada paso del proceso.' },
                         ].map((item, i) => (
-                            <motion.div
+                            <div
                                 key={i}
-                                whileHover={{ y: -6 }}
-                                transition={{ type: 'spring', stiffness: 300 }}
-                                className="p-10 bg-white rounded-[2rem] shadow-xl shadow-gray-200/60 border border-gray-100"
+                                className="lift-card p-10 bg-white rounded-[2rem] shadow-xl shadow-gray-200/60 border border-gray-100"
                             >
                                 <div className={`w-16 h-16 ${item.color} rounded-2xl flex items-center justify-center mb-8`}>
                                     <item.icon className="w-8 h-8" />
                                 </div>
                                 <h3 className="text-xl font-black mb-3 text-[#16151a]">{item.title}</h3>
                                 <p className="text-gray-500 leading-relaxed font-medium text-sm">{item.desc}</p>
-                            </motion.div>
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -624,22 +586,22 @@ const Home = () => {
 
                         <div className="lg:w-1/2 grid grid-cols-2 gap-4">
                             <div className="space-y-4 pt-12">
-                                <motion.div whileHover={{ scale: 1.03 }} className="h-60 rounded-3xl overflow-hidden shadow-2xl">
-                                    <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=600&auto=format&fit=crop" className="w-full h-full object-cover" alt="Sala de estar moderna y elegante con vista panorámica" />
-                                </motion.div>
-                                <motion.div whileHover={{ scale: 1.03 }} className="h-40 rounded-3xl overflow-hidden shadow-2xl bg-[#fc7f51] flex flex-col justify-end p-8">
+                                <div className="zoom-card h-60 rounded-3xl overflow-hidden shadow-2xl">
+                                    <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=75&w=600&auto=format&fit=crop" className="w-full h-full object-cover" alt="Sala de estar moderna y elegante con vista panorámica" loading="lazy" decoding="async" width="600" height="400" />
+                                </div>
+                                <div className="zoom-card h-40 rounded-3xl overflow-hidden shadow-2xl bg-[#fc7f51] flex flex-col justify-end p-8">
                                     <span className="text-3xl font-black text-white leading-none">24/7</span>
                                     <span className="text-[10px] font-bold uppercase tracking-widest text-white/70 mt-1">Soporte Activo</span>
-                                </motion.div>
+                                </div>
                             </div>
                             <div className="space-y-4">
-                                <motion.div whileHover={{ scale: 1.03 }} className="h-40 rounded-3xl overflow-hidden shadow-2xl bg-[#16151a] flex flex-col justify-end p-8">
+                                <div className="zoom-card h-40 rounded-3xl overflow-hidden shadow-2xl bg-[#16151a] flex flex-col justify-end p-8">
                                     <span className="text-3xl font-black text-white leading-none">10k+</span>
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-white/50 mt-1">Inmuebles</span>
-                                </motion.div>
-                                <motion.div whileHover={{ scale: 1.03 }} className="h-60 rounded-3xl overflow-hidden shadow-2xl">
-                                    <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=600&auto=format&fit=crop" className="w-full h-full object-cover" alt="Interior acogedor de un departamento minimalista" />
-                                </motion.div>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-white/80 mt-1">Inmuebles</span>
+                                </div>
+                                <div className="zoom-card h-60 rounded-3xl overflow-hidden shadow-2xl">
+                                    <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=75&w=600&auto=format&fit=crop" className="w-full h-full object-cover" alt="Interior acogedor de un departamento minimalista" loading="lazy" decoding="async" width="600" height="400" />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -670,11 +632,11 @@ const Home = () => {
 
             {/* ─────────────────── SELL MODAL ─────────────────── */}
             {showSellModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="sell-modal-title">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden animate-fadeIn">
                         <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                            <h3 className="font-bold text-lg text-gray-800">Vende con nosotros</h3>
-                            <button onClick={() => setShowSellModal(false)} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-200 rounded-full transition">
+                            <h2 id="sell-modal-title" className="font-bold text-lg text-gray-800">Vende con nosotros</h2>
+                            <button onClick={() => setShowSellModal(false)} aria-label="Cerrar formulario de venta" className="text-gray-500 hover:text-gray-700 p-1 hover:bg-gray-200 rounded-full transition">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -686,8 +648,9 @@ const Home = () => {
                                 { label: 'Monto Estimado de Venta', key: 'price', type: 'number', placeholder: 'Ej: 150000' },
                             ].map((f) => (
                                 <div key={f.key}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">{f.label}</label>
+                                    <label htmlFor={`sell-${f.key}`} className="block text-sm font-medium text-gray-700 mb-1">{f.label}</label>
                                     <input
+                                        id={`sell-${f.key}`}
                                         type={f.type}
                                         className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-[#fc7f51] focus:ring-2 focus:ring-[#fc7f51]/20 outline-none transition"
                                         placeholder={f.placeholder}

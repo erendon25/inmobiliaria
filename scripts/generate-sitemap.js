@@ -42,13 +42,19 @@ async function generateSitemap() {
     const staticPages = [
         '',
         '/properties',
-        '/search',
+        '/about',
         '/contact',
-        '/login'
+        '/tips',
+        '/inmuebles-en-arequipa',
+        '/departamentos-en-venta-arequipa',
+        '/casas-en-venta-arequipa',
+        '/terrenos-en-venta-arequipa',
+        '/departamentos-en-alquiler-arequipa',
+        '/casas-en-alquiler-arequipa'
     ];
 
     let sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+    sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
 
     // Static Pages
     staticPages.forEach(page => {
@@ -62,7 +68,7 @@ async function generateSitemap() {
     // Dynamic Property Pages
     const snapshot = await db.collection('properties')
         .where('status', '==', 'disponible')
-        .select('updatedAt') // Optimization: Only fetch IDs and updatedAt
+        .select('updatedAt', 'createdAt', 'title', 'images')
         .get();
     
     snapshot.forEach(doc => {
@@ -70,6 +76,33 @@ async function generateSitemap() {
         sitemap += `  <url>\n`;
         sitemap += `    <loc>${baseUrl}/property/${doc.id}</loc>\n`;
         sitemap += `    <lastmod>${property.updatedAt?.toDate ? property.updatedAt.toDate().toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}</lastmod>\n`;
+        sitemap += `    <changefreq>monthly</changefreq>\n`;
+        sitemap += `    <priority>0.6</priority>\n`;
+        if (property.images?.[0]) {
+            const imageUrl = String(property.images[0]).replace(/&/g, '&amp;');
+            const imageTitle = String(property.title || 'Propiedad en Arequipa')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            sitemap += `    <image:image>\n`;
+            sitemap += `      <image:loc>${imageUrl}</image:loc>\n`;
+            sitemap += `      <image:title>${imageTitle}</image:title>\n`;
+            sitemap += `    </image:image>\n`;
+        }
+        sitemap += `  </url>\n`;
+    });
+
+    // Published blog content
+    const tipsSnapshot = await db.collection('tips')
+        .select('createdAt', 'updatedAt')
+        .get();
+
+    tipsSnapshot.forEach(doc => {
+        const tip = doc.data();
+        const updatedAt = tip.updatedAt || tip.createdAt;
+        sitemap += `  <url>\n`;
+        sitemap += `    <loc>${baseUrl}/tips/${doc.id}</loc>\n`;
+        sitemap += `    <lastmod>${updatedAt?.toDate ? updatedAt.toDate().toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}</lastmod>\n`;
         sitemap += `    <changefreq>monthly</changefreq>\n`;
         sitemap += `    <priority>0.6</priority>\n`;
         sitemap += `  </url>\n`;

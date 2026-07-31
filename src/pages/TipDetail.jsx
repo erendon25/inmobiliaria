@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { db } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { ArrowLeft, User, Calendar, Clock } from 'lucide-react';
+import { SITE_URL, setCanonicalUrl, setMetaName, setMetaProperty, setPageTitle } from '../lib/seo';
 
 const TipDetail = () => {
     const { id } = useParams();
@@ -29,6 +30,66 @@ const TipDetail = () => {
 
         fetchTip();
     }, [id]);
+
+    useEffect(() => {
+        if (!tip) return undefined;
+
+        const canonicalUrl = `${SITE_URL}/tips/${id}`;
+        const title = `${tip.title} | Blog Inmuévete`;
+        const description = String(tip.summary || tip.content || '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 160);
+        const image = tip.imageUrl || `${SITE_URL}/hero-bg.webp`;
+
+        setPageTitle(title);
+        setCanonicalUrl(canonicalUrl);
+        setMetaName('robots', 'index, follow, max-image-preview:large');
+        setMetaName('description', description);
+        setMetaProperty('og:type', 'article');
+        setMetaProperty('og:url', canonicalUrl);
+        setMetaProperty('og:title', title);
+        setMetaProperty('og:description', description);
+        setMetaProperty('og:image', image);
+        setMetaProperty('twitter:url', canonicalUrl);
+        setMetaProperty('twitter:title', title);
+        setMetaProperty('twitter:description', description);
+        setMetaProperty('twitter:image', image);
+
+        const published = tip.createdAt?.toDate
+            ? tip.createdAt.toDate().toISOString()
+            : tip.createdAt?.seconds
+                ? new Date(tip.createdAt.seconds * 1000).toISOString()
+                : undefined;
+        const schema = document.createElement('script');
+        schema.type = 'application/ld+json';
+        schema.dataset.seo = 'article';
+        schema.textContent = JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Article',
+            headline: tip.title,
+            description,
+            image: [image],
+            datePublished: published,
+            dateModified: published,
+            author: {
+                '@type': 'Person',
+                name: tip.agentName || 'Equipo Inmuévete'
+            },
+            publisher: {
+                '@type': 'Organization',
+                name: 'Inmuévete Inmobiliaria',
+                logo: {
+                    '@type': 'ImageObject',
+                    url: `${SITE_URL}/logo.png`
+                }
+            },
+            mainEntityOfPage: canonicalUrl
+        });
+        document.head.appendChild(schema);
+
+        return () => schema.remove();
+    }, [id, tip]);
 
     if (loading) {
         return (

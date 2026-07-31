@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useLocation } from 'react-router-dom';
 import { db } from '../lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import PropertyCard from '../components/PropertyCard';
@@ -11,9 +11,11 @@ const EXCHANGE_RATE = 3.75;
 
 const SearchResults = () => {
     const [searchParams, setSearchParams] = useSearchParams();
+    const { pathname } = useLocation();
+    const isPropertiesDirectory = pathname === '/properties';
 
     // Read filters from URL
-    const [operation, setOperation] = useState(searchParams.get('operation') || 'venta');
+    const [operation, setOperation] = useState(searchParams.get('operation') || (isPropertiesDirectory ? '' : 'venta'));
     const [location, setLocation] = useState(searchParams.get('location') || '');
     const [propertyType, setPropertyType] = useState(searchParams.get('propertyType') || '');
     const [currency, setCurrency] = useState(searchParams.get('currency') || 'USD');
@@ -33,7 +35,7 @@ const SearchResults = () => {
 
     // Sync state with URL search params when they change (e.g. from Navbar navigation)
     useEffect(() => {
-        setOperation(searchParams.get('operation') || 'venta');
+        setOperation(searchParams.get('operation') || (isPropertiesDirectory ? '' : 'venta'));
         setLocation(searchParams.get('location') || '');
         setPropertyType(searchParams.get('propertyType') || '');
         setCurrency(searchParams.get('currency') || 'USD');
@@ -49,7 +51,7 @@ const SearchResults = () => {
         setSeaView(searchParams.get('seaView') === 'true');
         setFurnished(searchParams.get('furnished') === 'true');
         setSecurity(searchParams.get('security') === 'true');
-    }, [searchParams]);
+    }, [isPropertiesDirectory, searchParams]);
 
     const [allProperties, setAllProperties] = useState([]);
     const [filteredProperties, setFilteredProperties] = useState([]);
@@ -251,7 +253,7 @@ const SearchResults = () => {
     };
 
     const clearFilters = () => {
-        setOperation('venta');
+        setOperation(isPropertiesDirectory ? '' : 'venta');
         setLocation('');
         setPropertyType('');
         setCurrency('USD');
@@ -275,6 +277,15 @@ const SearchResults = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 font-sans text-[#262626] pt-24">
+            {isPropertiesDirectory && (
+                <header className="bg-[#16151a] text-white py-14">
+                    <div className="container mx-auto px-6">
+                        <span className="text-[#fc7f51] text-xs font-black uppercase tracking-widest">Catálogo inmobiliario</span>
+                        <h1 className="text-4xl md:text-5xl font-black mt-2">Propiedades en venta y alquiler en Arequipa</h1>
+                        <p className="text-gray-200 mt-4 max-w-3xl text-lg">Compara casas, departamentos, terrenos y locales disponibles, y contacta directamente a un asesor para coordinar una visita.</p>
+                    </div>
+                </header>
+            )}
             {/* Header */}
             <div className="bg-white border-b border-gray-200 pt-6 pb-4 sticky top-24 z-30 shadow-sm transition-all duration-300">
                 <div className="container mx-auto px-6 relative">

@@ -83,21 +83,21 @@ const About = () => {
                             <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-6 text-[#fc7f51]">
                                 <ShieldCheck className="w-10 h-10" />
                             </div>
-                            <h4 className="text-xl font-bold mb-3">Integridad</h4>
+                            <h3 className="text-xl font-bold mb-3">Integridad</h3>
                             <p className="text-[#878787] text-sm">Actuamos con honestidad y transparencia en cada paso.</p>
                         </div>
                         <div className="flex flex-col items-center">
                             <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-6 text-[#fc7f51]">
                                 <HeartHandshake className="w-10 h-10" />
                             </div>
-                            <h4 className="text-xl font-bold mb-3">Compromiso</h4>
+                            <h3 className="text-xl font-bold mb-3">Compromiso</h3>
                             <p className="text-[#878787] text-sm">Nos dedicamos a cumplir y superar las expectativas.</p>
                         </div>
                         <div className="flex flex-col items-center">
                             <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-6 text-[#fc7f51]">
                                 <Users className="w-10 h-10" />
                             </div>
-                            <h4 className="text-xl font-bold mb-3">Confianza</h4>
+                            <h3 className="text-xl font-bold mb-3">Confianza</h3>
                             <p className="text-[#878787] text-sm">Construimos relaciones duraderas basadas en la seguridad.</p>
                         </div>
                     </div>

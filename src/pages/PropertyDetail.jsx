@@ -392,13 +392,21 @@ END:VCALENDAR`;
         if (!property) return;
 
         const canonicalUrl = `${SITE_URL}/property/${id}`;
-        const title = `${property.title} | Inmuévete Inmobiliaria`;
-        const description = property.description?.substring(0, 160);
-        const image = property.images?.[0];
+        const locationText = property.location || property.address || 'Arequipa';
+        const operationText = String(property.type || 'venta').toLowerCase() === 'alquiler' ? 'en alquiler' : 'en venta';
+        const baseTitle = property.title || `${property.category || 'Propiedad'} ${operationText} en ${locationText}`;
+        const title = `${baseTitle} | Inmuévete`;
+        const description = String(property.description || `${property.category || 'Propiedad'} ${operationText} en ${locationText}. Consulta precio, características y coordina una visita con Inmuévete Inmobiliaria.`)
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 160);
+        const image = property.images?.[0] || `${SITE_URL}/hero-bg.webp`;
 
         setPageTitle(title);
         setCanonicalUrl(canonicalUrl);
+        setMetaName('robots', property.status === 'disponible' ? 'index, follow, max-image-preview:large' : 'noindex, follow');
         setMetaName('description', description);
+        setMetaProperty('og:type', 'website');
         setMetaProperty('og:url', canonicalUrl);
         setMetaProperty('og:title', title);
         setMetaProperty('og:description', description);

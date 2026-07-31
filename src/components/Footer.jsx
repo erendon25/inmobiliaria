@@ -1,14 +1,15 @@
 import logo from '../assets/logo.png';
 import { Facebook, Instagram } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
     return (
         <footer className="bg-[#16151a] text-white py-16">
-            <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
                 {/* Brand & Mission */}
                 <div>
                     <div className="flex items-center gap-3 mb-6">
-                        <img src={logo} alt="Inmuévete" className="h-12" />
+                        <img src={logo} alt="Inmuévete" className="h-12 w-auto" width="355" height="325" loading="lazy" decoding="async" />
                         <span className="text-2xl font-bold font-[Montserrat] text-white">Inmu<span className="text-[#fc7f51]">évete</span></span>
                     </div>
                     <p className="text-[#878787] text-sm leading-relaxed mb-6">
@@ -48,9 +49,22 @@ const Footer = () => {
                     </div>
                 </div>
 
+                {/* Popular property searches */}
+                <div>
+                    <h2 className="font-bold mb-6 text-white text-lg">Propiedades en Arequipa</h2>
+                    <ul className="space-y-3 text-sm text-[#a3a3a3]">
+                        <li><Link to="/inmuebles-en-arequipa" className="hover:text-white transition">Inmuebles en Arequipa</Link></li>
+                        <li><Link to="/departamentos-en-venta-arequipa" className="hover:text-white transition">Departamentos en venta</Link></li>
+                        <li><Link to="/casas-en-venta-arequipa" className="hover:text-white transition">Casas en venta</Link></li>
+                        <li><Link to="/terrenos-en-venta-arequipa" className="hover:text-white transition">Terrenos en venta</Link></li>
+                        <li><Link to="/departamentos-en-alquiler-arequipa" className="hover:text-white transition">Departamentos en alquiler</Link></li>
+                        <li><Link to="/casas-en-alquiler-arequipa" className="hover:text-white transition">Casas en alquiler</Link></li>
+                    </ul>
+                </div>
+
                 {/* Values / Links */}
                 <div>
-                    <h4 className="font-bold mb-6 text-white text-lg">Nuestros Valores</h4>
+                    <h2 className="font-bold mb-6 text-white text-lg">Nuestros Valores</h2>
                     <ul className="space-y-4 text-sm text-[#878787]">
                         <li className="flex items-center gap-2">
                             <span className="w-1.5 h-1.5 bg-[#fc7f51] rounded-full"></span> Integridad
@@ -66,10 +80,13 @@ const Footer = () => {
 
                 {/* Contact */}
                 <div>
-                    <h4 className="font-bold mb-6 text-white text-lg">Contacto</h4>
-                    <p className="text-[#878787] text-sm mb-3">Arequipa, Perú </p>
-                    <p className="text-[#878787] text-sm mb-3">vanessam.rendon@inmueveteinmobiliaria.com</p>
-                    <p className="text-[#878787] text-sm mb-3">soporte@inmueveteinmobiliaria.com</p>
+                    <h2 className="font-bold mb-6 text-white text-lg">Contacto</h2>
+                    <address className="not-italic text-[#a3a3a3] text-sm">
+                        <p className="mb-3">Arequipa, Perú</p>
+                        <p className="mb-3"><a href="tel:+51965355700" className="hover:text-white transition">+51 965 355 700</a></p>
+                        <p className="mb-3 break-words"><a href="mailto:vanessam.rendon@inmueveteinmobiliaria.com" className="hover:text-white transition">vanessam.rendon@inmueveteinmobiliaria.com</a></p>
+                        <p className="mb-3 break-words"><a href="mailto:soporte@inmueveteinmobiliaria.com" className="hover:text-white transition">soporte@inmueveteinmobiliaria.com</a></p>
+                    </address>
                 </div>
             </div>
 

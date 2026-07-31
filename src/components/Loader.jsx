@@ -14,6 +14,8 @@ const Loader = ({ fullScreen = false }) => {
                 <img
                     src={logo}
                     alt="Cargando..."
+                    width="355"
+                    height="325"
                     className="w-14 h-14 object-contain animate-pulse z-10 brightness-110 drop-shadow-sm"
                 />
             </div>

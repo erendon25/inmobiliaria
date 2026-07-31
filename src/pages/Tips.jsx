@@ -90,9 +90,9 @@ const Tips = () => {
                                         )}
                                     </div>
 
-                                    <h3 className="text-2xl font-bold text-gray-800 mb-4 leading-tight group-hover:text-[#fc7f51] transition">
+                                    <h2 className="text-2xl font-bold text-gray-800 mb-4 leading-tight group-hover:text-[#fc7f51] transition">
                                         {tip.title}
-                                    </h3>
+                                    </h2>
 
                                     <p className="text-gray-600 leading-relaxed mb-6 line-clamp-4 flex-grow">
                                         {tip.content}

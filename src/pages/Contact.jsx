@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { Mail, Phone, MapPin, Send, Instagram, Facebook, Linkedin, MessageCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Instagram, Facebook, MessageCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Contact = () => {
@@ -88,11 +88,17 @@ const Contact = () => {
                         <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-[#fc7f51] rounded-full opacity-10 blur-3xl"></div>
 
                         <div className="relative z-10">
-                            <h3 className="text-2xl font-bold mb-8">Información de Contacto</h3>
+                            <h2 className="text-2xl font-bold mb-8">Información de Contacto</h2>
 
                             <div className="space-y-8">
                                 <div className="flex items-start gap-4">
-
+                                    <div className="w-12 h-12 bg-[#262626] rounded-full flex items-center justify-center text-[#fc7f51] shrink-0">
+                                        <Phone className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg mb-1">Teléfono y WhatsApp</h3>
+                                        <a href="tel:+51965355700" className="text-gray-300 text-sm hover:text-white transition">+51 965 355 700</a>
+                                    </div>
                                 </div>
 
                                 <div className="flex items-start gap-4">
@@ -100,7 +106,7 @@ const Contact = () => {
                                         <Mail className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-lg mb-1">Email</h4>
+                                        <h3 className="font-bold text-lg mb-1">Email</h3>
                                         <p className="text-gray-400 text-sm mb-1">vanessam.rendon@inmueveteinmobiliaria.com</p>
                                         <p className="text-gray-400 text-sm">soporte@inmueveteinmobiliaria.com</p>
                                     </div>
@@ -111,26 +117,22 @@ const Contact = () => {
                                         <MapPin className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-lg mb-1">Oficina Central</h4>
+                                        <h3 className="font-bold text-lg mb-1">Zona de atención</h3>
                                         <p className="text-gray-400 text-sm leading-relaxed">
-                                            Arequipa,Perú<br />
-                                            Perú
+                                            Arequipa, Perú
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="mt-12">
-                                <h4 className="font-bold text-lg mb-4">Síguenos</h4>
+                                <h3 className="font-bold text-lg mb-4">Síguenos</h3>
                                 <div className="flex gap-4">
-                                    <a href="#" className="w-10 h-10 bg-[#262626] rounded-full flex items-center justify-center text-white hover:bg-[#fc7f51] transition">
+                                    <a href="https://www.instagram.com/inmuevete.inmobiliaria/" target="_blank" rel="noopener noreferrer" aria-label="Instagram de Inmuévete" className="w-10 h-10 bg-[#262626] rounded-full flex items-center justify-center text-white hover:bg-[#fc7f51] transition">
                                         <Instagram className="w-5 h-5" />
                                     </a>
-                                    <a href="#" className="w-10 h-10 bg-[#262626] rounded-full flex items-center justify-center text-white hover:bg-[#fc7f51] transition">
+                                    <a href="https://www.facebook.com/share/1AYe1Qtnwd/" target="_blank" rel="noopener noreferrer" aria-label="Facebook de Inmuévete" className="w-10 h-10 bg-[#262626] rounded-full flex items-center justify-center text-white hover:bg-[#fc7f51] transition">
                                         <Facebook className="w-5 h-5" />
-                                    </a>
-                                    <a href="#" className="w-10 h-10 bg-[#262626] rounded-full flex items-center justify-center text-white hover:bg-[#fc7f51] transition">
-                                        <Linkedin className="w-5 h-5" />
                                     </a>
                                 </div>
                             </div>

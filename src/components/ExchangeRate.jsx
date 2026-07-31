@@ -6,9 +6,15 @@ const ExchangeRate = ({ isScrolled = true }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (!window.matchMedia('(min-width: 1280px)').matches) {
+            setLoading(false);
+            return undefined;
+        }
+
+        const controller = new AbortController();
         const fetchExchangeRate = async () => {
             try {
-                const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD', { signal: controller.signal });
                 if (!response.ok) throw new Error('Failed to fetch');
                 const data = await response.json();
                 setExchangeData({
@@ -22,6 +28,7 @@ const ExchangeRate = ({ isScrolled = true }) => {
             }
         };
         fetchExchangeRate();
+        return () => controller.abort();
     }, []);
 
     if (loading) return (

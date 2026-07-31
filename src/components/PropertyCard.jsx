@@ -96,12 +96,14 @@ const PropertyCard = ({ property }) => {
                     alt={`Imagen de ${property.title} en ${property.location}`}
                     loading="lazy"
                     decoding="async"
+                    width="400"
+                    height="380"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
 
                 {/* Watermark Overlay */}
                 <div className="absolute inset-0 pointer-events-none select-none z-0 flex items-center justify-center p-2 gap-1.5 opacity-60">
-                    <img src={logo} alt="Inmuévete Inmobiliaria Logo" className="h-6 sm:h-8 w-auto object-contain" style={{ filter: 'drop-shadow(1px 2px 3px rgba(0,0,0,0.6)) brightness(0) invert(1)' }} />
+                    <img src={logo} alt="" aria-hidden="true" width="355" height="325" className="h-6 sm:h-8 w-auto object-contain" style={{ filter: 'drop-shadow(1px 2px 3px rgba(0,0,0,0.6)) brightness(0) invert(1)' }} />
                     <div className="flex flex-col items-start justify-center" style={{ filter: 'drop-shadow(1px 2px 3px rgba(0,0,0,0.6))' }}>
                         <span className="text-white text-xl sm:text-2xl font-black tracking-tight leading-none mb-0.5">
                             Inmuévete

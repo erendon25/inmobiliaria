@@ -26,7 +26,7 @@ const Navbar = () => {
         ? isScrolled ? 'bg-white/95 backdrop-blur-lg shadow-lg border border-white/30' : 'bg-transparent'
         : 'bg-white/80 backdrop-blur-md shadow-sm border border-gray-100/80';
     const navLinks = [
-        { name: 'Propiedades', path: '/' },
+        { name: 'Propiedades', path: '/properties' },
         { name: 'Blog', path: '/tips' },
         { name: 'Nosotros', path: '/about' },
         { name: 'Contacto', path: '/contact' },
@@ -55,6 +55,8 @@ const Navbar = () => {
                     <img
                         src={logo}
                         alt="Inmuévete"
+                        width="355"
+                        height="325"
                         className="h-9 md:h-11 w-auto object-contain"
                     />
                 </Link>
@@ -136,7 +138,10 @@ const Navbar = () => {
 
                     {/* Mobile hamburger */}
                     <button
+                        type="button"
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        aria-label={isMobileMenuOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'}
+                        aria-expanded={isMobileMenuOpen}
                         className={`md:hidden p-2 rounded-full transition ${
                             solidNav
                                 ? 'text-gray-900 bg-gray-100'
@@ -158,9 +163,11 @@ const Navbar = () => {
                     <div className="p-6 flex flex-col h-full">
                         {/* Header */}
                         <div className="flex justify-between items-center mb-10">
-                            <img src={logo} alt="Inmuévete" className="h-10 w-auto object-contain" />
+                            <img src={logo} alt="Inmuévete" className="h-10 w-auto object-contain" width="355" height="325" />
                             <button
+                                type="button"
                                 onClick={() => setIsMobileMenuOpen(false)}
+                                aria-label="Cerrar menú de navegación"
                                 className="p-2 bg-gray-100 rounded-full"
                             >
                                 <X className="w-6 h-6 text-gray-900" />
@@ -213,6 +220,7 @@ const Navbar = () => {
                                     Mi Panel
                                 </Link>
                                 <button
+                                    type="button"
                                     onClick={() => { logout(); setIsMobileMenuOpen(false); }}
                                     className="w-full py-4 text-center font-black text-red-500 rounded-2xl border border-red-100"
                                 >
