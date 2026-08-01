@@ -12,8 +12,8 @@
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/about</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/contact</loc>
@@ -23,179 +23,287 @@
   <url>
     <loc>https://inmueveteinmobiliaria.com/tips</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/inmuebles-en-arequipa</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/departamentos-en-venta-arequipa</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/casas-en-venta-arequipa</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/terrenos-en-venta-arequipa</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/departamentos-en-alquiler-arequipa</loc>
-    <changefreq>daily</changefreq>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/casas-en-alquiler-arequipa</loc>
-    <changefreq>daily</changefreq>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/39Qos6CixWFdfuXvSlRL</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1778206904268_e1d54db6-caf7-4976-8222-712e07c7e1c2.jpeg?alt=media&amp;token=05c14468-707e-430a-9004-e856a5978238</image:loc>
+      <image:title>DEPARTAMENTO AMOBLADO EN ALQUILER</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/4rZYqcVVzGNQfrF6jlt4</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1780417822996_IMG_5017.jpeg?alt=media&amp;token=00fe65b5-ad22-44f6-abf5-61f1cc49865f</image:loc>
+      <image:title>DUPLEX EN VENTA SACHACA PALACIO I </image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/5qqVePv28FlNsbF1RczH</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FM8c9x0tsFXVMICHVuyPnPGdrRZH3%2F1770948758506_a1aafeba-e77e-4b62-a3e5-ee927a439f84.jpeg?alt=media&amp;token=8959e396-f614-4b5a-8915-b8f9cc98622b</image:loc>
+      <image:title>CASA EN VENTA CERCADO -VALLECITO</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/AQi8OLcPfzBVeZ5TNQCP</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1783872727763_IMG_6753.jpeg?alt=media&amp;token=2dbc32ec-ce31-4268-b727-6da10b41129d</image:loc>
+      <image:title>DEPARTAMENTO EN VENTA JLBYR</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/Dr0lgmGIlme4lAQkoP7N</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1777936107048_IMG_3694.jpeg?alt=media&amp;token=91363810-c4c6-4fe5-b4a2-1e7ab3732106</image:loc>
+      <image:title>TERRENO URBANO EN VENTA CAYMA </image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/E6goF5grxRt5oSjUzLwp</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1779638571680_IMG_4537.jpeg?alt=media&amp;token=7521da21-edc2-430c-a013-0fe8647b66b5</image:loc>
+      <image:title>DEPARTAMENTO EN ALQUILER CERRO COLORADO</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/H9WDMMa7wgyLxDcwsETM</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1774027528495_IMG_2221.jpeg?alt=media&amp;token=1dbee3ac-eea1-49e5-8c26-4b39d09d31b7</image:loc>
+      <image:title>DUPLEX EN ALQUILER AMOBLADO</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/J4bDSwBcMPfXvUjJushW</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1777935434814_IMG_3471.jpeg?alt=media&amp;token=323e7ec0-3b05-429b-b6b8-95dca3cb8c01</image:loc>
+      <image:title>TERRENO RUSTICO EN VENTA</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/JJwBcghQ9EDevQNrikfq</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1772243586885_IMG_9936.jpeg?alt=media&amp;token=49577eb9-67ca-4480-8a9e-ec7234df2035</image:loc>
+      <image:title>DUPLEX EN VENTA CERRO COLORADO</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/KWwKYs6cSrqlPFUpY6cE</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1778193875033_IMG_3852.jpeg?alt=media&amp;token=786daa5e-3829-48ad-8160-07f8d1df5960</image:loc>
+      <image:title>DUPLEX EN VENTA SACHACA</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/M0p4e0ARTMIQeJJxxG4w</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1783873885877_IMG_6700.jpeg?alt=media&amp;token=faafd55d-ed78-43bc-9ef4-99b973f56ef9</image:loc>
+      <image:title>DEPARTAMENTO EN ALQUILER SACHACA</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/MEVlEsEiFTllLE15WRgz</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1778379252711_IMG_3847.jpeg?alt=media&amp;token=5301c35e-71bf-4bf1-b7dd-652e23b3edb2</image:loc>
+      <image:title>DEPARTAMENTOS EN VENTA SACHACA</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/S7uHnab6WS82ZhxhgxbQ</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1772232195095_AAED0937-4236-4055-905B-F386BF44EF63.png?alt=media&amp;token=8b21f3ac-ea4f-43da-a120-6c705e3ab184</image:loc>
+      <image:title>CASA EN VENTA MARIANO MELGAR</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/THSSHGQVdeOqK7eImqHs</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1774281965991_IMG_2252.jpeg?alt=media&amp;token=ad960909-632b-4dd7-8ef9-ef9310f2065e</image:loc>
+      <image:title>PREVENTA DEPARTAMENTOS CAYMA</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/YgglM4EBKIrITtqJkBuT</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1772244135856_2cf51269-f3af-4988-b00e-0eb67456355f.jpeg?alt=media&amp;token=66846816-0ce4-4c35-a32e-04c51afe0cd6</image:loc>
+      <image:title>DEPARTAMENTO EN VENTA CAYMA </image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/beyhH51Xin14NwzNOuA0</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1773883626974_IMG_2048.jpeg?alt=media&amp;token=81e59552-f813-45fa-b133-a9d06a9ff1db</image:loc>
+      <image:title>CASA EN VENTA SACHACA </image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/e1BgMWgC4Bdc25cvoWIo</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1774282818964_3773752C-EBF8-4442-814F-437FD232FDBA.jpeg?alt=media&amp;token=e6e139e8-db86-418a-8791-d3e6baeca635</image:loc>
+      <image:title>DEPARTAMENTOS EN VENTA SACHACA</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/ePdqXADeVVSC32VcKiZY</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FM8c9x0tsFXVMICHVuyPnPGdrRZH3%2F1771012435914_IMG_9485.jpeg?alt=media&amp;token=a25f9e53-f067-4bfd-9675-73f2dd57b907</image:loc>
+      <image:title>terreno en venta camaná - Residencial villa mar</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/hUo4QQ739jaPb41KoFRB</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1772217663506_9620121a-453d-4452-a3f0-9c55ea8cf3fe.jpeg?alt=media&amp;token=f54fb453-9715-484b-aa52-cbf21d677e32</image:loc>
+      <image:title>DEPARTAMENTO EN VENTA CAYMA </image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/hzvK7BLZvGzsk7j5ziQB</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1779498493916_IMG_4459.jpeg?alt=media&amp;token=10fa3843-594b-4ae0-be62-ac5b0b40f1aa</image:loc>
+      <image:title>DEPARTAMENTO EN ALQUILER CERRO COLORADO </image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/kH00rh3Uw0KTWcZY2s2k</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1783873424370_b828c036-8d82-4958-8fdd-14fd108f51cc.jpeg?alt=media&amp;token=61ab4e8c-d992-464f-a3cd-abbd9310f629</image:loc>
+      <image:title>DEPARTAMENTO EN ALQUILER YANAHUARA</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/o3CN3Kc1UHuSJUNXksTW</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FM8c9x0tsFXVMICHVuyPnPGdrRZH3%2F1771010092432_IMG_5732.png?alt=media&amp;token=96226c51-d2f5-4328-93cd-a948f792f204</image:loc>
+      <image:title>departamento en venta cayma parte baja</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://inmueveteinmobiliaria.com/property/tJVBLfLpjgIZKetI819Q</loc>
-    <lastmod>2026-07-31</lastmod>
+    <lastmod>2026-08-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1779582057001_IMG_4246.jpeg?alt=media&amp;token=887e5e8d-3f39-4dae-bb75-c25259f73972</image:loc>
+      <image:title>DUPLEX EN VENTA CERRO COLORADO </image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://inmueveteinmobiliaria.com/property/xnE8ItrlnKfO3DoSg9Jb</loc>
+    <lastmod>2026-08-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://firebasestorage.googleapis.com/v0/b/inmobiliaria-89dca.firebasestorage.app/o/properties%2FtDODWPqQMcdjwlxQXR7XQUm5HGd2%2F1778196480780_5dd56e32-a343-4d89-9a3c-d8c4b150364e.jpeg?alt=media&amp;token=cdfe66a0-0103-4825-a3e1-076b9d6fb106</image:loc>
+      <image:title>CASA EN PREVENTA SACHACA</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://inmueveteinmobiliaria.com/tips/sM1jQUivqyAgWkW7zLy1</loc>
+    <lastmod>2026-04-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://inmueveteinmobiliaria.com/property/xnE8ItrlnKfO3DoSg9Jb</loc>
-    <lastmod>2026-07-31</lastmod>
+    <loc>https://inmueveteinmobiliaria.com/tips/wRNFJqKsLjSUNoBrGApW</loc>
+    <lastmod>2026-04-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
